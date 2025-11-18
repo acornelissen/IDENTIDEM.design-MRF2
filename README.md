@@ -4,6 +4,8 @@ MRF2 is version two of an open hardware / open firmware medium-format rangefinde
 
 It is based on the [Panomicron Thulium](https://www.panomicron.com/thulium) designed by Oscar Oweson, has been heavily modified, but has kept the best ideas from that camera. 😉
 
+**There is no build guide yet, but a 2-hour long build video is dropping soon!**
+
 ## 📦 Repo at a Glance
 
 - `Firmware/` – ESP32-S3 Arduino firmware (full details in `Firmware/README.md`)
@@ -75,6 +77,17 @@ Item | Qty | Notes | Example sources |
 25.0mm Dia. x -25 FL Planco-concave lens (PCV) | 1 | Front viewfinder lens | [Edmunds Optics](https://www.edmundoptics.co.uk/p/250mm-dia-x25-fl-uncoated-plano-concave-lens/5542/)
 30x30x1.1mm 50R/50T beam splitter | 1 | Sits between front and rear optics | [AliExpress Search](https://www.aliexpress.com/w/wholesale-30x30x1.1-50R%25252F50T-beam-splitter.html)
 
+
+## 💰 Cost Estimate (ballpark)
+
+Assumes single-quantity retail buys (Adafruit/Amazon/AliExpress), optics from Edmund Optics, and £1 ≈ $1.27; excludes shipping/VAT/import and assembly labor.
+
+- Electronics (MCU, sensors, displays, cables, LiPo, switches): ~$125 / ~£100
+- PCB share (DIY assembly; amortized per build): ~$10 / ~£6  \[full 5× PCB batch ~ $35 / £28\]
+- Hardware/fasteners/mech bits: ~$25 / ~£20
+- Optics (lenses + beam splitter): ~$115 / ~£90
+- Printed parts material: ~$25 / ~£20
+- Rough per-build total: ~$300 / ~£235 (add shipping/taxes and any PCB batch overhead you keep)
 
 ## 🖨 CAD & Printed Parts
 
