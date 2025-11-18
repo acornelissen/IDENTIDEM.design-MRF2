@@ -1,0 +1,69 @@
+# macOS cruft
+.DS_Store
+
+# Editors/IDEs
+.vscode/
+.idea/
+*.code-workspace
+
+# Python virtual envs
+.venv/
+venv/
+
+# Node/Yarn (if used for tooling)
+node_modules/
+
+# Build/output from PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+.clangd/
+.cache/
+
+# Arduino/ESP32 artifacts
+*.elf
+*.bin
+*.map
+*.hex
+*.pio/bin/
+
+# Logs / temp
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+
+# KiCad
+*-backups/
+*.kicad_prl
+*.lck
+*.kicad_pcb-bak
+*.sch-bak
+fp-info-cache
+sym-lib-table-bak
+*.net
+*.xml
+*.dcm
+*.wrl
+*.stp
+*.step
+*.iges
+*.iges.gz
+*.3dshapes/*.wrl
+*.3dshapes/*.step
+
+# KiCad generated fabrication/plot cache
+plot/
+
+# Slicers / CAD working files
+*.3mf#*
+*.f3d1
+*.f3z
+*.asd
+
+# Misc archives and generated exports
+*.zip
+*.tar
+*.tar.gz
+
