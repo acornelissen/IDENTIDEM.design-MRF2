@@ -1,6 +1,6 @@
 # IDENTIDEM.design M(edium Format) (R)ange(F)inder Two (MRF2)
 
-[![Build Guide](https://img.youtube.com/vi/sIWXoqOFIU_/0.jpg)](https://www.youtube.com/watch?v=sIWXoqOFIU_)
+[![Build Guide](https://img.youtube.com/vi/_sIWXoqOFIU/0.jpg)](https://www.youtube.com/watch?v=_sIWXoqOFIU)
 
 MRF2 is version two of an open hardware / open firmware medium-format rangefinder camera for Mamiya Press lenses. It combines custom PCBs, ESP32-S3 firmware, LiDAR-based lens coupled focusing, dual OLED displays, and printed mechanical parts so you can build a fully featured medium-format shooter with configurable lens profiles and film formats.
 
