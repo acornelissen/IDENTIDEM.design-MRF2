@@ -1,10 +1,11 @@
 # IDENTIDEM.design M(edium Format) (R)ange(F)inder Two (MRF2)
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/_sIWXoqOFIU?si=452RhHmBFnujWYJd" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 MRF2 is version two of an open hardware / open firmware medium-format rangefinder camera for Mamiya Press lenses. It combines custom PCBs, ESP32-S3 firmware, LiDAR-based lens coupled focusing, dual OLED displays, and printed mechanical parts so you can build a fully featured medium-format shooter with configurable lens profiles and film formats.
 
 It is based on the [Panomicron Thulium](https://www.panomicron.com/thulium) designed by Oscar Oweson, has been heavily modified, but has kept the best ideas from that camera. 😉
 
-**There is no build guide yet, but a 2-hour long build video is dropping soon!**
 
 ## 📦 Repo at a Glance
 
