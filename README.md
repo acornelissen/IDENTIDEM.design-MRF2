@@ -53,10 +53,18 @@ B-type 8-pin FPC ribbon cable | 1 | Links main PCB to breakout | [Amazon](https:
 | STEMMA QT Rotary Encoder (Adafruit 5880) | 1 | Film advance tracking | [Adafruit](https://www.adafruit.com/product/5880) |
 | 1.12" 128×128 SH1107 OLED (Adafruit 5297) | 1 | Main display | [Adafruit](https://www.adafruit.com/product/5297) |
 | 128×32 SSD1306 OLED (I2C) | 1 | External status display | [AliExpress search](https://www.aliexpress.com/w/wholesale-128x32-oled-display-ssd1306.html) |
-| JST-SH/Qwiic/STEMMA QT cables | several | I2C daisy-chain and encoder | [Adafruit](https://www.adafruit.com/?q=stemma%20qt%20cable&sort=BestMatch) |
+| JST-SH/Qwiic/STEMMA QT cables | 6-8 (extras if you want to shorten / modify) | I2C daisy-chain and encoder | [Adafruit](https://www.adafruit.com/?q=stemma%20qt%20cable&sort=BestMatch) |
 | LiPo cell (3.7V, 820mmAh) - 44x30.5x6.8xmm | 1 | **CHECK POLARITY** | [Amazon](https://www.amazon.co.uk/dp/B082152887) |
 | 8mm Momentary Button| 2 | Select buttons | [Amazon](https://www.amazon.co.uk/dp/B07S1MNB8C)
 | 6mm DPDT slide switch | 1 | Power switch | [Amazon](https://www.amazon.co.uk/dp/B07H9VPK1J)
+
+### Components for custom PCBs
+| Item | Qty | Notes | Example sources |
+| --- | --- | --- | --- |
+| 0.5mm Pitch 8-pin FPC connector | 2 | One on the main PCB, one on the breakout | [JLCPCB](https://jlcpcb.com/partdetail/XUNPU-FPC_05F8PH20/C2856797)
+| ST SH 8-pin connector | 1 | Connects power switch and buttons | [JLCPCB](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_08PWT/C7430450)
+| ST SH 6-pin connector | 1 | Connects LiDAR sensor | [JLCPCB](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_06PWT/C7430448)
+| ST SH 4-pin connector | 1 | Connects STEMMA QT | [JLCPCB](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_04PWT/C7430446)
 
 ### Hardware
 
