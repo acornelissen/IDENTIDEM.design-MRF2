@@ -77,6 +77,7 @@ Steel rod - for door hinge | 1 | Cut to length: ~82mm | [Amazon](https://www.ama
 2 Turn Door Handle Spring | 1 | For advance lever auto-return | [Amazon](https://www.amazon.co.uk/dp/B076VRBT4M) |
 CSK8PP One-way bearing / sprag clutch | 1 | For advance-lever, make sure inner and outer keyed | [AliExpress Search](https://www.aliexpress.com/w/wholesale-CSK8PP.html)
 Cold-shoe | 1 | Mount on top | [Amazon](https://www.amazon.co.uk/Anwenk-Adapter-Bracket-Standard-Monitor/dp/B01MD29V3X)
+20x50x2mm bar magnets | as needed | 1 for the body, 1 for each mask you print | [Amazon](https://amzn.eu/d/ejitdei)
 
 ### Optics
 
