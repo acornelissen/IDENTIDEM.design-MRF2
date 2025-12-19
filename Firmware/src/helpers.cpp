@@ -43,6 +43,7 @@ void loadPrefs()
     }
 
     selected_lens = prefs.getInt("selected_lens", 1);
+    parallaxEnabled = prefs.getBool("parallax", true);
 
     int non_zero_aperture_index = getFirstNonZeroAperture();
 
@@ -67,6 +68,7 @@ void savePrefs()
   prefs.putInt("aperture_index", aperture_index);
   prefs.putInt("selected_format", selected_format);
   prefs.putInt("selected_lens", selected_lens);
+  prefs.putBool("parallax", parallaxEnabled);
   prefs.putInt("film_counter", film_counter);
   prefs.putInt("encoder_value", encoder_value);
   prefs.putInt("prev_encoder_value", prev_encoder_value);

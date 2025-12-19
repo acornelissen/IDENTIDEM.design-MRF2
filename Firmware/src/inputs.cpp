@@ -29,7 +29,7 @@ void checkButtons()
       else if (ui_mode == "config")
       {
         config_step++;
-        if (config_step > 5) // MAX_CONFIG_STEPS might be better
+        if (config_step > 6) // MAX_CONFIG_STEPS might be better
         {
           config_step = 0;
         }
@@ -98,13 +98,17 @@ void checkButtons()
             ui_mode = "calib";
           }
           else if (config_step == 4) {
+            parallaxEnabled = !parallaxEnabled;
+            savePrefs();
+          }
+          else if (config_step == 5) {
             encoder.setEncoderPosition(0); // Reset encoder related values
             encoder_value = 0; prev_encoder_value = 0;
             film_counter = 0; frame_progress = 0; prev_frame_progress = 0;
             savePrefs();
             ui_mode = "main"; config_step = 0;
           }
-          else if (config_step == 5) {
+          else if (config_step == 6) {
             ui_mode = "main"; config_step = 0;
           }
         }

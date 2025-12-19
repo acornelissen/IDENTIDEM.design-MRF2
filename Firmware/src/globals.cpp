@@ -50,6 +50,7 @@ int calib_step = 0;
 int selected_lens = 1;
 int selected_format = 3;
 int calib_lens = 0;
+bool parallaxEnabled = true;
 
 int calib_distance_set[7] = {};
 int current_calib_distance = 0;

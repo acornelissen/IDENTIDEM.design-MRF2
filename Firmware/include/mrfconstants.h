@@ -45,6 +45,9 @@ const float LIDAR_CAL_REF_TRUE_CM = 100.0f;
 #define PARALLAX_MIN_DISTANCE_MM 500.0f // clamp very close focus to avoid huge shifts
 #define PARALLAX_MAX_SHIFT_PX 24        // guardrail on-screen shift
 
+// Viewfinder overlay geometry (approximate) used to size framelines.
+const float VIEWFINDER_FOV_DEG = 15.2f;
+
 #define DISTANCE_MIN 5
 #define DISTANCE_MAX 18
 

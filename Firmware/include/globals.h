@@ -53,6 +53,7 @@ extern int calib_step;
 extern int selected_lens;
 extern int selected_format;
 extern int calib_lens;
+extern bool parallaxEnabled;
 
 extern int calib_distance_set[7];
 extern int current_calib_distance;

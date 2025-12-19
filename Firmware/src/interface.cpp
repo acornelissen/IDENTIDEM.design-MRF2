@@ -17,30 +17,10 @@ struct ParallaxShift
   float y;
 };
 
-static void getFormatLongShortMm(const FilmFormat &format, float &longMm, float &shortMm)
+static void getFormatWidthHeightMm(const FilmFormat &format, float &widthMm, float &heightMm)
 {
-  if (format.frame_mm_width >= format.frame_mm_height)
-  {
-    longMm = format.frame_mm_width;
-    shortMm = format.frame_mm_height;
-  }
-  else
-  {
-    longMm = format.frame_mm_height;
-    shortMm = format.frame_mm_width;
-  }
-}
-
-static const FilmFormat *getBaseFormat()
-{
-  for (size_t i = 0; i < NUM_FILM_FORMATS; ++i)
-  {
-    if (film_formats[i].id == 67)
-    {
-      return &film_formats[i];
-    }
-  }
-  return &film_formats[selected_format];
+  widthMm = format.frame_mm_width;
+  heightMm = format.frame_mm_height;
 }
 
 static float getParallaxDistanceMm()
@@ -73,6 +53,11 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
 {
   ParallaxShift shift = {0.0f, 0.0f};
 
+  if (!parallaxEnabled)
+  {
+    return shift;
+  }
+
   if ((PARALLAX_OFFSET_X_MM == 0.0f && PARALLAX_OFFSET_Y_MM == 0.0f) || lenses[selected_lens].focal_mm <= 0)
   {
     return shift;
@@ -84,10 +69,10 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
     return shift;
   }
 
-  float formatLongMm = 0.0f;
-  float formatShortMm = 0.0f;
-  getFormatLongShortMm(film_formats[selected_format], formatLongMm, formatShortMm);
-  if (formatLongMm <= 0.0f || formatShortMm <= 0.0f)
+  float formatWidthMm = 0.0f;
+  float formatHeightMm = 0.0f;
+  getFormatWidthHeightMm(film_formats[selected_format], formatWidthMm, formatHeightMm);
+  if (formatWidthMm <= 0.0f || formatHeightMm <= 0.0f)
   {
     return shift;
   }
@@ -95,8 +80,8 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
   float shiftX_mm = lenses[selected_lens].focal_mm * PARALLAX_OFFSET_X_MM / distance_mm;
   float shiftY_mm = lenses[selected_lens].focal_mm * PARALLAX_OFFSET_Y_MM / distance_mm;
 
-  float pxPerMmX = static_cast<float>(frameWidthPx) / formatLongMm;
-  float pxPerMmY = static_cast<float>(frameHeightPx) / formatShortMm;
+  float pxPerMmX = static_cast<float>(frameWidthPx) / formatWidthMm;
+  float pxPerMmY = static_cast<float>(frameHeightPx) / formatHeightMm;
 
   shift.x = shiftX_mm * pxPerMmX;
   shift.y = shiftY_mm * pxPerMmY;
@@ -172,22 +157,25 @@ void drawMainUI()
   int baseFramelineX = framelineX;
   int baseFramelineY = framelineY;
 
-  float baseLongMm = 0.0f;
-  float baseShortMm = 0.0f;
-  float formatLongMm = 0.0f;
-  float formatShortMm = 0.0f;
-  const FilmFormat *baseFormat = getBaseFormat();
-  getFormatLongShortMm(*baseFormat, baseLongMm, baseShortMm);
-  getFormatLongShortMm(film_formats[selected_format], formatLongMm, formatShortMm);
+  float formatWidthMm = 0.0f;
+  float formatHeightMm = 0.0f;
+  getFormatWidthHeightMm(film_formats[selected_format], formatWidthMm, formatHeightMm);
+
+  float overlayFovXDeg = VIEWFINDER_FOV_DEG;
+  float overlayFovYDeg = VIEWFINDER_FOV_DEG * (static_cast<float>(framelineH) / static_cast<float>(framelineW));
 
   int new_width = framelineW;
   int new_height = framelineH;
-  if (baseLongMm > 0.0f && baseShortMm > 0.0f)
+  if (lenses[selected_lens].focal_mm > 0.0f && formatWidthMm > 0.0f && formatHeightMm > 0.0f && overlayFovXDeg > 0.0f && overlayFovYDeg > 0.0f)
   {
-    float widthScale = formatLongMm / baseLongMm;
-    float heightScale = formatShortMm / baseShortMm;
-    new_width = static_cast<int>(roundf(framelineW * widthScale));
-    new_height = static_cast<int>(roundf(framelineH * heightScale));
+    float aovXDeg = 2.0f * atan(formatWidthMm / (2.0f * lenses[selected_lens].focal_mm)) * (180.0f / PI);
+    float aovYDeg = 2.0f * atan(formatHeightMm / (2.0f * lenses[selected_lens].focal_mm)) * (180.0f / PI);
+
+    new_width = static_cast<int>(roundf(framelineW * (aovXDeg / overlayFovXDeg)));
+    new_height = static_cast<int>(roundf(framelineH * (aovYDeg / overlayFovYDeg)));
+
+    new_width = max(1, min(framelineW, new_width));
+    new_height = max(1, min(framelineH, new_height));
   }
 
   ParallaxShift parallax = computeParallaxShiftPx(new_width, new_height);
@@ -328,13 +316,19 @@ void drawConfigUI()
 
   u8g2.setCursor(3, 70);
   setItemColors(config_step == 4);
-  u8g2.print(F(" Reset count >> "));
+  u8g2.print(F(" Parallax: "));
+  u8g2.print(parallaxEnabled ? F("On") : F("Off"));
+  u8g2.print(F(" "));
 
   u8g2.setCursor(3, 81);
   setItemColors(config_step == 5);
+  u8g2.print(F(" Reset count >> "));
+
+  u8g2.setCursor(3, 92);
+  setItemColors(config_step == 6);
   u8g2.print(F(" Exit >> "));
 
-  u8g2.setCursor(3, 100);
+  u8g2.setCursor(3, 112);
   u8g2.setBackgroundColor(BLACK); // Reset for footer
   u8g2.setForegroundColor(WHITE);
   u8g2.print(F(" IDENTIDEM.design MRF "));
