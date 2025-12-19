@@ -12,16 +12,48 @@
 #include "helpers.h"
 #include "cyclefuncs.h" // For cycleApertures
 
+static int applyLidarCalibrationCm(int raw_cm)
+{
+  if (raw_cm <= 0)
+  {
+    return raw_cm;
+  }
+
+  if (raw_cm >= static_cast<int>(LIDAR_CAL_CUTOFF_CM))
+  {
+    return raw_cm;
+  }
+
+  if (LIDAR_CAL_REF_RAW_CM <= 0.0f || LIDAR_CAL_REF_TRUE_CM <= 0.0f || LIDAR_CAL_REF_RAW_CM >= LIDAR_CAL_CUTOFF_CM)
+  {
+    return raw_cm;
+  }
+
+  static float exponent = 0.0f;
+  static bool exponent_init = false;
+  if (!exponent_init)
+  {
+    exponent = logf(LIDAR_CAL_REF_TRUE_CM / LIDAR_CAL_REF_RAW_CM) /
+               logf(LIDAR_CAL_REF_RAW_CM / LIDAR_CAL_CUTOFF_CM);
+    exponent_init = true;
+  }
+
+  float raw_cm_f = static_cast<float>(raw_cm);
+  float scaled = raw_cm_f * powf(raw_cm_f / LIDAR_CAL_CUTOFF_CM, exponent);
+  return static_cast<int>(roundf(scaled));
+}
+
 // Functions to read values from sensors and set variables
 // ---------------------
 void setDistance()
 {
   if (lidar.update())
   { // Get data from Lidar
-    distance = (lidar.getDistance() / 10) + LIDAR_OFFSET;
+    int raw_cm = (lidar.getDistance() / 10) + LIDAR_OFFSET;
+    distance = applyLidarCalibrationCm(raw_cm);
     if (distance != prev_distance)
     {
-      if (distance <= LIDAR_OFFSET)
+      if (raw_cm <= LIDAR_OFFSET)
       {
         distance_cm = "> " + String(DISTANCE_MAX) + "m";
       }
@@ -234,22 +266,21 @@ void setLightMeter()
 
 void toggleLidar(bool lidarStatusParam) // Renamed parameter to avoid conflict with global
 {
-  // The original function parameter `lidarStatus` shadows a potential global variable
-  // and the assignments `lidarStatus = false;` or `lidarStatus = true;` inside the function
-  // only affect the local parameter, not a global state if one was intended to be modified.
-  // Assuming the function's purpose is to send a command based on the parameter.
-  // DTS6012M doesn't support enable/disable output commands
-  // Sensor runs continuously when powered
   if (lidarStatusParam == false)
   {
-    // Note: DTS6012M cannot be disabled via software command
-    // If there's a global `bool lidarStatus` that needs updating, it should be done explicitly.
-    // For example: ::lidarStatus = false;
+    if (lidarEnabled)
+    {
+      lidar.disableSensor();
+      lidarEnabled = false;
+    }
   }
   else
   {
-    // Note: DTS6012M is always enabled when powered
-    // For example: ::lidarStatus = true;
+    if (!lidarEnabled)
+    {
+      lidar.enableSensor();
+      lidarEnabled = true;
+    }
   }
 }
 // ---------------------

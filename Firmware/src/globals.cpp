@@ -37,6 +37,7 @@ int16_t distance = 0;    // Distance to object in centimeters
 int16_t strength = 0;    // Strength or quality of return signal
 int16_t temperature = 0; // Internal temperature of Lidar sensor chip
 String distance_cm = "...";
+bool lidarEnabled = true;
 
 // Battery gauge
 int prev_bat_per = 0;

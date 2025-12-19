@@ -7,6 +7,7 @@ struct Lens
 {
   int id;
   String name;
+  float focal_mm;
   int sensor_reading[7];
   float distance[7];
   float apertures[9];

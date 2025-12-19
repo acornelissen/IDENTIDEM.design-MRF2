@@ -33,9 +33,14 @@ void loadPrefs()
     iso_index = prefs.getInt("iso_index", 5);
 
     // Use the constant for the lenses array size defined in lenses.cpp and declared in lenses.h
-    byte tempLenses[NUM_LENSES * sizeof(Lens)]; // Allocate based on number of elements * size of element
-    prefs.getBytes("lenses", tempLenses, NUM_LENSES * sizeof(Lens));
-    memcpy(lenses, tempLenses, NUM_LENSES * sizeof(Lens));
+    size_t storedLensBytes = prefs.getBytesLength("lenses");
+    size_t expectedLensBytes = NUM_LENSES * sizeof(Lens);
+    if (storedLensBytes == expectedLensBytes)
+    {
+      byte tempLenses[NUM_LENSES * sizeof(Lens)]; // Allocate based on number of elements * size of element
+      prefs.getBytes("lenses", tempLenses, expectedLensBytes);
+      memcpy(lenses, tempLenses, expectedLensBytes);
+    }
 
     selected_lens = prefs.getInt("selected_lens", 1);
 

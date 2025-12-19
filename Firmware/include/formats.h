@@ -10,6 +10,8 @@ struct FilmFormat
   int sensor[22];
   int frame[22];
   int frame_fill[4];
+  float frame_mm_width;
+  float frame_mm_height;
 };
 
 extern FilmFormat film_formats[];

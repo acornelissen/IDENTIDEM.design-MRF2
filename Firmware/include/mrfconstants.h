@@ -2,7 +2,7 @@
 #define MRFCONSTANTS_H
 
 // Constants
-#define FWVERSION "7.0"
+#define FWVERSION "7.5"
 #define SLEEPTIMEOUT 60000
 
 #define RXD2 RX
@@ -27,10 +27,23 @@ const int LENS_CALIB_OFFSET = 0;
 
 const float LENS_OUTLIER_THRESHOLD = 50.0;
 
-#define RETICLE_OFFSET_X -4
-#define RETICLE_OFFSET_Y -4
+#define RETICLE_OFFSET_X -8
+#define RETICLE_OFFSET_Y 0
 #define CLOSE_FOCUS 100
-#define LIDAR_OFFSET 5
+#define LIDAR_OFFSET 40
+
+// LiDAR correction curve (cm). Below cutoff, apply a smooth correction based on a single reference point.
+const float LIDAR_CAL_CUTOFF_CM = 150.0f;
+const float LIDAR_CAL_REF_RAW_CM = 130.0f;
+const float LIDAR_CAL_REF_TRUE_CM = 100.0f;
+
+// Parallax correction (mm offsets between lens axis and viewfinder axis)
+// +X = viewfinder is to the right of the lens; +Y = viewfinder is above the lens.
+// Mamiya top finder is centered horizontally and sits above the lens; adjust magnitude as measured.
+#define PARALLAX_OFFSET_X_MM 0.0f
+#define PARALLAX_OFFSET_Y_MM 30.0f
+#define PARALLAX_MIN_DISTANCE_MM 500.0f // clamp very close focus to avoid huge shifts
+#define PARALLAX_MAX_SHIFT_PX 24        // guardrail on-screen shift
 
 #define DISTANCE_MIN 5
 #define DISTANCE_MAX 18

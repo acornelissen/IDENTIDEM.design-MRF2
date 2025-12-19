@@ -11,6 +11,117 @@
 #include "formats.h"
 #include "helpers.h" // For getFocusRadius
 
+struct ParallaxShift
+{
+  float x;
+  float y;
+};
+
+static void getFormatLongShortMm(const FilmFormat &format, float &longMm, float &shortMm)
+{
+  if (format.frame_mm_width >= format.frame_mm_height)
+  {
+    longMm = format.frame_mm_width;
+    shortMm = format.frame_mm_height;
+  }
+  else
+  {
+    longMm = format.frame_mm_height;
+    shortMm = format.frame_mm_width;
+  }
+}
+
+static const FilmFormat *getBaseFormat()
+{
+  for (size_t i = 0; i < NUM_FILM_FORMATS; ++i)
+  {
+    if (film_formats[i].id == 67)
+    {
+      return &film_formats[i];
+    }
+  }
+  return &film_formats[selected_format];
+}
+
+static float getParallaxDistanceMm()
+{
+  // Prefer lens focus distance so framelines track focus changes, but only if calibrated.
+  if (lenses[selected_lens].calibrated && lens_distance_raw == 9999999)
+  {
+    // Treat infinity as no parallax shift and avoid falling back to LiDAR.
+    return 0.0f;
+  }
+  if (lenses[selected_lens].calibrated && lens_distance_raw > 0 && lens_distance_raw != 9999999)
+  {
+    float lens_mm = static_cast<float>(lens_distance_raw) * 10.0f;
+    return max(lens_mm, PARALLAX_MIN_DISTANCE_MM);
+  }
+
+  if (distance > 0)
+  {
+    float lidar_mm = static_cast<float>(distance) * 10.0f;
+    if (lidar_mm > 0)
+    {
+      return max(lidar_mm, PARALLAX_MIN_DISTANCE_MM);
+    }
+  }
+
+  return 0.0f;
+}
+
+static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
+{
+  ParallaxShift shift = {0.0f, 0.0f};
+
+  if ((PARALLAX_OFFSET_X_MM == 0.0f && PARALLAX_OFFSET_Y_MM == 0.0f) || lenses[selected_lens].focal_mm <= 0)
+  {
+    return shift;
+  }
+
+  float distance_mm = getParallaxDistanceMm();
+  if (distance_mm <= 0.0f)
+  {
+    return shift;
+  }
+
+  float formatLongMm = 0.0f;
+  float formatShortMm = 0.0f;
+  getFormatLongShortMm(film_formats[selected_format], formatLongMm, formatShortMm);
+  if (formatLongMm <= 0.0f || formatShortMm <= 0.0f)
+  {
+    return shift;
+  }
+
+  float shiftX_mm = lenses[selected_lens].focal_mm * PARALLAX_OFFSET_X_MM / distance_mm;
+  float shiftY_mm = lenses[selected_lens].focal_mm * PARALLAX_OFFSET_Y_MM / distance_mm;
+
+  float pxPerMmX = static_cast<float>(frameWidthPx) / formatLongMm;
+  float pxPerMmY = static_cast<float>(frameHeightPx) / formatShortMm;
+
+  shift.x = shiftX_mm * pxPerMmX;
+  shift.y = shiftY_mm * pxPerMmY;
+
+  if (shift.x > PARALLAX_MAX_SHIFT_PX)
+  {
+    shift.x = PARALLAX_MAX_SHIFT_PX;
+  }
+  else if (shift.x < -PARALLAX_MAX_SHIFT_PX)
+  {
+    shift.x = -PARALLAX_MAX_SHIFT_PX;
+  }
+
+  if (shift.y > PARALLAX_MAX_SHIFT_PX)
+  {
+    shift.y = PARALLAX_MAX_SHIFT_PX;
+  }
+  else if (shift.y < -PARALLAX_MAX_SHIFT_PX)
+  {
+    shift.y = -PARALLAX_MAX_SHIFT_PX;
+  }
+
+  return shift;
+}
+
 // Define colors for U8G2 if not available (GFX uses BLACK/WHITE)
 #ifndef BLACK
 #define BLACK 0
@@ -54,18 +165,50 @@ void drawMainUI()
   u8g2.print(F("Lens:"));
   u8g2.print(lens_distance_cm);
 
+  int framelineX = lenses[selected_lens].framelines[0];
+  int framelineY = lenses[selected_lens].framelines[1];
+  int framelineW = lenses[selected_lens].framelines[2];
+  int framelineH = lenses[selected_lens].framelines[3];
+  int baseFramelineX = framelineX;
+  int baseFramelineY = framelineY;
+
+  float baseLongMm = 0.0f;
+  float baseShortMm = 0.0f;
+  float formatLongMm = 0.0f;
+  float formatShortMm = 0.0f;
+  const FilmFormat *baseFormat = getBaseFormat();
+  getFormatLongShortMm(*baseFormat, baseLongMm, baseShortMm);
+  getFormatLongShortMm(film_formats[selected_format], formatLongMm, formatShortMm);
+
+  int new_width = framelineW;
+  int new_height = framelineH;
+  if (baseLongMm > 0.0f && baseShortMm > 0.0f)
+  {
+    float widthScale = formatLongMm / baseLongMm;
+    float heightScale = formatShortMm / baseShortMm;
+    new_width = static_cast<int>(roundf(framelineW * widthScale));
+    new_height = static_cast<int>(roundf(framelineH * heightScale));
+  }
+
+  ParallaxShift parallax = computeParallaxShiftPx(new_width, new_height);
+  int parallaxX = static_cast<int>(roundf(parallax.x));
+  int parallaxY = static_cast<int>(roundf(parallax.y));
+
+  framelineX += parallaxX;
+  framelineY += parallaxY;
+
   display.fillRect(
-    lenses[selected_lens].framelines[0], 
-    lenses[selected_lens].framelines[1], 
-    lenses[selected_lens].framelines[2],
-    lenses[selected_lens].framelines[3], 
+    framelineX, 
+    framelineY, 
+    framelineW,
+    framelineH, 
     WHITE
   );
 
-  int new_width = int(lenses[selected_lens].framelines[2] * film_formats[selected_format].frame_fill[1] / 100);
-  int new_height =  int(lenses[selected_lens].framelines[3] * film_formats[selected_format].frame_fill[0] / 100);
-  int width_offset = lenses[selected_lens].framelines[0] + (lenses[selected_lens].framelines[2] - new_width) / 2;
-  int heigh_offset = lenses[selected_lens].framelines[1] + (lenses[selected_lens].framelines[3] - new_height) / 2;
+  float frameCenterX = framelineX + framelineW / 2.0f;
+  float frameCenterY = framelineY + framelineH / 2.0f;
+  int width_offset = static_cast<int>(roundf(frameCenterX - new_width / 2.0f));
+  int heigh_offset = static_cast<int>(roundf(frameCenterY - new_height / 2.0f));
   
   display.fillRect(
     width_offset,
@@ -83,8 +226,8 @@ void drawMainUI()
   );
 
   // Calculate the center of the rectangle
-  int rectCenterX = (lenses[selected_lens].framelines[0] + lenses[selected_lens].framelines[2] / 2) + RETICLE_OFFSET_X;
-  int rectCenterY = (lenses[selected_lens].framelines[1] + lenses[selected_lens].framelines[3] / 2 - 5) + RETICLE_OFFSET_Y;
+  int rectCenterX = (baseFramelineX + framelineW / 2) + RETICLE_OFFSET_X;
+  int rectCenterY = (baseFramelineY + framelineH / 2 - 5) + RETICLE_OFFSET_Y;
  
   // Draw a circle at the center of the rectangle
   display.fillCircle(rectCenterX, rectCenterY, 3, WHITE);
