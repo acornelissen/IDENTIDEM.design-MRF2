@@ -47,8 +47,25 @@ static int applyLidarCalibrationCm(int raw_cm)
 // ---------------------
 void setDistance()
 {
+  static unsigned long lastLidarUpdateMs = 0;
+
+  if (!lidarEnabled)
+  {
+    return;
+  }
+
+  if (lidarSerial.available() == 0)
+  {
+    if (millis() - lastLidarUpdateMs > 500)
+    {
+      distance_cm = "...";
+    }
+    return;
+  }
+
   if (lidar.update())
   { // Get data from Lidar
+    lastLidarUpdateMs = millis();
     int raw_cm = (lidar.getDistance() / 10) + LIDAR_OFFSET;
     distance = applyLidarCalibrationCm(raw_cm);
     if (distance != prev_distance)
