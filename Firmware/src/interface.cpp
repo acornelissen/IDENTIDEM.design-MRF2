@@ -161,14 +161,36 @@ void drawMainUI()
   float formatHeightMm = 0.0f;
   getFormatWidthHeightMm(film_formats[selected_format], formatWidthMm, formatHeightMm);
 
+  int baseFormatIndex = DEFAULT_SELECTED_FORMAT;
+  if (baseFormatIndex < 0 || baseFormatIndex >= static_cast<int>(NUM_FILM_FORMATS))
+  {
+    baseFormatIndex = selected_format;
+  }
+
+  float baseFormatWidthMm = 0.0f;
+  float baseFormatHeightMm = 0.0f;
+  getFormatWidthHeightMm(film_formats[baseFormatIndex], baseFormatWidthMm, baseFormatHeightMm);
+
   int new_width = framelineW;
   int new_height = framelineH;
+  bool allowOverflow = false;
   if (formatWidthMm > 0.0f && formatHeightMm > 0.0f)
   {
     float formatRatio = formatWidthMm / formatHeightMm;
     float baseRatio = static_cast<float>(framelineW) / static_cast<float>(framelineH);
 
-    if (formatRatio >= baseRatio)
+    if (baseFormatWidthMm > 0.0f && baseFormatHeightMm > 0.0f)
+    {
+      float baseFormatRatio = baseFormatWidthMm / baseFormatHeightMm;
+      allowOverflow = formatRatio > baseFormatRatio && formatHeightMm >= baseFormatHeightMm;
+    }
+
+    if (allowOverflow)
+    {
+      new_height = framelineH;
+      new_width = static_cast<int>(roundf(framelineH * formatRatio));
+    }
+    else if (formatRatio >= baseRatio)
     {
       new_width = framelineW;
       new_height = static_cast<int>(roundf(framelineW / formatRatio));
@@ -180,8 +202,16 @@ void drawMainUI()
     }
   }
 
-  new_width = max(1, min(framelineW, new_width));
-  new_height = max(1, min(framelineH, new_height));
+  if (allowOverflow)
+  {
+    new_width = max(1, new_width);
+    new_height = max(1, min(framelineH, new_height));
+  }
+  else
+  {
+    new_width = max(1, min(framelineW, new_width));
+    new_height = max(1, min(framelineH, new_height));
+  }
 
   ParallaxShift parallax = computeParallaxShiftPx(new_width, new_height);
   int parallaxX = static_cast<int>(roundf(parallax.x));
