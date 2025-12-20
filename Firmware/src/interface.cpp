@@ -114,6 +114,9 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
 #ifndef WHITE
 #define WHITE 1
 #endif
+#ifndef INVERSE
+#define INVERSE 2
+#endif
 
 // Functions to draw UI
 // ---------------------
@@ -253,8 +256,38 @@ void drawMainUI()
   int rectCenterY = (baseFramelineY + framelineH / 2 - MAIN_RETICLE_CENTER_Y_OFFSET) + RETICLE_OFFSET_Y;
  
   // Draw a circle at the center of the rectangle
-  display.fillCircle(rectCenterX, rectCenterY, MAIN_RETICLE_CENTER_RADIUS, WHITE);
-  display.drawCircle(rectCenterX, rectCenterY, getFocusRadius(), WHITE);
+  display.fillCircle(rectCenterX, rectCenterY, MAIN_RETICLE_CENTER_RADIUS, INVERSE);
+  int focusRadius = getFocusRadius();
+  static bool focusThicknessInit = false;
+  static float focusThicknessSmoothed = 0.0f;
+  float targetThickness = static_cast<float>(FOCUS_RING_THICKNESS_MIN);
+  if (FOCUS_RADIUS_MAX > FOCUS_RADIUS_MIN)
+  {
+    float ratio = static_cast<float>(focusRadius - FOCUS_RADIUS_MIN) /
+                  static_cast<float>(FOCUS_RADIUS_MAX - FOCUS_RADIUS_MIN);
+    targetThickness = static_cast<float>(FOCUS_RING_THICKNESS_MIN) +
+                      (ratio * (FOCUS_RING_THICKNESS_MAX - FOCUS_RING_THICKNESS_MIN));
+  }
+  targetThickness = max(static_cast<float>(FOCUS_RING_THICKNESS_MIN),
+                        min(static_cast<float>(FOCUS_RING_THICKNESS_MAX), targetThickness));
+  if (!focusThicknessInit)
+  {
+    focusThicknessSmoothed = targetThickness;
+    focusThicknessInit = true;
+  }
+  focusThicknessSmoothed += (targetThickness - focusThicknessSmoothed) * FOCUS_RING_THICKNESS_SMOOTHING;
+  int focusThickness = static_cast<int>(roundf(focusThicknessSmoothed));
+  focusThickness = max(FOCUS_RING_THICKNESS_MIN, min(FOCUS_RING_THICKNESS_MAX, focusThickness));
+  int outerRadius = focusRadius;
+  int innerRadius = focusRadius - focusThickness;
+  if (outerRadius >= 1)
+  {
+    display.fillCircle(rectCenterX, rectCenterY, outerRadius, INVERSE);
+  }
+  if (innerRadius >= 1)
+  {
+    display.fillCircle(rectCenterX, rectCenterY, innerRadius, INVERSE);
+  }
 
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
@@ -292,7 +325,7 @@ void drawMainUI()
   float endY =  rectCenterY + length/2 * sin(roll_angle) + pitch_angle;
 
   // Draw the line on the display
-  display.drawLine(startX, startY, endX, endY, WHITE);   
+  display.drawLine(startX, startY, endX, endY, INVERSE);   
 
   // Define the length of the vertical line
   int vertLineLength = LEVEL_VERTICAL_LINE_LENGTH;
@@ -302,7 +335,7 @@ void drawMainUI()
   int vertLineEndY = rectCenterY + vertLineLength / 2;
 
   // Draw the vertical line on the display
-  display.drawLine(rectCenterX, vertLineStartY, rectCenterX, vertLineEndY, WHITE);
+  display.drawLine(rectCenterX, vertLineStartY, rectCenterX, vertLineEndY, INVERSE);
 
   display.display();
 }
@@ -347,13 +380,13 @@ void drawConfigUI()
 
   u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 3));
   setItemColors(config_step == 3);
-  u8g2.print(F(" Lens Calib. > "));
+  u8g2.print(F(" Parallax Correction: "));
+  u8g2.print(parallaxEnabled ? F("On") : F("Off"));
+  u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 4));
   setItemColors(config_step == 4);
-  u8g2.print(F(" Parallax: "));
-  u8g2.print(parallaxEnabled ? F("On") : F("Off"));
-  u8g2.print(F(" "));
+  u8g2.print(F(" Lens Calibration > "));
 
   u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 5));
   setItemColors(config_step == 5);
@@ -419,6 +452,28 @@ void drawCalibUI()
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1); u8g2.print(F(" (L) to Select"));
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2); u8g2.print(F(" (R) to Cancel"));
   }
+
+  display.display();
+}
+
+void drawResetConfirmUI()
+{
+  display.clearDisplay();
+
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+
+  u8g2.setFont(u8g2_font_9x15_mf);
+  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
+  u8g2.print(F("Reset Count?"));
+
+  u8g2.setFont(u8g2_font_4x6_mf);
+  u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y1);
+  u8g2.print(F(" (L) Cancel"));
+  u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y2);
+  u8g2.print(F(" (R) Reset"));
 
   display.display();
 }

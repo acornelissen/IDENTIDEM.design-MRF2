@@ -66,6 +66,9 @@ const int LENS_INFINITY_RAW = 9999999;
 const int LENS_ACTIVITY_THRESHOLD = 3;
 const int FOCUS_RADIUS_MIN = 3;
 const int FOCUS_RADIUS_MAX = 30;
+const int FOCUS_RING_THICKNESS_MIN = 1;
+const int FOCUS_RING_THICKNESS_MAX = 3;
+const float FOCUS_RING_THICKNESS_SMOOTHING = 0.25f;
 
 const float LENS_OUTLIER_THRESHOLD = 50.0;
 const float CM_TO_MM = 10.0f;

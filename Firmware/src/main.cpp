@@ -167,6 +167,10 @@ void loop()
       lens_sensor_reading = getLensSensorReading() - LENS_CALIB_OFFSET;
       drawCalibUI();
     }
+    else if (ui_mode == "reset_confirm")
+    {
+      drawResetConfirmUI();
+    }
     drawExternalUI();
   }
 }
