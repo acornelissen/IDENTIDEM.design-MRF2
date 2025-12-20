@@ -29,8 +29,8 @@ void loadPrefs()
 
   if (prefs.isKey("iso"))
   {
-    iso = prefs.getInt("iso", 400);
-    iso_index = prefs.getInt("iso_index", 5);
+    iso = prefs.getInt("iso", DEFAULT_ISO);
+    iso_index = prefs.getInt("iso_index", DEFAULT_ISO_INDEX);
 
     // Use the constant for the lenses array size defined in lenses.cpp and declared in lenses.h
     size_t storedLensBytes = prefs.getBytesLength("lenses");
@@ -42,7 +42,8 @@ void loadPrefs()
       memcpy(lenses, tempLenses, expectedLensBytes);
     }
 
-    selected_lens = prefs.getInt("selected_lens", 1);
+    selected_lens = prefs.getInt("selected_lens", DEFAULT_SELECTED_LENS);
+    parallaxEnabled = prefs.getBool("parallax", true);
 
     int non_zero_aperture_index = getFirstNonZeroAperture();
 
@@ -52,7 +53,7 @@ void loadPrefs()
     film_counter = prefs.getInt("film_counter", 0);
     encoder_value = prefs.getInt("encoder_value", 0);
     prev_encoder_value = prefs.getInt("prev_encoder_value", 0);
-    selected_format = prefs.getInt("selected_format", 3); // Moved this down, order doesn't strictly matter here but grouped with other loaded prefs
+    selected_format = prefs.getInt("selected_format", DEFAULT_SELECTED_FORMAT); // Moved this down, order doesn't strictly matter here but grouped with other loaded prefs
   }
 
   prefs.end();
@@ -67,6 +68,7 @@ void savePrefs()
   prefs.putInt("aperture_index", aperture_index);
   prefs.putInt("selected_format", selected_format);
   prefs.putInt("selected_lens", selected_lens);
+  prefs.putBool("parallax", parallaxEnabled);
   prefs.putInt("film_counter", film_counter);
   prefs.putInt("encoder_value", encoder_value);
   prefs.putInt("prev_encoder_value", prev_encoder_value);
@@ -76,13 +78,13 @@ void savePrefs()
 
 String cmToReadable(int cm, int places)
 {
-  if (cm < 100)
+  if (cm < CM_PER_METER)
   {
     return String(cm) + "cm";
   }
   else
   {
-    return String(float(cm) / 100, places) + "m";
+    return String(float(cm) / CM_PER_METER, places) + "m";
   }
 }
 
@@ -106,7 +108,7 @@ int calcMovingAvg(int index, int sensorVal)
 
 int rejectOutliers(int index, int sensorVal)
 {
-  static int lastValidValue[2] = {0, 0};
+  static int lastValidValue[SENSOR_CHANNEL_COUNT] = {0, 0};
 
   if (lastValidValue[index] == 0)
   {
@@ -125,8 +127,8 @@ int rejectOutliers(int index, int sensorVal)
 
 int_fast16_t getFocusRadius()
 {
-  int minRadius = 3;
-  int maxRadius = 30;
+  int minRadius = FOCUS_RADIUS_MIN;
+  int maxRadius = FOCUS_RADIUS_MAX;
 
   // Arduino.h usually provides min/max macros or functions
   // and abs. If not, <algorithm> for std::min/max or manual.

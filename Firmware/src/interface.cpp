@@ -17,49 +17,29 @@ struct ParallaxShift
   float y;
 };
 
-static void getFormatLongShortMm(const FilmFormat &format, float &longMm, float &shortMm)
+static void getFormatWidthHeightMm(const FilmFormat &format, float &widthMm, float &heightMm)
 {
-  if (format.frame_mm_width >= format.frame_mm_height)
-  {
-    longMm = format.frame_mm_width;
-    shortMm = format.frame_mm_height;
-  }
-  else
-  {
-    longMm = format.frame_mm_height;
-    shortMm = format.frame_mm_width;
-  }
-}
-
-static const FilmFormat *getBaseFormat()
-{
-  for (size_t i = 0; i < NUM_FILM_FORMATS; ++i)
-  {
-    if (film_formats[i].id == 67)
-    {
-      return &film_formats[i];
-    }
-  }
-  return &film_formats[selected_format];
+  widthMm = format.frame_mm_width;
+  heightMm = format.frame_mm_height;
 }
 
 static float getParallaxDistanceMm()
 {
   // Prefer lens focus distance so framelines track focus changes, but only if calibrated.
-  if (lenses[selected_lens].calibrated && lens_distance_raw == 9999999)
+  if (lenses[selected_lens].calibrated && lens_distance_raw == LENS_INFINITY_RAW)
   {
     // Treat infinity as no parallax shift and avoid falling back to LiDAR.
     return 0.0f;
   }
-  if (lenses[selected_lens].calibrated && lens_distance_raw > 0 && lens_distance_raw != 9999999)
+  if (lenses[selected_lens].calibrated && lens_distance_raw > 0 && lens_distance_raw != LENS_INFINITY_RAW)
   {
-    float lens_mm = static_cast<float>(lens_distance_raw) * 10.0f;
+    float lens_mm = static_cast<float>(lens_distance_raw) * CM_TO_MM;
     return max(lens_mm, PARALLAX_MIN_DISTANCE_MM);
   }
 
   if (distance > 0)
   {
-    float lidar_mm = static_cast<float>(distance) * 10.0f;
+    float lidar_mm = static_cast<float>(distance) * CM_TO_MM;
     if (lidar_mm > 0)
     {
       return max(lidar_mm, PARALLAX_MIN_DISTANCE_MM);
@@ -73,6 +53,11 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
 {
   ParallaxShift shift = {0.0f, 0.0f};
 
+  if (!parallaxEnabled)
+  {
+    return shift;
+  }
+
   if ((PARALLAX_OFFSET_X_MM == 0.0f && PARALLAX_OFFSET_Y_MM == 0.0f) || lenses[selected_lens].focal_mm <= 0)
   {
     return shift;
@@ -84,10 +69,10 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
     return shift;
   }
 
-  float formatLongMm = 0.0f;
-  float formatShortMm = 0.0f;
-  getFormatLongShortMm(film_formats[selected_format], formatLongMm, formatShortMm);
-  if (formatLongMm <= 0.0f || formatShortMm <= 0.0f)
+  float formatWidthMm = 0.0f;
+  float formatHeightMm = 0.0f;
+  getFormatWidthHeightMm(film_formats[selected_format], formatWidthMm, formatHeightMm);
+  if (formatWidthMm <= 0.0f || formatHeightMm <= 0.0f)
   {
     return shift;
   }
@@ -95,8 +80,8 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
   float shiftX_mm = lenses[selected_lens].focal_mm * PARALLAX_OFFSET_X_MM / distance_mm;
   float shiftY_mm = lenses[selected_lens].focal_mm * PARALLAX_OFFSET_Y_MM / distance_mm;
 
-  float pxPerMmX = static_cast<float>(frameWidthPx) / formatLongMm;
-  float pxPerMmY = static_cast<float>(frameHeightPx) / formatShortMm;
+  float pxPerMmX = static_cast<float>(frameWidthPx) / formatWidthMm;
+  float pxPerMmY = static_cast<float>(frameHeightPx) / formatHeightMm;
 
   shift.x = shiftX_mm * pxPerMmX;
   shift.y = shiftY_mm * pxPerMmY;
@@ -129,6 +114,9 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
 #ifndef WHITE
 #define WHITE 1
 #endif
+#ifndef INVERSE
+#define INVERSE 2
+#endif
 
 // Functions to draw UI
 // ---------------------
@@ -141,12 +129,12 @@ void drawMainUI()
   u8g2.setForegroundColor(BLACK); // U8G2 uses 0/1, GFX uses BLACK/WHITE defines
   u8g2.setBackgroundColor(WHITE);
   u8g2.setFont(u8g2_font_4x6_mf);
-  display.fillRect(0, 0, 128, 15, WHITE);
-  display.drawLine(64, 0, 64, 128, BLACK);
-  u8g2.setCursor(2, 7);
+  display.fillRect(0, 0, SCREEN_WIDTH, MAIN_HEADER_HEIGHT, WHITE);
+  display.drawLine(SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT, BLACK);
+  u8g2.setCursor(MAIN_ISO_X, MAIN_ISO_Y);
   u8g2.print(F("ISO"));
   u8g2.print(iso);
-  u8g2.setCursor(46, 7);
+  u8g2.setCursor(MAIN_APERTURE_X, MAIN_APERTURE_Y);
   u8g2.print(F("f"));
   if (aperture == static_cast<int>(aperture))
   {
@@ -154,14 +142,14 @@ void drawMainUI()
   }
   else
   {
-    u8g2.print(aperture, 1);
+    u8g2.print(aperture, APERTURE_DECIMAL_PLACES);
   }
-  u8g2.setCursor(2, 14);
+  u8g2.setCursor(MAIN_SHUTTER_X, MAIN_SHUTTER_Y);
   u8g2.print(shutter_speed);
-  u8g2.setCursor(68, 7);
+  u8g2.setCursor(MAIN_DISTANCE_X, MAIN_DISTANCE_Y);
   u8g2.print(F("Dist:"));
   u8g2.print(distance_cm);
-  u8g2.setCursor(68, 14);
+  u8g2.setCursor(MAIN_LENS_X, MAIN_LENS_Y);
   u8g2.print(F("Lens:"));
   u8g2.print(lens_distance_cm);
 
@@ -172,22 +160,60 @@ void drawMainUI()
   int baseFramelineX = framelineX;
   int baseFramelineY = framelineY;
 
-  float baseLongMm = 0.0f;
-  float baseShortMm = 0.0f;
-  float formatLongMm = 0.0f;
-  float formatShortMm = 0.0f;
-  const FilmFormat *baseFormat = getBaseFormat();
-  getFormatLongShortMm(*baseFormat, baseLongMm, baseShortMm);
-  getFormatLongShortMm(film_formats[selected_format], formatLongMm, formatShortMm);
+  float formatWidthMm = 0.0f;
+  float formatHeightMm = 0.0f;
+  getFormatWidthHeightMm(film_formats[selected_format], formatWidthMm, formatHeightMm);
+
+  int baseFormatIndex = DEFAULT_SELECTED_FORMAT;
+  if (baseFormatIndex < 0 || baseFormatIndex >= static_cast<int>(NUM_FILM_FORMATS))
+  {
+    baseFormatIndex = selected_format;
+  }
+
+  float baseFormatWidthMm = 0.0f;
+  float baseFormatHeightMm = 0.0f;
+  getFormatWidthHeightMm(film_formats[baseFormatIndex], baseFormatWidthMm, baseFormatHeightMm);
 
   int new_width = framelineW;
   int new_height = framelineH;
-  if (baseLongMm > 0.0f && baseShortMm > 0.0f)
+  bool allowOverflow = false;
+  if (formatWidthMm > 0.0f && formatHeightMm > 0.0f)
   {
-    float widthScale = formatLongMm / baseLongMm;
-    float heightScale = formatShortMm / baseShortMm;
-    new_width = static_cast<int>(roundf(framelineW * widthScale));
-    new_height = static_cast<int>(roundf(framelineH * heightScale));
+    float formatRatio = formatWidthMm / formatHeightMm;
+    float baseRatio = static_cast<float>(framelineW) / static_cast<float>(framelineH);
+
+    if (baseFormatWidthMm > 0.0f && baseFormatHeightMm > 0.0f)
+    {
+      float baseFormatRatio = baseFormatWidthMm / baseFormatHeightMm;
+      allowOverflow = formatRatio > baseFormatRatio && formatHeightMm >= baseFormatHeightMm;
+    }
+
+    if (allowOverflow)
+    {
+      new_height = framelineH;
+      new_width = static_cast<int>(roundf(framelineH * formatRatio));
+    }
+    else if (formatRatio >= baseRatio)
+    {
+      new_width = framelineW;
+      new_height = static_cast<int>(roundf(framelineW / formatRatio));
+    }
+    else
+    {
+      new_height = framelineH;
+      new_width = static_cast<int>(roundf(framelineH * formatRatio));
+    }
+  }
+
+  if (allowOverflow)
+  {
+    new_width = max(1, new_width);
+    new_height = max(1, min(framelineH, new_height));
+  }
+  else
+  {
+    new_width = max(1, min(framelineW, new_width));
+    new_height = max(1, min(framelineH, new_height));
   }
 
   ParallaxShift parallax = computeParallaxShiftPx(new_width, new_height);
@@ -227,11 +253,41 @@ void drawMainUI()
 
   // Calculate the center of the rectangle
   int rectCenterX = (baseFramelineX + framelineW / 2) + RETICLE_OFFSET_X;
-  int rectCenterY = (baseFramelineY + framelineH / 2 - 5) + RETICLE_OFFSET_Y;
+  int rectCenterY = (baseFramelineY + framelineH / 2 - MAIN_RETICLE_CENTER_Y_OFFSET) + RETICLE_OFFSET_Y;
  
   // Draw a circle at the center of the rectangle
-  display.fillCircle(rectCenterX, rectCenterY, 3, WHITE);
-  display.drawCircle(rectCenterX, rectCenterY, getFocusRadius(), WHITE);
+  display.fillCircle(rectCenterX, rectCenterY, MAIN_RETICLE_CENTER_RADIUS, INVERSE);
+  int focusRadius = getFocusRadius();
+  static bool focusThicknessInit = false;
+  static float focusThicknessSmoothed = 0.0f;
+  float targetThickness = static_cast<float>(FOCUS_RING_THICKNESS_MIN);
+  if (FOCUS_RADIUS_MAX > FOCUS_RADIUS_MIN)
+  {
+    float ratio = static_cast<float>(focusRadius - FOCUS_RADIUS_MIN) /
+                  static_cast<float>(FOCUS_RADIUS_MAX - FOCUS_RADIUS_MIN);
+    targetThickness = static_cast<float>(FOCUS_RING_THICKNESS_MIN) +
+                      (ratio * (FOCUS_RING_THICKNESS_MAX - FOCUS_RING_THICKNESS_MIN));
+  }
+  targetThickness = max(static_cast<float>(FOCUS_RING_THICKNESS_MIN),
+                        min(static_cast<float>(FOCUS_RING_THICKNESS_MAX), targetThickness));
+  if (!focusThicknessInit)
+  {
+    focusThicknessSmoothed = targetThickness;
+    focusThicknessInit = true;
+  }
+  focusThicknessSmoothed += (targetThickness - focusThicknessSmoothed) * FOCUS_RING_THICKNESS_SMOOTHING;
+  int focusThickness = static_cast<int>(roundf(focusThicknessSmoothed));
+  focusThickness = max(FOCUS_RING_THICKNESS_MIN, min(FOCUS_RING_THICKNESS_MAX, focusThickness));
+  int outerRadius = focusRadius;
+  int innerRadius = focusRadius - focusThickness;
+  if (outerRadius >= 1)
+  {
+    display.fillCircle(rectCenterX, rectCenterY, outerRadius, INVERSE);
+  }
+  if (innerRadius >= 1)
+  {
+    display.fillCircle(rectCenterX, rectCenterY, innerRadius, INVERSE);
+  }
 
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
@@ -240,13 +296,13 @@ void drawMainUI()
   float z = a.acceleration.z;
 
   // Convert accelerometer readings into angles
-  float pitch_scale = 25;
-  float roll_scale = 0.5;
+  float pitch_scale = LEVEL_PITCH_SCALE;
+  float roll_scale = LEVEL_ROLL_SCALE;
   float pitch_angle = atan2(x, sqrt(x*x + z*z)); // Renamed to avoid conflict
   float roll_angle = atan2(y, sqrt(x*x + z*z));  // Renamed to avoid conflict
 
   // Define the deadzone
-  float deadzone = 0.03;
+  float deadzone = LEVEL_DEADZONE;
 
   // Apply the deadzone to the pitch and roll
   if (abs(pitch_angle) < deadzone) {
@@ -260,7 +316,7 @@ void drawMainUI()
   roll_angle = roll_angle * roll_scale;
 
   // Define the length of the line
-  float length = SCREEN_WIDTH - 10;
+  float length = SCREEN_WIDTH - LEVEL_LINE_MARGIN_PX;
 
   // Calculate the start and end points of the line
   float startX = rectCenterX - length/2 * cos(roll_angle);
@@ -269,17 +325,17 @@ void drawMainUI()
   float endY =  rectCenterY + length/2 * sin(roll_angle) + pitch_angle;
 
   // Draw the line on the display
-  display.drawLine(startX, startY, endX, endY, WHITE);   
+  display.drawLine(startX, startY, endX, endY, INVERSE);   
 
   // Define the length of the vertical line
-  int vertLineLength = 30;
+  int vertLineLength = LEVEL_VERTICAL_LINE_LENGTH;
 
   // Calculate the start and end points of the vertical line
   int vertLineStartY = rectCenterY - vertLineLength / 2;
   int vertLineEndY = rectCenterY + vertLineLength / 2;
 
   // Draw the vertical line on the display
-  display.drawLine(rectCenterX, vertLineStartY, rectCenterX, vertLineEndY, WHITE);
+  display.drawLine(rectCenterX, vertLineStartY, rectCenterX, vertLineEndY, INVERSE);
 
   display.display();
 }
@@ -294,7 +350,7 @@ void drawConfigUI()
   u8g2.setBackgroundColor(BLACK);
 
   u8g2.setFont(u8g2_font_9x15_mf);
-  u8g2.setCursor(3, 15);
+  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
   u8g2.print(F("Setup"));
 
   u8g2.setFont(u8g2_font_4x6_mf);
@@ -310,31 +366,37 @@ void drawConfigUI()
     }
   };
 
-  u8g2.setCursor(3, 26);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 0));
   setItemColors(config_step == 0);
   u8g2.print(F(" ISO:")); u8g2.print(iso); u8g2.print(F(" "));
 
-  u8g2.setCursor(3, 37);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 1));
   setItemColors(config_step == 1);
   u8g2.print(F(" Format:")); u8g2.print(film_formats[selected_format].name); u8g2.print(F(" "));
 
-  u8g2.setCursor(3, 48);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 2));
   setItemColors(config_step == 2);
   u8g2.print(F(" Lens:")); u8g2.print(lenses[selected_lens].name); u8g2.print(F(" "));
 
-  u8g2.setCursor(3, 59);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 3));
   setItemColors(config_step == 3);
-  u8g2.print(F(" Lens Calib. > "));
+  u8g2.print(F(" Parallax Correction: "));
+  u8g2.print(parallaxEnabled ? F("On") : F("Off"));
+  u8g2.print(F(" "));
 
-  u8g2.setCursor(3, 70);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 4));
   setItemColors(config_step == 4);
+  u8g2.print(F(" Lens Calibration > "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 5));
+  setItemColors(config_step == 5);
   u8g2.print(F(" Reset count >> "));
 
-  u8g2.setCursor(3, 81);
-  setItemColors(config_step == 5);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 6));
+  setItemColors(config_step == 6);
   u8g2.print(F(" Exit >> "));
 
-  u8g2.setCursor(3, 100);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y);
   u8g2.setBackgroundColor(BLACK); // Reset for footer
   u8g2.setForegroundColor(WHITE);
   u8g2.print(F(" IDENTIDEM.design MRF "));
@@ -353,7 +415,7 @@ void drawCalibUI()
   u8g2.setBackgroundColor(BLACK);
 
   u8g2.setFont(u8g2_font_6x10_mf);
-  u8g2.setCursor(3, 15);
+  u8g2.setCursor(CALIB_TITLE_X, CALIB_TITLE_Y);
   u8g2.print(F("Calibrate"));
 
   u8g2.setFont(u8g2_font_4x6_mf);
@@ -368,13 +430,13 @@ void drawCalibUI()
     }
   };
 
-  u8g2.setCursor(3, 35);
+  u8g2.setCursor(CALIB_ITEM_X, CALIB_LENS_Y);
   setItemColors(calib_step == 0);
   u8g2.print(F(" Lens:")); u8g2.print(lenses[calib_lens].name); u8g2.print(F(" "));
 
-  u8g2.setCursor(3, 47);
+  u8g2.setCursor(CALIB_ITEM_X, CALIB_DISTANCE_Y);
   setItemColors(calib_step == 1);
-  u8g2.print(F(" ")); u8g2.print(CALIB_DISTANCES[current_calib_distance], 1);
+  u8g2.print(F(" ")); u8g2.print(CALIB_DISTANCES[current_calib_distance], DISTANCE_DECIMAL_PLACES);
   u8g2.print(F("m: ")); u8g2.print(lens_sensor_reading); u8g2.print(F(" "));
 
   u8g2.setBackgroundColor(BLACK); // Reset for instructions
@@ -382,24 +444,46 @@ void drawCalibUI()
 
   if (calib_step == 0)
   {
-    u8g2.setCursor(3, 70); u8g2.print(F(" (L) to Cycle"));
-    u8g2.setCursor(3, 81); u8g2.print(F(" (R) to Select"));
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1); u8g2.print(F(" (L) to Cycle"));
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2); u8g2.print(F(" (R) to Select"));
   }
   else
   {
-    u8g2.setCursor(3, 70); u8g2.print(F(" (L) to Select"));
-    u8g2.setCursor(3, 81); u8g2.print(F(" (R) to Cancel"));
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1); u8g2.print(F(" (L) to Select"));
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2); u8g2.print(F(" (R) to Cancel"));
   }
+
+  display.display();
+}
+
+void drawResetConfirmUI()
+{
+  display.clearDisplay();
+
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+
+  u8g2.setFont(u8g2_font_9x15_mf);
+  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
+  u8g2.print(F("Reset Count?"));
+
+  u8g2.setFont(u8g2_font_4x6_mf);
+  u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y1);
+  u8g2.print(F(" (L) Cancel"));
+  u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y2);
+  u8g2.print(F(" (R) Reset"));
 
   display.display();
 }
 
 void drawExternalUI()
 {
-  int progessBarWidth = 90;
-  int progressBarHeight = 17;
-  int progressBarX = 34;
-  int progressBarY = 15;
+  int progessBarWidth = EXT_PROGRESS_BAR_WIDTH;
+  int progressBarHeight = EXT_PROGRESS_BAR_HEIGHT;
+  int progressBarX = EXT_PROGRESS_BAR_X;
+  int progressBarY = EXT_PROGRESS_BAR_Y;
 
   display_ext.clearDisplay();
 
@@ -409,44 +493,47 @@ void drawExternalUI()
   u8g2_ext.setBackgroundColor(WHITE);
   u8g2_ext.setFont(u8g2_font_6x10_mf);
 
-  u8g2_ext.setCursor(2, 8);
-  display_ext.fillRect(0, 0, 128, 10, WHITE);
+  u8g2_ext.setCursor(EXT_HEADER_FORMAT_X, EXT_HEADER_FORMAT_Y);
+  display_ext.fillRect(0, 0, SCREEN_WIDTH, EXT_HEADER_HEIGHT, WHITE);
   u8g2_ext.print(film_formats[selected_format].name);
 
-  display_ext.drawLine(33, 0, 33, 10, BLACK);
+  display_ext.drawLine(EXT_HEADER_DIVIDER_X, 0, EXT_HEADER_DIVIDER_X, EXT_HEADER_HEIGHT, BLACK);
 
-  u8g2_ext.setCursor(37, 8);
+  u8g2_ext.setCursor(EXT_HEADER_LENS_X, EXT_HEADER_LENS_Y);
   u8g2_ext.print(lenses[selected_lens].name);
 
   // Adjust cursor for battery percentage display
-  if (bat_per == 100) {
-    display_ext.drawLine(100, 0, 100, 10, BLACK); u8g2_ext.setCursor(104, 8);
-  } else if (bat_per < 10) {
-    display_ext.drawLine(111, 0, 111, 10, BLACK); u8g2_ext.setCursor(115, 8);
+  if (bat_per == BATTERY_PERCENT_MAX) {
+    display_ext.drawLine(EXT_BATTERY_DIVIDER_FULL_X, 0, EXT_BATTERY_DIVIDER_FULL_X, EXT_HEADER_HEIGHT, BLACK);
+    u8g2_ext.setCursor(EXT_BATTERY_CURSOR_FULL_X, EXT_HEADER_FORMAT_Y);
+  } else if (bat_per < BATTERY_PERCENT_LOW_THRESHOLD) {
+    display_ext.drawLine(EXT_BATTERY_DIVIDER_LOW_X, 0, EXT_BATTERY_DIVIDER_LOW_X, EXT_HEADER_HEIGHT, BLACK);
+    u8g2_ext.setCursor(EXT_BATTERY_CURSOR_LOW_X, EXT_HEADER_FORMAT_Y);
   } else {
-    display_ext.drawLine(103, 0, 103, 10, BLACK); u8g2_ext.setCursor(107, 8);
+    display_ext.drawLine(EXT_BATTERY_DIVIDER_MID_X, 0, EXT_BATTERY_DIVIDER_MID_X, EXT_HEADER_HEIGHT, BLACK);
+    u8g2_ext.setCursor(EXT_BATTERY_CURSOR_MID_X, EXT_HEADER_FORMAT_Y);
   }
   u8g2_ext.print(bat_per); u8g2_ext.print(F("%"));
 
   if (frame_progress > 0)
   {
-    float progressPercentage = frame_progress * 100;
-    int progressWidth = progessBarWidth * (progressPercentage / 100);
+    float progressPercentage = frame_progress * PERCENT_SCALE;
+    int progressWidth = progessBarWidth * (progressPercentage / PERCENT_SCALE);
     display_ext.drawRect(progressBarX, progressBarY, progessBarWidth, progressBarHeight, WHITE);
     display_ext.fillRect(progressBarX, progressBarY, progressWidth, progressBarHeight, WHITE);
 
     if (frame_progress != prev_frame_progress) {
-      if (progressPercentage > 0 && progressPercentage < 100) {
-        int greenValue = frame_progress * 255;
-        int redValue = (1 - frame_progress) * 255;
-        sspixel.setPixelColor(0, sspixel.Color(redValue, greenValue, 0));
+      if (progressPercentage > 0 && progressPercentage < PERCENT_SCALE) {
+        int greenValue = frame_progress * NEOPIXEL_COLOR_MAX;
+        int redValue = (1 - frame_progress) * NEOPIXEL_COLOR_MAX;
+        sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(redValue, greenValue, NEOPIXEL_OFF_B));
       }
       prev_frame_progress = frame_progress;
     }
   }
   else
   {
-    sspixel.setPixelColor(0, sspixel.Color(0, 0, 255)); // Blue for no progress
+    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_BLUE_R, NEOPIXEL_BLUE_G, NEOPIXEL_BLUE_B)); // Blue for no progress
     // No need to set cursor if nothing is printed here for this case
   }
 
@@ -455,13 +542,13 @@ void drawExternalUI()
   u8g2_ext.setFont(u8g2_font_10x20_mf);
 
   if (film_counter == 0 && frame_progress == 0) {
-    u8g2_ext.setCursor(8, 30); u8g2_ext.print(F(" Load film."));
-    sspixel.setPixelColor(0, sspixel.Color(238, 130, 238)); // Violet
-  } else if (film_counter == 99) {
-    u8g2_ext.setCursor(8, 30); u8g2_ext.print(F(" Roll end."));
-    sspixel.setPixelColor(0, sspixel.Color(238, 130, 238)); // Violet
+    u8g2_ext.setCursor(EXT_COUNTER_MESSAGE_X, EXT_COUNTER_TEXT_Y); u8g2_ext.print(F(" Load film."));
+    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_VIOLET_R, NEOPIXEL_VIOLET_G, NEOPIXEL_VIOLET_B)); // Violet
+  } else if (film_counter == FILM_COUNTER_END) {
+    u8g2_ext.setCursor(EXT_COUNTER_MESSAGE_X, EXT_COUNTER_TEXT_Y); u8g2_ext.print(F(" Roll end."));
+    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_VIOLET_R, NEOPIXEL_VIOLET_G, NEOPIXEL_VIOLET_B)); // Violet
   } else {
-    u8g2_ext.setCursor( (frame_progress > 0) ? 8 : 60, 30); // Adjust cursor based on progress bar
+    u8g2_ext.setCursor((frame_progress > 0) ? EXT_COUNTER_VALUE_X_WITH_PROGRESS : EXT_COUNTER_VALUE_X_NO_PROGRESS, EXT_COUNTER_TEXT_Y); // Adjust cursor based on progress bar
     u8g2_ext.print(film_counter);
   }
 
@@ -480,13 +567,13 @@ void drawSleepUI()
   u8g2_ext.setBackgroundColor(BLACK);
   u8g2_ext.setFont(u8g2_font_10x20_mf);
 
-  u8g2_ext.setCursor(8, 22);
+  u8g2_ext.setCursor(EXT_SLEEP_TEXT_X, EXT_SLEEP_TEXT_Y);
   u8g2_ext.print(F("ZzzZZzZz..."));
 
   display.display();
   display_ext.display();
 
-  sspixel.setPixelColor(0, sspixel.Color(0, 0, 0)); // Off
+  sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B)); // Off
   sspixel.show();
 }
 // ---------------------

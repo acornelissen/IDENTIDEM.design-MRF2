@@ -6,6 +6,7 @@
 void drawMainUI();
 void drawConfigUI();
 void drawCalibUI();
+void drawResetConfirmUI();
 void drawExternalUI();
 void drawSleepUI();
 // ---------------------

@@ -12,10 +12,21 @@
 
 // Functions to check and act on button presses
 // ---------------------
+static void resetFrameCounter()
+{
+  encoder.setEncoderPosition(0); // Reset encoder related values
+  encoder_value = 0;
+  prev_encoder_value = 0;
+  film_counter = 0;
+  frame_progress = 0;
+  prev_frame_progress = 0;
+  savePrefs();
+}
+
 void checkButtons()
 {
   lbutton.update();
-  if (lbutton.rose() && lbutton.previousDuration() < 1000)
+  if (lbutton.rose() && lbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
   {
     lastActivityTime = millis();
     if (sleepMode == true) {
@@ -29,7 +40,7 @@ void checkButtons()
       else if (ui_mode == "config")
       {
         config_step++;
-        if (config_step > 5) // MAX_CONFIG_STEPS might be better
+        if (config_step > CONFIG_STEP_MAX)
         {
           config_step = 0;
         }
@@ -44,7 +55,7 @@ void checkButtons()
         {
           calib_distance_set[current_calib_distance] = lens_sensor_reading;
           current_calib_distance++;
-          if (current_calib_distance >= sizeof(CALIB_DISTANCES) / sizeof(CALIB_DISTANCES[0]))
+          if (current_calib_distance >= CALIB_DISTANCE_COUNT)
           {
             lenses[calib_lens].calibrated = true;
             for (int i = 0; i < sizeof(calib_distance_set) / sizeof(calib_distance_set[0]); i++)
@@ -57,11 +68,16 @@ void checkButtons()
           }
         }
       }
+      else if (ui_mode == "reset_confirm")
+      {
+        ui_mode = "config";
+        config_step = 5;
+      }
     }
   }
 
   rbutton.update();
-  if (rbutton.isPressed() && rbutton.currentDuration() >= 3000) 
+  if (rbutton.isPressed() && rbutton.currentDuration() >= BUTTON_LONG_PRESS_MIN_MS) 
   {
     lastActivityTime = millis();
     if (ui_mode == "main")
@@ -69,7 +85,7 @@ void checkButtons()
       ui_mode = "config";
     }
   }
-  else if (rbutton.rose() && rbutton.previousDuration() < 1000)
+  else if (rbutton.rose() && rbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
   {
     lastActivityTime = millis();
     if (sleepMode == true) {
@@ -91,20 +107,20 @@ void checkButtons()
             aperture_index = non_zero_aperture_index;
           }
           else if (config_step == 3) {
+            parallaxEnabled = !parallaxEnabled;
+            savePrefs();
+          }
+          else if (config_step == 4) {
             calib_step = 0;
             calib_lens = selected_lens; // Use current selected lens for calibration
             current_calib_distance = 0;
             memset(calib_distance_set, 0, sizeof(calib_distance_set));
             ui_mode = "calib";
           }
-          else if (config_step == 4) {
-            encoder.setEncoderPosition(0); // Reset encoder related values
-            encoder_value = 0; prev_encoder_value = 0;
-            film_counter = 0; frame_progress = 0; prev_frame_progress = 0;
-            savePrefs();
-            ui_mode = "main"; config_step = 0;
-          }
           else if (config_step == 5) {
+            ui_mode = "reset_confirm";
+          }
+          else if (config_step == 6) {
             ui_mode = "main"; config_step = 0;
           }
         }
@@ -114,6 +130,12 @@ void checkButtons()
           else if (calib_step == 1) { // This should likely be an else if
             calib_step = 0; ui_mode = "config";
           }
+        }
+        else if (ui_mode == "reset_confirm")
+        {
+          resetFrameCounter();
+          ui_mode = "main";
+          config_step = 0;
         }
     }
   }
