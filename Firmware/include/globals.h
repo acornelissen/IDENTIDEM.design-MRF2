@@ -23,10 +23,10 @@ extern int iso_index;
 extern int aperture_index;
 
 // Filter algorithm
-extern int samples[2][SMOOTHING_WINDOW_SIZE]; // the readings from the analog input
-extern int curReadIndex[2];          // the index of the current reading
-extern int sampleTotal[2];           // the running total
-extern int sampleAvg[2];
+extern int samples[SENSOR_CHANNEL_COUNT][SMOOTHING_WINDOW_SIZE]; // the readings from the analog input
+extern int curReadIndex[SENSOR_CHANNEL_COUNT];          // the index of the current reading
+extern int sampleTotal[SENSOR_CHANNEL_COUNT];           // the running total
+extern int sampleAvg[SENSOR_CHANNEL_COUNT];
 
 // Lens distance
 extern int prev_lens_sensor_reading;
@@ -55,7 +55,7 @@ extern int selected_format;
 extern int calib_lens;
 extern bool parallaxEnabled;
 
-extern int calib_distance_set[7];
+extern int calib_distance_set[CALIB_DISTANCE_COUNT];
 extern int current_calib_distance;
 
 extern int film_counter;

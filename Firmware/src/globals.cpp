@@ -9,21 +9,21 @@ Preferences prefs;
 // Variables
 // ---------------------
 // Lightmeter
-int prev_iso = 400;
-int iso = 400;
+int prev_iso = DEFAULT_ISO;
+int iso = DEFAULT_ISO;
 float prev_aperture;
 float aperture;
 float prev_lux = 0;
 float lux = 0;
 String shutter_speed = "...";
-int iso_index = 5;
+int iso_index = DEFAULT_ISO_INDEX;
 int aperture_index;
 
 // Filter algorithm
-int samples[2][SMOOTHING_WINDOW_SIZE]; // the readings from the analog input
-int curReadIndex[2] = {0, 0};          // the index of the current reading
-int sampleTotal[2] = {0, 0};           // the running total
-int sampleAvg[2] = {0, 0};
+int samples[SENSOR_CHANNEL_COUNT][SMOOTHING_WINDOW_SIZE]; // the readings from the analog input
+int curReadIndex[SENSOR_CHANNEL_COUNT] = {0, 0};          // the index of the current reading
+int sampleTotal[SENSOR_CHANNEL_COUNT] = {0, 0};           // the running total
+int sampleAvg[SENSOR_CHANNEL_COUNT] = {0, 0};
 
 // Lens distance
 int prev_lens_sensor_reading = 0;
@@ -47,12 +47,12 @@ int bat_per = 0;
 String ui_mode = "main";
 int config_step = 0;
 int calib_step = 0;
-int selected_lens = 1;
-int selected_format = 3;
+int selected_lens = DEFAULT_SELECTED_LENS;
+int selected_format = DEFAULT_SELECTED_FORMAT;
 int calib_lens = 0;
 bool parallaxEnabled = true;
 
-int calib_distance_set[7] = {};
+int calib_distance_set[CALIB_DISTANCE_COUNT] = {};
 int current_calib_distance = 0;
 
 int film_counter = 0;

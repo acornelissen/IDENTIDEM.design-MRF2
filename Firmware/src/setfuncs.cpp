@@ -56,7 +56,7 @@ void setDistance()
 
   if (lidarSerial.available() == 0)
   {
-    if (millis() - lastLidarUpdateMs > 500)
+    if (millis() - lastLidarUpdateMs > LIDAR_NO_DATA_TIMEOUT_MS)
     {
       distance_cm = "...";
     }
@@ -66,7 +66,7 @@ void setDistance()
   if (lidar.update())
   { // Get data from Lidar
     lastLidarUpdateMs = millis();
-    int raw_cm = (lidar.getDistance() / 10) + LIDAR_OFFSET;
+    int raw_cm = (lidar.getDistance() / LIDAR_DISTANCE_DIVISOR) + LIDAR_OFFSET;
     distance = applyLidarCalibrationCm(raw_cm);
     if (distance != prev_distance)
     {
@@ -80,7 +80,7 @@ void setDistance()
       }
       else
       {
-        distance_cm = cmToReadable(distance, 1);
+        distance_cm = cmToReadable(distance, DISTANCE_DECIMAL_PLACES);
       }
       prev_distance = distance;
     }
@@ -100,8 +100,8 @@ int getLensSensorReading()
   // You want the value to increase as the focus distance increases.
   // 1m should be smallest, 10m should be largest. If not, swap the wires.
 
-  int filteredVal = rejectOutliers(0, sensorVal);
-  float finalVal = calcMovingAvg(0, filteredVal);
+  int filteredVal = rejectOutliers(LENS_SENSOR_CHANNEL, sensorVal);
+  float finalVal = calcMovingAvg(LENS_SENSOR_CHANNEL, filteredVal);
 
   Serial.print(sensorVal);
   Serial.print(" | ");
@@ -120,7 +120,7 @@ void setLensDistance()
   if (lens_sensor_reading != prev_lens_sensor_reading)
   {
 
-    if (abs(lens_sensor_reading - prev_lens_sensor_reading) > 3)
+    if (abs(lens_sensor_reading - prev_lens_sensor_reading) > LENS_ACTIVITY_THRESHOLD)
     {
       lastActivityTime = millis();
     }
@@ -131,24 +131,24 @@ void setLensDistance()
     {
       if (lens_sensor_reading < lenses[selected_lens].sensor_reading[0])
       {
-        lens_distance_raw = lenses[selected_lens].distance[0] * 100;
-        lens_distance_cm = cmToReadable(lens_distance_raw, 1);
+        lens_distance_raw = lenses[selected_lens].distance[0] * CM_PER_METER;
+        lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
       }
       else if (lens_sensor_reading > lenses[selected_lens].sensor_reading[sizeof(lenses[selected_lens].sensor_reading) / sizeof(lenses[selected_lens].sensor_reading[0]) - 1] + LENS_INF_THRESHOLD)
       {
-        lens_distance_raw = 9999999;
+        lens_distance_raw = LENS_INFINITY_RAW;
         lens_distance_cm = "Inf.";
       }
       else if (lens_sensor_reading == lenses[selected_lens].sensor_reading[i])
       {
-        lens_distance_raw = lenses[selected_lens].distance[i] * 100;
-        lens_distance_cm = cmToReadable(lens_distance_raw, 1);
+        lens_distance_raw = lenses[selected_lens].distance[i] * CM_PER_METER;
+        lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
       }
       else if (lens_sensor_reading > lenses[selected_lens].sensor_reading[i] && lens_sensor_reading < lenses[selected_lens].sensor_reading[i + 1])
       {
         float distance_val = lenses[selected_lens].distance[i] + (lens_sensor_reading - lenses[selected_lens].sensor_reading[i]) * (lenses[selected_lens].distance[i + 1] - lenses[selected_lens].distance[i]) / (lenses[selected_lens].sensor_reading[i + 1] - lenses[selected_lens].sensor_reading[i]);
-        lens_distance_raw = distance_val * 100;
-        lens_distance_cm = cmToReadable(lens_distance_raw, 1);
+        lens_distance_raw = distance_val * CM_PER_METER;
+        lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
       }
     }
   }
@@ -179,8 +179,8 @@ void setFilmCounter()
       }
       else if (film_formats[selected_format].sensor[i] < encoder_value && encoder_value < film_formats[selected_format].sensor[i + 1])
       {
-        // Check if the encoder value is within +/- 2 of the next frame
-        if (abs(encoder_value - film_formats[selected_format].sensor[i + 1]) <= 1)
+        // Check if the encoder value is within the snap threshold of the next frame
+        if (abs(encoder_value - film_formats[selected_format].sensor[i + 1]) <= FILM_COUNTER_SNAP_THRESHOLD)
         {
           // Snap to the next frame
           film_counter = film_formats[selected_format].frame[i + 1];
@@ -192,9 +192,9 @@ void setFilmCounter()
           frame_progress = static_cast<float>(encoder_value - film_formats[selected_format].sensor[i]) / (film_formats[selected_format].sensor[i + 1] - film_formats[selected_format].sensor[i]);
         }
       }
-      else if (film_formats[selected_format].frame[i] == 99 && encoder_value >= film_formats[selected_format].sensor[i])
+      else if (film_formats[selected_format].frame[i] == FILM_COUNTER_END && encoder_value >= film_formats[selected_format].sensor[i])
       {
-        film_counter = 99;
+        film_counter = FILM_COUNTER_END;
         frame_progress = 0;
       }
     }
@@ -205,9 +205,9 @@ void setFilmCounter()
 void setVoltage()
 {
   bat_per = maxlipo.cellPercent();
-  if (bat_per > 100)
+  if (bat_per > BATTERY_PERCENT_MAX)
   {
-    bat_per = 100;
+    bat_per = BATTERY_PERCENT_MAX;
   }
 
   if (bat_per != prev_bat_per)
@@ -234,7 +234,7 @@ void setLightMeter()
         cycleApertures("up");
       }
 
-      float speed = round(((aperture * aperture) * K) / (lux * iso) * 1000.0) / 1000.0;
+      float speed = round(((aperture * aperture) * K) / (lux * iso) * LIGHTMETER_SPEED_ROUND_SCALE) / LIGHTMETER_SPEED_ROUND_SCALE;
 
       struct SpeedRange
       {
@@ -255,8 +255,8 @@ void setLightMeter()
           {0.250, 0.500, "1/4"},
           {0.500, 1, "1/2"}};
 
-      char print_speed[10];
-      dtostrf(speed, 4, 1, print_speed); // dtostrf is not standard C++, but common in Arduino
+      char print_speed[SPEED_TEXT_BUFFER_LEN];
+      dtostrf(speed, SPEED_TEXT_WIDTH, SPEED_TEXT_DECIMALS_SHORT, print_speed); // dtostrf is not standard C++, but common in Arduino
 
       for (int i = 0; i < sizeof(speed_ranges) / sizeof(speed_ranges[0]); i++)
       {
@@ -267,10 +267,10 @@ void setLightMeter()
         }
       }
 
-      if (speed >= 1)
+      if (speed >= SPEED_SECONDS_THRESHOLD)
       {
-        char print_speed_raw[10];
-        dtostrf(speed, 4, 2, print_speed_raw);
+        char print_speed_raw[SPEED_TEXT_BUFFER_LEN];
+        dtostrf(speed, SPEED_TEXT_WIDTH, SPEED_TEXT_DECIMALS_LONG, print_speed_raw);
         shutter_speed = strcat(print_speed_raw, " sec.");
       }
       else

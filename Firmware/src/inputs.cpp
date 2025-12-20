@@ -15,7 +15,7 @@
 void checkButtons()
 {
   lbutton.update();
-  if (lbutton.rose() && lbutton.previousDuration() < 1000)
+  if (lbutton.rose() && lbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
   {
     lastActivityTime = millis();
     if (sleepMode == true) {
@@ -29,7 +29,7 @@ void checkButtons()
       else if (ui_mode == "config")
       {
         config_step++;
-        if (config_step > 6) // MAX_CONFIG_STEPS might be better
+        if (config_step > CONFIG_STEP_MAX)
         {
           config_step = 0;
         }
@@ -44,7 +44,7 @@ void checkButtons()
         {
           calib_distance_set[current_calib_distance] = lens_sensor_reading;
           current_calib_distance++;
-          if (current_calib_distance >= sizeof(CALIB_DISTANCES) / sizeof(CALIB_DISTANCES[0]))
+          if (current_calib_distance >= CALIB_DISTANCE_COUNT)
           {
             lenses[calib_lens].calibrated = true;
             for (int i = 0; i < sizeof(calib_distance_set) / sizeof(calib_distance_set[0]); i++)
@@ -61,7 +61,7 @@ void checkButtons()
   }
 
   rbutton.update();
-  if (rbutton.isPressed() && rbutton.currentDuration() >= 3000) 
+  if (rbutton.isPressed() && rbutton.currentDuration() >= BUTTON_LONG_PRESS_MIN_MS) 
   {
     lastActivityTime = millis();
     if (ui_mode == "main")
@@ -69,7 +69,7 @@ void checkButtons()
       ui_mode = "config";
     }
   }
-  else if (rbutton.rose() && rbutton.previousDuration() < 1000)
+  else if (rbutton.rose() && rbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
   {
     lastActivityTime = millis();
     if (sleepMode == true) {

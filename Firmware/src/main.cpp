@@ -43,7 +43,7 @@
 void setup()
 {
 
-  Serial.begin(115200); // Initializing serial port
+  Serial.begin(SERIAL_BAUD_RATE); // Initializing serial port
 
   esp_wifi_stop(); // Stop WiFi to save power
   // esp_bt_controller_disable(); // This function might not exist, esp_bt_disable() is more common.
@@ -58,53 +58,55 @@ void setup()
 
   theads.setDataRate(RATE_ADS1015_128SPS);
   theads.setGain(GAIN_TWOTHIRDS);
-  lbutton.attach(10, INPUT_PULLUP);
-  lbutton.interval(5);
+  lbutton.attach(BUTTON_LEFT_PIN, INPUT_PULLUP);
+  lbutton.interval(BUTTON_DEBOUNCE_MS);
   lbutton.setPressedState(LOW);
-  rbutton.attach(9, INPUT_PULLUP);
-  rbutton.interval(5);
+  rbutton.attach(BUTTON_RIGHT_PIN, INPUT_PULLUP);
+  rbutton.interval(BUTTON_DEBOUNCE_MS);
   rbutton.setPressedState(LOW);
 
   // Initialize lastActivityTime here, as globals are initialized before millis() is reliable.
   lastActivityTime = millis();
 
-  delay(1000);               // Slight delay or the displays won't work
-  display.begin(0x3D, true); // Address 0x3D default
-  display.oled_command(0xC8);
-  display.setRotation(3);
+  delay(DISPLAY_INIT_DELAY_MS);               // Slight delay or the displays won't work
+  display.begin(SCREEN_ADDRESS, true); // Default display address
+  display.oled_command(DISPLAY_COMMAND_FLIP);
+  display.setRotation(DISPLAY_ROTATION);
   u8g2.begin(display);
   display.clearDisplay();
   display.display();
 
-  delay(500); // Slight delay or the displays won't work
+  delay(DISPLAY_EXT_INIT_DELAY_MS); // Slight delay or the displays won't work
 
   display_ext.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS_EXT);
 
   // Boot up sceen
   display_ext.clearDisplay();
-  display_ext.setTextSize(2); // Draw 2X-scale text
+  display_ext.setTextSize(DISPLAY_BOOT_TEXT_SIZE); // Draw 2X-scale text
   display_ext.setTextColor(SSD1306_WHITE);
-  display_ext.setCursor(20, 10);
+  display_ext.setCursor(DISPLAY_BOOT_CURSOR_X, DISPLAY_BOOT_CURSOR_Y);
   display_ext.print(F("MRF "));
   display_ext.println(FWVERSION);
   display_ext.display();
 
-  delay(1000);
+  delay(DISPLAY_BOOT_SCREEN_MS);
 
   u8g2_ext.begin(display_ext);
   display_ext.clearDisplay();
   display_ext.display();
 
   // Start the LiDAR sensor
-  lidarSerial.begin(921600, SERIAL_8N1, RXD2, TXD2);
-  delay(20);
+  lidarSerial.begin(LIDAR_BAUD_RATE, SERIAL_8N1, RXD2, TXD2);
+  delay(LIDAR_SERIAL_STARTUP_DELAY_MS);
   lidar.begin();
 
   // Clear the moving average arrays
-  for (int i = 0; i < SMOOTHING_WINDOW_SIZE; i++)
+  for (int channel = 0; channel < SENSOR_CHANNEL_COUNT; channel++)
   {
-    samples[0][i] = 0;
-    samples[1][i] = 0;
+    for (int i = 0; i < SMOOTHING_WINDOW_SIZE; i++)
+    {
+      samples[channel][i] = 0;
+    }
   }
 
   // Start the battery gauge and lightmeter
@@ -114,15 +116,15 @@ void setup()
   // Seesaw NEOpixel
   if (sspixel.begin(SEESAW_ADDR))
   {
-    delay(10);
-    sspixel.setBrightness(80);
+    delay(SEESAW_INIT_DELAY_MS);
+    sspixel.setBrightness(SEESAW_NEOPIXEL_BRIGHTNESS);
     sspixel.show();
   }
 
   // Start the encoder
   if (encoder.begin(SEESAW_ADDR))
   {
-    delay(10);
+    delay(SEESAW_INIT_DELAY_MS);
     encoder.setEncoderPosition(encoder_value);
     encoder.enableEncoderInterrupt();
   }
