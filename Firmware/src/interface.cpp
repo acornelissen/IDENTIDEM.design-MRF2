@@ -161,22 +161,27 @@ void drawMainUI()
   float formatHeightMm = 0.0f;
   getFormatWidthHeightMm(film_formats[selected_format], formatWidthMm, formatHeightMm);
 
-  float overlayFovXDeg = VIEWFINDER_FOV_DEG;
-  float overlayFovYDeg = VIEWFINDER_FOV_DEG * (static_cast<float>(framelineH) / static_cast<float>(framelineW));
-
   int new_width = framelineW;
   int new_height = framelineH;
-  if (lenses[selected_lens].focal_mm > 0.0f && formatWidthMm > 0.0f && formatHeightMm > 0.0f && overlayFovXDeg > 0.0f && overlayFovYDeg > 0.0f)
+  if (formatWidthMm > 0.0f && formatHeightMm > 0.0f)
   {
-    float aovXDeg = 2.0f * atan(formatWidthMm / (2.0f * lenses[selected_lens].focal_mm)) * (180.0f / PI);
-    float aovYDeg = 2.0f * atan(formatHeightMm / (2.0f * lenses[selected_lens].focal_mm)) * (180.0f / PI);
+    float formatRatio = formatWidthMm / formatHeightMm;
+    float baseRatio = static_cast<float>(framelineW) / static_cast<float>(framelineH);
 
-    new_width = static_cast<int>(roundf(framelineW * (aovXDeg / overlayFovXDeg)));
-    new_height = static_cast<int>(roundf(framelineH * (aovYDeg / overlayFovYDeg)));
-
-    new_width = max(1, min(framelineW, new_width));
-    new_height = max(1, min(framelineH, new_height));
+    if (formatRatio >= baseRatio)
+    {
+      new_width = framelineW;
+      new_height = static_cast<int>(roundf(framelineW / formatRatio));
+    }
+    else
+    {
+      new_height = framelineH;
+      new_width = static_cast<int>(roundf(framelineH * formatRatio));
+    }
   }
+
+  new_width = max(1, min(framelineW, new_width));
+  new_height = max(1, min(framelineH, new_height));
 
   ParallaxShift parallax = computeParallaxShiftPx(new_width, new_height);
   int parallaxX = static_cast<int>(roundf(parallax.x));
