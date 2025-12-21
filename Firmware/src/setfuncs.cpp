@@ -74,6 +74,10 @@ void setDistance()
       {
         distance_cm = "> " + String(DISTANCE_MAX) + "m";
       }
+      else if (distance > (DISTANCE_MAX * CM_PER_METER))
+      {
+        distance_cm = "> " + String(DISTANCE_MAX) + "m";
+      }
       else if (distance < DISTANCE_MIN)
       {
         distance_cm = "< " + String(DISTANCE_MIN) + "cm";
