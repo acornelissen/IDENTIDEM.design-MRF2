@@ -224,9 +224,8 @@ void setLightMeter()
 {
   lux = lightMeter.readLightLevel();
 
-  if (lux != prev_lux)
+  if (lux != prev_lux || iso != prev_iso || aperture != prev_aperture)
   {
-    prev_lux = lux;
     if (lux <= 0)
     {
       shutter_speed = "Dark!";
@@ -240,6 +239,7 @@ void setLightMeter()
 
       float speed = round(((aperture * aperture) * K) / (lux * iso) * LIGHTMETER_SPEED_ROUND_SCALE) / LIGHTMETER_SPEED_ROUND_SCALE;
 
+      const float SPEED_TOO_FAST_THRESHOLD = 0.001f;
       struct SpeedRange
       {
         float lower;
@@ -259,19 +259,11 @@ void setLightMeter()
           {0.250, 0.500, "1/4"},
           {0.500, 1, "1/2"}};
 
-      char print_speed[SPEED_TEXT_BUFFER_LEN];
-      dtostrf(speed, SPEED_TEXT_WIDTH, SPEED_TEXT_DECIMALS_SHORT, print_speed); // dtostrf is not standard C++, but common in Arduino
-
-      for (int i = 0; i < sizeof(speed_ranges) / sizeof(speed_ranges[0]); i++)
+      if (speed < SPEED_TOO_FAST_THRESHOLD)
       {
-        if (speed_ranges[i].lower <= speed && speed < speed_ranges[i].upper)
-        {
-          strcpy(print_speed, speed_ranges[i].print_speed_range);
-          break;
-        }
+        shutter_speed = "Bright!";
       }
-
-      if (speed >= SPEED_SECONDS_THRESHOLD)
+      else if (speed >= SPEED_SECONDS_THRESHOLD)
       {
         char print_speed_raw[SPEED_TEXT_BUFFER_LEN];
         dtostrf(speed, SPEED_TEXT_WIDTH, SPEED_TEXT_DECIMALS_LONG, print_speed_raw);
@@ -279,9 +271,23 @@ void setLightMeter()
       }
       else
       {
+        char print_speed[SPEED_TEXT_BUFFER_LEN];
+        dtostrf(speed, SPEED_TEXT_WIDTH, SPEED_TEXT_DECIMALS_SHORT, print_speed); // dtostrf is not standard C++, but common in Arduino
+
+        for (int i = 0; i < sizeof(speed_ranges) / sizeof(speed_ranges[0]); i++)
+        {
+          if (speed_ranges[i].lower <= speed && speed < speed_ranges[i].upper)
+          {
+            strcpy(print_speed, speed_ranges[i].print_speed_range);
+            break;
+          }
+        }
         shutter_speed = strcat(print_speed, " sec.");
       }
     }
+    prev_lux = lux;
+    prev_iso = iso;
+    prev_aperture = aperture;
   }
 }
 
