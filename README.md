@@ -42,7 +42,7 @@ It is based on the [Panomicron Thulium](https://www.panomicron.com/thulium) desi
 | Feather ESP32-S3 (Adafruit 5477) | 1 | Main MCU, includes MAX17048 fuel gauge | [Adafruit](https://www.adafruit.com/product/5477) |
 | MRF2 Main PCB | 1 | Use Gerbers in `PCBs/Main PCB/Gerber` | Any fab |
 | MRF2 Breakout PCB | 1 | Use Gerbers in `PCBs/Breakout/Gerber` | Any fab |
-B-type 8-pin FPC ribbon cable | 1 | Links main PCB to breakout | [Amazon](https://www.amazon.co.uk/sourcing-map-Flexible-Ribbon-Player/dp/B0FKBRHH4J)
+B-type 8-pin FPC ribbon cable | 1 | Links main PCB to breakout | [Amazon](https://www.amazon.co.uk/sourcing-map-Ribbon-Flexible-Printer/dp/B0F4K1KMKR/)
 8-pin JST-SH cable | 1 | For power switch and buttons, 10cm should be plenty | [AliExpress Search](https://www.aliexpress.com/w/wholesale-8-pin-jst%252525252dsh-cable.html)
 6-pin JST-SH cable | 1 | Connect the LiDAR sensor to the breakout board - some cutting and soldering needed on the connector supplied with the sensor | [AliExpress Search](https://www.aliexpress.com/w/wholesale-8-pin-jst%252525252dsh-cable.html)
 | LiDAR DTS6012M | 1 | Distance sensing | [AliExpress search](https://www.aliexpress.com/wholesale?SearchText=DTS6012M+UART) |
