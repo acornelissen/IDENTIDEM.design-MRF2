@@ -99,61 +99,101 @@ void setDistance()
 // https://github.com/makeabilitylab/arduino/blob/master/Filters/MovingAverageFilter/MovingAverageFilter.ino
 int getLensSensorReading()
 {
-  float sensorVal = round(theads.readADC_SingleEnded(LENS_ADC_PIN));
+  int sensorVal = theads.readADC_SingleEnded(LENS_ADC_PIN);
   // Make sure your sensor's + and GND are connected the right way around.
   // You want the value to increase as the focus distance increases.
   // 1m should be smallest, 10m should be largest. If not, swap the wires.
 
   int filteredVal = rejectOutliers(LENS_SENSOR_CHANNEL, sensorVal);
-  float finalVal = calcMovingAvg(LENS_SENSOR_CHANNEL, filteredVal);
-
-  Serial.print(sensorVal);
-  Serial.print(" | ");
-  Serial.print(filteredVal);
-  Serial.print(" | ");
-  Serial.println(finalVal);
-
+  int finalVal = calcMovingAvg(LENS_SENSOR_CHANNEL, filteredVal);
   return finalVal;
 }
 
 void setLensDistance()
 {
+  static int prevSnapIndex = -1;
+  static int prevSnapLens = -1;
 
-  lens_sensor_reading = getLensSensorReading();
-
-  if (lens_sensor_reading != prev_lens_sensor_reading)
+  if (selected_lens != prevSnapLens)
   {
+    prevSnapLens = selected_lens;
+    prevSnapIndex = -1;
+  }
 
-    if (abs(lens_sensor_reading - prev_lens_sensor_reading) > LENS_ACTIVITY_THRESHOLD)
-    {
-      lastActivityTime = millis();
-    }
+  if (lens_sensor_reading == prev_lens_sensor_reading)
+  {
+    return;
+  }
 
-    prev_lens_sensor_reading = lens_sensor_reading;
+  int prevReading = prev_lens_sensor_reading;
+  prev_lens_sensor_reading = lens_sensor_reading;
 
+  bool activityDetected = abs(lens_sensor_reading - prevReading) > LENS_ACTIVITY_THRESHOLD;
+  int snapIndex = -1;
+
+  if (lenses[selected_lens].calibrated)
+  {
+    int snapDelta = LENS_SNAP_DEADZONE + 1;
     for (int i = 0; i < sizeof(lenses[selected_lens].sensor_reading) / sizeof(lenses[selected_lens].sensor_reading[0]); i++)
     {
-      if (lens_sensor_reading < lenses[selected_lens].sensor_reading[0])
+      int delta = abs(lens_sensor_reading - lenses[selected_lens].sensor_reading[i]);
+      if (delta <= LENS_SNAP_DEADZONE && delta < snapDelta)
       {
-        lens_distance_raw = lenses[selected_lens].distance[0] * CM_PER_METER;
-        lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
+        snapDelta = delta;
+        snapIndex = i;
       }
-      else if (lens_sensor_reading > lenses[selected_lens].sensor_reading[sizeof(lenses[selected_lens].sensor_reading) / sizeof(lenses[selected_lens].sensor_reading[0]) - 1] + LENS_INF_THRESHOLD)
-      {
-        lens_distance_raw = LENS_INFINITY_RAW;
-        lens_distance_cm = "Inf.";
-      }
-      else if (lens_sensor_reading == lenses[selected_lens].sensor_reading[i])
-      {
-        lens_distance_raw = lenses[selected_lens].distance[i] * CM_PER_METER;
-        lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
-      }
-      else if (lens_sensor_reading > lenses[selected_lens].sensor_reading[i] && lens_sensor_reading < lenses[selected_lens].sensor_reading[i + 1])
-      {
-        float distance_val = lenses[selected_lens].distance[i] + (lens_sensor_reading - lenses[selected_lens].sensor_reading[i]) * (lenses[selected_lens].distance[i + 1] - lenses[selected_lens].distance[i]) / (lenses[selected_lens].sensor_reading[i + 1] - lenses[selected_lens].sensor_reading[i]);
-        lens_distance_raw = distance_val * CM_PER_METER;
-        lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
-      }
+    }
+
+    if (snapIndex >= 0 && snapIndex != prevSnapIndex)
+    {
+      activityDetected = true;
+    }
+
+    prevSnapIndex = snapIndex;
+  }
+  else
+  {
+    prevSnapIndex = -1;
+  }
+
+  if (activityDetected)
+  {
+    lastActivityTime = millis();
+    if (sleepMode == true)
+    {
+      sleepMode = false;
+    }
+  }
+
+  if (lenses[selected_lens].calibrated && snapIndex >= 0)
+  {
+    lens_distance_raw = lenses[selected_lens].distance[snapIndex] * CM_PER_METER;
+    lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
+    return;
+  }
+
+  for (int i = 0; i < sizeof(lenses[selected_lens].sensor_reading) / sizeof(lenses[selected_lens].sensor_reading[0]); i++)
+  {
+    if (lens_sensor_reading < lenses[selected_lens].sensor_reading[0])
+    {
+      lens_distance_raw = lenses[selected_lens].distance[0] * CM_PER_METER;
+      lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
+    }
+    else if (lens_sensor_reading > lenses[selected_lens].sensor_reading[sizeof(lenses[selected_lens].sensor_reading) / sizeof(lenses[selected_lens].sensor_reading[0]) - 1] + LENS_INF_THRESHOLD)
+    {
+      lens_distance_raw = LENS_INFINITY_RAW;
+      lens_distance_cm = "Inf.";
+    }
+    else if (lens_sensor_reading == lenses[selected_lens].sensor_reading[i])
+    {
+      lens_distance_raw = lenses[selected_lens].distance[i] * CM_PER_METER;
+      lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
+    }
+    else if (lens_sensor_reading > lenses[selected_lens].sensor_reading[i] && lens_sensor_reading < lenses[selected_lens].sensor_reading[i + 1])
+    {
+      float distance_val = lenses[selected_lens].distance[i] + (lens_sensor_reading - lenses[selected_lens].sensor_reading[i]) * (lenses[selected_lens].distance[i + 1] - lenses[selected_lens].distance[i]) / (lenses[selected_lens].sensor_reading[i + 1] - lenses[selected_lens].sensor_reading[i]);
+      lens_distance_raw = distance_val * CM_PER_METER;
+      lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
     }
   }
 }

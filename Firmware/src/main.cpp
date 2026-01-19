@@ -132,14 +132,16 @@ void setup()
 
 void loop()
 {
+  checkButtons();
+  setFilmCounter();
+
+  lens_sensor_reading = getLensSensorReading();
+  setLensDistance();
 
   if (millis() - lastActivityTime > SLEEPTIMEOUT)
   {
     sleepMode = true;
   }
-
-  checkButtons();
-  setFilmCounter();
 
   if (sleepMode == true)
   {
@@ -155,7 +157,6 @@ void loop()
 
     if (ui_mode == "main")
     {
-      setLensDistance();
       drawMainUI();
     }
     else if (ui_mode == "config")
@@ -164,7 +165,6 @@ void loop()
     }
     else if (ui_mode == "calib")
     {
-      lens_sensor_reading = getLensSensorReading() - LENS_CALIB_OFFSET;
       drawCalibUI();
     }
     else if (ui_mode == "reset_confirm")

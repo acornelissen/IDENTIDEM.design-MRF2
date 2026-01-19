@@ -2,7 +2,7 @@
 #define MRFCONSTANTS_H
 
 // Constants
-#define FWVERSION "7.5"
+#define FWVERSION "9.0.0"
 #define SLEEPTIMEOUT 60000
 
 const unsigned long SERIAL_BAUD_RATE = 115200;
@@ -57,13 +57,13 @@ const int DISPLAY_BOOT_CURSOR_Y = 10;
 const int DISPLAY_I2C_FREQUENCY_HZ = 1000000;
 const int DISPLAY_COMMAND_FLIP = 0xC8;
 
-const int SMOOTHING_WINDOW_SIZE = 15;
+const int SMOOTHING_WINDOW_SIZE = 13;
 const int SENSOR_CHANNEL_COUNT = 2;
 const int LENS_SENSOR_CHANNEL = 0;
 const int LENS_INF_THRESHOLD = 5;
-const int LENS_CALIB_OFFSET = 0;
 const int LENS_INFINITY_RAW = 9999999;
 const int LENS_ACTIVITY_THRESHOLD = 3;
+const int LENS_SNAP_DEADZONE = 3;
 const int FOCUS_RADIUS_MIN = 3;
 const int FOCUS_RADIUS_MAX = 30;
 const int FOCUS_RING_THICKNESS_MIN = 1;
@@ -74,9 +74,8 @@ const float LENS_OUTLIER_THRESHOLD = 50.0;
 const float CM_TO_MM = 10.0f;
 const int CM_PER_METER = 100;
 
-#define RETICLE_OFFSET_X -8
+#define RETICLE_OFFSET_X -5
 #define RETICLE_OFFSET_Y 0
-#define CLOSE_FOCUS 100
 #define LIDAR_OFFSET 40
 const int LIDAR_DISTANCE_DIVISOR = 10;
 const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 500;
@@ -97,7 +96,6 @@ const float LIDAR_CAL_REF_TRUE_CM = 100.0f;
 #define PARALLAX_MAX_SHIFT_PX 24        // guardrail on-screen shift
 
 // Viewfinder overlay geometry (approximate) used to size framelines.
-const float VIEWFINDER_FOV_DEG = 15.2f;
 
 #define DISTANCE_MIN 5
 #define DISTANCE_MAX 18
