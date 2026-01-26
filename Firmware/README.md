@@ -1,44 +1,44 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 7.0  
+**Version**: 9.0.0  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
 ## Overview
 
-MRF2 Firmware drives the ESP32-S3-based medium format LiDAR rangefinder camera. For the hardware overview, PCBs, CAD, and BoM, see the root `README.md`; this document focuses on firmware build, architecture, and pin-level details.
+MRF2 Firmware drives the ESP32-S3-based medium format LiDAR rangefinder camera. For the hardware overview, PCBs, CAD, and BoM, see the root `README.md`; this document focuses on firmware architecture, configuration, and pin-level details.
 
 ## Hardware Interface (pins)
 
-- **LiDAR Serial**: RX/TX pins on Hardware Serial 2
+- **LiDAR Serial**: Hardware Serial 2 at 921600 baud
 - **I2C Bus**: All I2C devices share the default I2C bus
 - **Lens Position**: ADS1015 channel 1
 - **Left Button**: GPIO 9 (internal pull-up)
 - **Right Button**: GPIO 10 (internal pull-up)
-- **Status LED**: Seesaw NeoPixel for visual feedback
+- **Status LED**: Seesaw NeoPixel at address 0x36
 
 ## Software Dependencies
 
-The project uses PlatformIO with the following libraries (versions resolved from the current build):
+The project uses PlatformIO with the following libraries (declared in `platformio.ini`):
 
-- Adafruit SSD1306 (2.5.13)
-- Adafruit GFX Library (1.12.1)
-- U8g2_for_Adafruit_GFX (1.8.0)
-- Adafruit MAX1704X (1.0.3)
-- DTS6012M_UART (1.2.0)
-- BH1750 (1.3.0)
-- Bounce2 (2.72.0)
-- Adafruit SH110X (2.1.12)
-- Adafruit seesaw Library (1.7.9)
-- Adafruit ADS1X15 (2.5.0)
-- Adafruit MPU6050 (2.2.6)
-- Adafruit BusIO (1.17.1)
-- Adafruit Unified Sensor (1.1.15)
+- Adafruit SSD1306 (^2.5.9)
+- Adafruit GFX Library (^1.11.9)
+- U8g2_for_Adafruit_GFX (^1.8.0)
+- Adafruit MAX1704X (^1.0.3)
+- DTS6012M_UART (^1.0.0)
+- BH1750 (^1.3.0)
+- Bounce2 (^2.72)
+- Adafruit SH110X (^2.1.10)
+- Adafruit seesaw Library (^1.7.6)
+- Adafruit ADS1X15 (^2.5.0)
+- Adafruit MPU6050 (^2.2.6)
+- Adafruit BusIO (^1.16.0)
+- Adafruit Unified Sensor (^1.1.14)
 
 ## Project Structure
 
 ```
-MRF2 Firmware/
+Firmware/
 ├── include/          # Header files
 │   ├── mrfconstants.h    # System constants and configuration
 │   ├── hardware.h        # Hardware initialization declarations
@@ -69,14 +69,14 @@ MRF2 Firmware/
 
 ### Main Program Flow
 
-1. **Setup Phase** (`setup()` in main.cpp:47-133)
+1. **Setup Phase** (`setup()` in `src/main.cpp`)
    - Disable WiFi/Bluetooth for power saving
    - Load saved preferences
    - Initialize all hardware components
    - Configure displays and show boot screen
    - Start sensor readings
 
-2. **Main Loop** (`loop()` in main.cpp:135-174)
+2. **Main Loop** (`loop()` in `src/main.cpp`)
    - Check for sleep timeout (60 seconds)
    - Process button inputs
    - Update film counter
@@ -94,7 +94,7 @@ MRF2 Firmware/
 
 #### Distance Measurement
 - LiDAR sensor provides primary distance reading
-- Moving average filter (15 samples) for stability
+- Moving average filter (13 samples) for stability
 - Configurable offset compensation
 - Range: 5cm to 18m
 
@@ -105,7 +105,7 @@ MRF2 Firmware/
 - Aperture support for lens profiles
 
 #### Lens System
-- Mamiya Univeral Press Lenses
+- Mamiya Press / Universal Press lenses
 - Support for multiple lens profiles
 - Position sensing via ADC
 - 7-point calibration curve
@@ -118,12 +118,9 @@ MRF2 Firmware/
 
 ## Building and Flashing
 
-### Prerequisites
-1. Install [PlatformIO](https://platformio.org/)
-2. Clone this repository
-3. Connect ESP32-S3 board via USB
+For the step-by-step VS Code + PlatformIO workflow, see `Documentation/flash-firmware/README.md`.
 
-### Build Commands
+### CLI Build Commands
 ```bash
 # Build the project
 pio run
@@ -135,20 +132,13 @@ pio run --target upload
 pio run --target monitor
 ```
 
-### First-Time Setup
-
-1. Flash the firmware
-2. Enter calibration mode to set up lens profiles
-3. Configure ISO and aperture settings
-4. Select appropriate film format
-
 ## Configuration
 
 ### Constants (mrfconstants.h)
 
 - `FWVERSION`: Firmware version string
 - `SLEEPTIMEOUT`: Auto-sleep delay (60000ms)
-- `SMOOTHING_WINDOW_SIZE`: Filter window (15 samples)
+- `SMOOTHING_WINDOW_SIZE`: Filter window (13 samples)
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
 - `LIDAR_OFFSET`: Distance calibration offset
 
@@ -160,8 +150,9 @@ The system saves:
 - Film format selection
 - ISO setting
 - Aperture setting
-- Film counter position
-- Calibration data
+- Film counter and encoder position
+- Parallax toggle state
+- Lens calibration data
 
 ## Troubleshooting
 
