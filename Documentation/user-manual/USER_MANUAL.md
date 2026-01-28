@@ -1,4 +1,4 @@
-# MRF2 Firmware User Manual
+# MRF2 User Manual
 
 **Firmware version:** 9.0.0
 
