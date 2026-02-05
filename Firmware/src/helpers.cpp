@@ -110,6 +110,11 @@ int calcMovingAvg(int index, int sensorVal)
 
 int rejectOutliers(int index, int sensorVal)
 {
+  if (index == LENS_SENSOR_CHANNEL)
+  {
+    return sensorVal;
+  }
+
   if (lastValidValue[index] == 0)
   {
     lastValidValue[index] = sensorVal;
