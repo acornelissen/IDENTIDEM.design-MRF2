@@ -9,6 +9,7 @@
 #include "lenses.h"
 #include "helpers.h"
 #include "cyclefuncs.h"
+#include "setfuncs.h"
 
 // Functions to check and act on button presses
 // ---------------------
@@ -53,7 +54,14 @@ void checkButtons()
         }
         if (calib_step == 1) // This should likely be an else if
         {
-          calib_distance_set[current_calib_distance] = lens_sensor_reading;
+          long sum = 0;
+          for (int i = 0; i < CALIB_SAMPLE_COUNT; i++)
+          {
+            sum += getLensSensorReading();
+            delay(CALIB_SAMPLE_DELAY_MS);
+          }
+          int averagedReading = static_cast<int>(sum / CALIB_SAMPLE_COUNT);
+          calib_distance_set[current_calib_distance] = averagedReading;
           current_calib_distance++;
           if (current_calib_distance >= CALIB_DISTANCE_COUNT)
           {

@@ -99,7 +99,24 @@ void setDistance()
 // https://github.com/makeabilitylab/arduino/blob/master/Filters/MovingAverageFilter/MovingAverageFilter.ino
 int getLensSensorReading()
 {
-  int sensorVal = theads.readADC_SingleEnded(LENS_ADC_PIN);
+  if (LENS_ADC_QUIET_DELAY_MS > 0)
+  {
+    delay(LENS_ADC_QUIET_DELAY_MS);
+  }
+  long sampleTotal = 0;
+  for (int i = 0; i < LENS_ADC_SAMPLE_COUNT; i++)
+  {
+    sampleTotal += theads.readADC_SingleEnded(LENS_ADC_PIN);
+    if (LENS_ADC_SAMPLE_DELAY_US > 0)
+    {
+      delayMicroseconds(LENS_ADC_SAMPLE_DELAY_US);
+    }
+  }
+  int sensorVal = static_cast<int>(sampleTotal / LENS_ADC_SAMPLE_COUNT);
+  if (ui_mode == "main")
+  {
+    sensorVal += LENS_ADC_MAIN_OFFSET;
+  }
   // Make sure your sensor's + and GND are connected the right way around.
   // You want the value to increase as the focus distance increases.
   // 1m should be smallest, 10m should be largest. If not, swap the wires.
@@ -113,6 +130,7 @@ void setLensDistance()
 {
   static int prevSnapIndex = -1;
   static int prevSnapLens = -1;
+  const int readingCount = sizeof(lenses[selected_lens].sensor_reading) / sizeof(lenses[selected_lens].sensor_reading[0]);
 
   if (selected_lens != prevSnapLens)
   {
@@ -133,11 +151,16 @@ void setLensDistance()
 
   if (lenses[selected_lens].calibrated)
   {
-    int snapDelta = LENS_SNAP_DEADZONE + 1;
-    for (int i = 0; i < sizeof(lenses[selected_lens].sensor_reading) / sizeof(lenses[selected_lens].sensor_reading[0]); i++)
+    int snapDelta = max(LENS_SNAP_DEADZONE, LENS_SNAP_DEADZONE_FAR) + 1;
+    for (int i = 0; i < readingCount; i++)
     {
       int delta = abs(lens_sensor_reading - lenses[selected_lens].sensor_reading[i]);
-      if (delta <= LENS_SNAP_DEADZONE && delta < snapDelta)
+      int snapDeadzone = LENS_SNAP_DEADZONE;
+      if (lenses[selected_lens].distance[i] >= LENS_SNAP_FAR_DISTANCE_M)
+      {
+        snapDeadzone = LENS_SNAP_DEADZONE_FAR;
+      }
+      if (delta <= snapDeadzone && delta < snapDelta)
       {
         snapDelta = delta;
         snapIndex = i;
@@ -172,14 +195,14 @@ void setLensDistance()
     return;
   }
 
-  for (int i = 0; i < sizeof(lenses[selected_lens].sensor_reading) / sizeof(lenses[selected_lens].sensor_reading[0]); i++)
+  for (int i = 0; i < readingCount; i++)
   {
     if (lens_sensor_reading < lenses[selected_lens].sensor_reading[0])
     {
       lens_distance_raw = lenses[selected_lens].distance[0] * CM_PER_METER;
       lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
     }
-    else if (lens_sensor_reading > lenses[selected_lens].sensor_reading[sizeof(lenses[selected_lens].sensor_reading) / sizeof(lenses[selected_lens].sensor_reading[0]) - 1] + LENS_INF_THRESHOLD)
+    else if (lens_sensor_reading > lenses[selected_lens].sensor_reading[readingCount - 1] + LENS_INF_THRESHOLD)
     {
       lens_distance_raw = LENS_INFINITY_RAW;
       lens_distance_cm = "Inf.";
@@ -189,7 +212,9 @@ void setLensDistance()
       lens_distance_raw = lenses[selected_lens].distance[i] * CM_PER_METER;
       lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
     }
-    else if (lens_sensor_reading > lenses[selected_lens].sensor_reading[i] && lens_sensor_reading < lenses[selected_lens].sensor_reading[i + 1])
+    else if (i + 1 < readingCount &&
+             lens_sensor_reading > lenses[selected_lens].sensor_reading[i] &&
+             lens_sensor_reading < lenses[selected_lens].sensor_reading[i + 1])
     {
       float distance_val = lenses[selected_lens].distance[i] + (lens_sensor_reading - lenses[selected_lens].sensor_reading[i]) * (lenses[selected_lens].distance[i + 1] - lenses[selected_lens].distance[i]) / (lenses[selected_lens].sensor_reading[i + 1] - lenses[selected_lens].sensor_reading[i]);
       lens_distance_raw = distance_val * CM_PER_METER;

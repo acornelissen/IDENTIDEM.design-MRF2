@@ -63,7 +63,13 @@ const int LENS_SENSOR_CHANNEL = 0;
 const int LENS_INF_THRESHOLD = 5;
 const int LENS_INFINITY_RAW = 9999999;
 const int LENS_ACTIVITY_THRESHOLD = 3;
-const int LENS_SNAP_DEADZONE = 3;
+const int LENS_SNAP_DEADZONE = 1;
+const int LENS_SNAP_DEADZONE_FAR = 3;
+const float LENS_SNAP_FAR_DISTANCE_M = 3.0f;
+const int LENS_ADC_SAMPLE_COUNT = 3;
+const int LENS_ADC_SAMPLE_DELAY_US = 200;
+const int LENS_ADC_QUIET_DELAY_MS = 1;
+const int LENS_ADC_MAIN_OFFSET = 4;
 const int FOCUS_RADIUS_MIN = 3;
 const int FOCUS_RADIUS_MAX = 30;
 const int FOCUS_RING_THICKNESS_MIN = 1;
@@ -177,6 +183,8 @@ const int EXT_SLEEP_TEXT_Y = 22;
 const int ISOS[] = {50, 80, 100, 125, 200, 400, 500, 640, 800, 1600, 3200, 6400};
 const float CALIB_DISTANCES[] = {1, 1.2, 1.5, 2, 3, 5, 10};
 const int CALIB_DISTANCE_COUNT = sizeof(CALIB_DISTANCES) / sizeof(CALIB_DISTANCES[0]);
+const int CALIB_SAMPLE_COUNT = 8;
+const int CALIB_SAMPLE_DELAY_MS = 5;
 
 const int K = 20;
 

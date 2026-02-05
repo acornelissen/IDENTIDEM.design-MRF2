@@ -10,6 +10,8 @@
 
 // Helper functions
 // ---------------------
+static int lastValidValue[SENSOR_CHANNEL_COUNT] = {0, 0};
+
 float getFirstNonZeroAperture()
 {
   for (int i = 0; i < sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]); i++)
@@ -108,8 +110,6 @@ int calcMovingAvg(int index, int sensorVal)
 
 int rejectOutliers(int index, int sensorVal)
 {
-  static int lastValidValue[SENSOR_CHANNEL_COUNT] = {0, 0};
-
   if (lastValidValue[index] == 0)
   {
     lastValidValue[index] = sensorVal;

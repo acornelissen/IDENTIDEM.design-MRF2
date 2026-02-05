@@ -135,9 +135,6 @@ void loop()
   checkButtons();
   setFilmCounter();
 
-  lens_sensor_reading = getLensSensorReading();
-  setLensDistance();
-
   if (millis() - lastActivityTime > SLEEPTIMEOUT)
   {
     sleepMode = true;
@@ -173,5 +170,8 @@ void loop()
     }
     drawExternalUI();
   }
+
+  lens_sensor_reading = getLensSensorReading();
+  setLensDistance();
 }
 // ---------------------
