@@ -6,6 +6,9 @@ MRF2 is version two of an open hardware / open firmware medium-format rangefinde
 
 It is based on the [Panomicron Thulium](https://www.panomicron.com/thulium) designed by Oscar Oweson, has been heavily modified, but has kept the best ideas from that camera. 😉
 
+Keep checking back regularly as I keep making improvements as I use my own copy of this camera. 
+You can [support me on Patreon](https://patreon.com/IDENTIDEMdesign), or just show me your builds and the photos you're making with the camera!
+
 
 ## 📦 Repo at a Glance
 
