@@ -32,7 +32,18 @@ Adafruit_MAX17048 maxlipo;
 BH1750 lightMeter;
 // LiDAR setup
 HardwareSerial lidarSerial(LIDAR_SERIAL_PORT); // Using serial port 2
-DTS6012M_UART lidar(lidarSerial);
+namespace
+{
+DTSConfig makeLidarConfig()
+{
+  DTSConfig config;
+  config.baudRate = LIDAR_BAUD_RATE;
+  config.crcByteOrder = DTSCRCByteOrder::AUTO;
+  return config;
+}
+} // namespace
+
+DTS6012M_UART lidar(lidarSerial, makeLidarConfig());
 // Display setup
 Adafruit_SH1107 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET, DISPLAY_I2C_FREQUENCY_HZ, DISPLAY_I2C_FREQUENCY_HZ);
 Adafruit_SSD1306 display_ext(SCREEN_WIDTH, SCREEN_HEIGHT_EXT, &Wire, OLED_RESET);

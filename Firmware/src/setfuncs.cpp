@@ -63,8 +63,9 @@ void setDistance()
     return;
   }
 
-  if (lidar.update())
-  { // Get data from Lidar
+  DTSError lidarUpdateError = static_cast<DTSError>(lidar.update());
+  if (lidarUpdateError == DTSError::NONE)
+  { // Get data from LiDAR
     lastLidarUpdateMs = millis();
     int raw_cm = (lidar.getDistance() / LIDAR_DISTANCE_DIVISOR) + LIDAR_OFFSET;
     distance = applyLidarCalibrationCm(raw_cm);
@@ -362,16 +363,22 @@ void toggleLidar(bool lidarStatusParam) // Renamed parameter to avoid conflict w
   {
     if (lidarEnabled)
     {
-      lidar.disableSensor();
-      lidarEnabled = false;
+      DTSError disableError = static_cast<DTSError>(lidar.disableSensor());
+      if (disableError == DTSError::NONE)
+      {
+        lidarEnabled = false;
+      }
     }
   }
   else
   {
     if (!lidarEnabled)
     {
-      lidar.enableSensor();
-      lidarEnabled = true;
+      DTSError enableError = static_cast<DTSError>(lidar.enableSensor());
+      if (enableError == DTSError::NONE)
+      {
+        lidarEnabled = true;
+      }
     }
   }
 }

@@ -95,10 +95,15 @@ void setup()
   display_ext.clearDisplay();
   display_ext.display();
 
-  // Start the LiDAR sensor
-  lidarSerial.begin(LIDAR_BAUD_RATE, SERIAL_8N1, RXD2, TXD2);
+  // Start the LiDAR sensor using the v2 initialization interface.
+  DTSResult lidarInit = lidar.begin(LIDAR_BAUD_RATE, RXD2, TXD2);
+  if (lidarInit != DTSError::NONE)
+  {
+    lidarEnabled = false;
+    Serial.print(F("LiDAR init error: "));
+    Serial.println(static_cast<int>(static_cast<DTSError>(lidarInit)));
+  }
   delay(LIDAR_SERIAL_STARTUP_DELAY_MS);
-  lidar.begin();
 
   // Clear the moving average arrays
   for (int channel = 0; channel < SENSOR_CHANNEL_COUNT; channel++)
