@@ -47,27 +47,36 @@ static int applyLidarCalibrationCm(int raw_cm)
 // ---------------------
 void setDistance()
 {
-  static unsigned long lastLidarUpdateMs = 0;
+  static unsigned long lastValidLidarMeasurementMs = 0;
 
   if (!lidarEnabled)
   {
     return;
   }
 
-  if (lidarSerial.available() == 0)
-  {
-    if (millis() - lastLidarUpdateMs > LIDAR_NO_DATA_TIMEOUT_MS)
-    {
-      distance_cm = "...";
-    }
-    return;
-  }
-
   DTSError lidarUpdateError = static_cast<DTSError>(lidar.update());
   if (lidarUpdateError == DTSError::NONE)
-  { // Get data from LiDAR
-    lastLidarUpdateMs = millis();
-    int raw_cm = (lidar.getDistance() / LIDAR_DISTANCE_DIVISOR) + LIDAR_OFFSET;
+  {
+    // Only accept high-confidence measurements to reduce jitter and outliers.
+    if (!lidar.isDataValid())
+    {
+      return;
+    }
+
+    DataQuality quality = lidar.getDataQuality();
+    if (quality != DataQuality::EXCELLENT && quality != DataQuality::GOOD)
+    {
+      return;
+    }
+
+    uint16_t raw_distance_mm = lidar.getDistance();
+    if (raw_distance_mm == DTS_INVALID_DISTANCE)
+    {
+      return;
+    }
+
+    lastValidLidarMeasurementMs = millis();
+    int raw_cm = (static_cast<int>(raw_distance_mm) / LIDAR_DISTANCE_DIVISOR) + LIDAR_OFFSET;
     distance = applyLidarCalibrationCm(raw_cm);
     if (distance != prev_distance || distance_cm == "...")
     {
@@ -90,9 +99,12 @@ void setDistance()
       prev_distance = distance;
     }
   }
-  else
+  else if (lidarUpdateError == DTSError::TIMEOUT)
   {
-    distance_cm = "...";
+    if (millis() - lastValidLidarMeasurementMs > LIDAR_NO_DATA_TIMEOUT_MS)
+    {
+      distance_cm = "...";
+    }
   }
 }
 
