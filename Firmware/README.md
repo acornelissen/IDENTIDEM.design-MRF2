@@ -25,7 +25,7 @@ The project uses PlatformIO with the following libraries (declared in `platformi
 - Adafruit GFX Library (^1.11.9)
 - U8g2_for_Adafruit_GFX (^1.8.0)
 - Adafruit MAX1704X (^1.0.3)
-- DTS6012M_UART (^1.0.0)
+- DTS6012M_UART (^2.1.1)
 - BH1750 (^1.3.0)
 - Bounce2 (^2.72)
 - Adafruit SH110X (^2.1.10)
@@ -93,9 +93,10 @@ Firmware/
 ### Key Features Implementation
 
 #### Distance Measurement
-- LiDAR sensor provides primary distance reading
-- Moving average filter (13 samples) for stability
-- Configurable offset compensation
+- DTS6012M v2 provides primary and secondary returns per sample
+- Confidence scoring combines data quality, intensity, temporal consistency, and lens-position prior
+- Two-stage correction: library scale/offset in mm, then curve/residual correction in cm
+- Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
 - Range: 5cm to 18m
 
 #### Light Metering
@@ -140,7 +141,13 @@ pio run --target monitor
 - `SLEEPTIMEOUT`: Auto-sleep delay (60000ms)
 - `SMOOTHING_WINDOW_SIZE`: Filter window (13 samples)
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
-- `LIDAR_OFFSET`: Distance calibration offset
+- `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor
+- `LIDAR_LIBRARY_DISTANCE_OFFSET_MM`: LiDAR library distance offset in mm
+- `LIDAR_NO_DATA_TIMEOUT_MS`: Timeout before showing unavailable distance
+- `LIDAR_FUSION_MIN_INTENSITY`: Minimum intensity gate for valid candidates
+- `LIDAR_CONFIDENCE_HIGH` / `LIDAR_CONFIDENCE_MEDIUM`: Confidence thresholds for smoothing behavior
+- `LIDAR_CAL_CUTOFF_CM` / `LIDAR_CAL_REF_RAW_CM` / `LIDAR_CAL_REF_TRUE_CM`: Near-range calibration curve parameters
+- `LIDAR_RESIDUAL_DIST_CM` / `LIDAR_RESIDUAL_DELTA_CM`: Piecewise residual correction table
 
 ### Preferences Storage
 
