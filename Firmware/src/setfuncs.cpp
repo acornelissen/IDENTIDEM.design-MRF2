@@ -43,6 +43,160 @@ static int applyLidarCalibrationCm(int raw_cm)
   return static_cast<int>(roundf(scaled));
 }
 
+static int applyLidarResidualCorrectionCm(int corrected_cm)
+{
+  if (corrected_cm <= 0 || LIDAR_RESIDUAL_POINT_COUNT <= 0)
+  {
+    return corrected_cm;
+  }
+
+  if (corrected_cm <= LIDAR_RESIDUAL_DIST_CM[0])
+  {
+    return corrected_cm + LIDAR_RESIDUAL_DELTA_CM[0];
+  }
+
+  for (int i = 1; i < LIDAR_RESIDUAL_POINT_COUNT; i++)
+  {
+    if (corrected_cm <= LIDAR_RESIDUAL_DIST_CM[i])
+    {
+      int x0 = LIDAR_RESIDUAL_DIST_CM[i - 1];
+      int x1 = LIDAR_RESIDUAL_DIST_CM[i];
+      int y0 = LIDAR_RESIDUAL_DELTA_CM[i - 1];
+      int y1 = LIDAR_RESIDUAL_DELTA_CM[i];
+      float t = static_cast<float>(corrected_cm - x0) / static_cast<float>(x1 - x0);
+      int residual_delta = static_cast<int>(roundf(static_cast<float>(y0) + (static_cast<float>(y1 - y0) * t)));
+      return corrected_cm + residual_delta;
+    }
+  }
+
+  return corrected_cm + LIDAR_RESIDUAL_DELTA_CM[LIDAR_RESIDUAL_POINT_COUNT - 1];
+}
+
+static int applyLidarDoubleCorrectionCm(int raw_cm)
+{
+  int curve_corrected_cm = applyLidarCalibrationCm(raw_cm);
+  return applyLidarResidualCorrectionCm(curve_corrected_cm);
+}
+
+static int qualityBaseScore(DataQuality quality)
+{
+  switch (quality)
+  {
+  case DataQuality::EXCELLENT:
+    return 80;
+  case DataQuality::GOOD:
+    return 65;
+  case DataQuality::FAIR:
+    return 45;
+  case DataQuality::POOR:
+    return 25;
+  default:
+    return 0;
+  }
+}
+
+static bool getLensPriorCm(int &lens_prior_cm)
+{
+  if (!lenses[selected_lens].calibrated)
+  {
+    return false;
+  }
+
+  if (lens_distance_raw <= 0 || lens_distance_raw == LENS_INFINITY_RAW)
+  {
+    return false;
+  }
+
+  lens_prior_cm = lens_distance_raw;
+  return true;
+}
+
+struct LidarCandidate
+{
+  bool valid;
+  int distance_cm;
+  int confidence;
+};
+
+static LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
+                                          uint16_t intensity,
+                                          DataQuality quality,
+                                          bool secondary_candidate,
+                                          int previous_distance_cm,
+                                          bool has_lens_prior,
+                                          int lens_prior_cm)
+{
+  LidarCandidate candidate = {false, 0, 0};
+
+  if (raw_distance_mm == DTS_INVALID_DISTANCE || intensity < LIDAR_FUSION_MIN_INTENSITY)
+  {
+    return candidate;
+  }
+
+  int raw_cm = static_cast<int>(raw_distance_mm) / LIDAR_DISTANCE_DIVISOR;
+  if (raw_cm <= 0)
+  {
+    return candidate;
+  }
+
+  int corrected_cm = applyLidarDoubleCorrectionCm(raw_cm);
+  if (corrected_cm <= 0)
+  {
+    return candidate;
+  }
+
+  int confidence = qualityBaseScore(quality);
+  confidence += min(20, static_cast<int>(intensity / 150));
+
+  if (previous_distance_cm > 0)
+  {
+    confidence -= min(25, abs(corrected_cm - previous_distance_cm) / 8);
+  }
+
+  if (has_lens_prior)
+  {
+    float prior_weight = (quality == DataQuality::EXCELLENT) ? LIDAR_LENS_PRIOR_WEIGHT_EXCELLENT : LIDAR_LENS_PRIOR_WEIGHT_GOOD;
+    int prior_penalty = static_cast<int>(roundf(static_cast<float>(abs(corrected_cm - lens_prior_cm)) * prior_weight));
+    confidence -= min(20, prior_penalty);
+  }
+
+  if (secondary_candidate)
+  {
+    confidence -= 2;
+  }
+
+  confidence = constrain(confidence, 0, 100);
+  if (confidence == 0)
+  {
+    return candidate;
+  }
+
+  candidate.valid = true;
+  candidate.distance_cm = corrected_cm;
+  candidate.confidence = confidence;
+  return candidate;
+}
+
+static void setDistanceDisplayString(int corrected_cm)
+{
+  if (corrected_cm <= 0)
+  {
+    distance_cm = "> " + String(DISTANCE_MAX) + "m";
+  }
+  else if (corrected_cm > (DISTANCE_MAX * CM_PER_METER))
+  {
+    distance_cm = "> " + String(DISTANCE_MAX) + "m";
+  }
+  else if (corrected_cm < DISTANCE_MIN)
+  {
+    distance_cm = "< " + String(DISTANCE_MIN) + "cm";
+  }
+  else
+  {
+    distance_cm = cmToReadable(corrected_cm, DISTANCE_DECIMAL_PLACES);
+  }
+}
+
 // Functions to read values from sensors and set variables
 // ---------------------
 void setDistance()
@@ -57,45 +211,72 @@ void setDistance()
   DTSError lidarUpdateError = static_cast<DTSError>(lidar.update());
   if (lidarUpdateError == DTSError::NONE)
   {
-    // Only accept high-confidence measurements to reduce jitter and outliers.
-    if (!lidar.isDataValid())
+    DTSMeasurement measurement = lidar.getMeasurement();
+
+    int lens_prior_cm = 0;
+    bool has_lens_prior = getLensPriorCm(lens_prior_cm);
+
+    DataQuality secondary_quality = measurement.secondaryQuality;
+    if (secondary_quality == DataQuality::INVALID && measurement.secondaryDistance_mm != DTS_INVALID_DISTANCE)
     {
-      return;
+      secondary_quality = measurement.primaryQuality;
     }
 
-    DataQuality quality = lidar.getDataQuality();
-    if (quality != DataQuality::EXCELLENT && quality != DataQuality::GOOD)
+    LidarCandidate primary = buildLidarCandidate(measurement.primaryDistance_mm,
+                                                 measurement.primaryIntensity,
+                                                 measurement.primaryQuality,
+                                                 false,
+                                                 prev_distance,
+                                                 has_lens_prior,
+                                                 lens_prior_cm);
+
+    LidarCandidate secondary = buildLidarCandidate(measurement.secondaryDistance_mm,
+                                                   measurement.secondaryIntensity,
+                                                   secondary_quality,
+                                                   true,
+                                                   prev_distance,
+                                                   has_lens_prior,
+                                                   lens_prior_cm);
+
+    LidarCandidate chosen = primary;
+    if (!chosen.valid || (secondary.valid && secondary.confidence > chosen.confidence))
     {
-      return;
+      chosen = secondary;
     }
 
-    uint16_t raw_distance_mm = lidar.getDistance();
-    if (raw_distance_mm == DTS_INVALID_DISTANCE)
+    if (!chosen.valid)
     {
       return;
     }
 
     lastValidLidarMeasurementMs = millis();
-    int raw_cm = (static_cast<int>(raw_distance_mm) / LIDAR_DISTANCE_DIVISOR) + LIDAR_OFFSET;
-    distance = applyLidarCalibrationCm(raw_cm);
-    if (distance != prev_distance || distance_cm == "...")
+
+    int next_distance_cm = chosen.distance_cm;
+    if (prev_distance > 0)
     {
-      if (raw_cm <= LIDAR_OFFSET)
+      if (chosen.confidence >= LIDAR_CONFIDENCE_HIGH)
       {
-        distance_cm = "> " + String(DISTANCE_MAX) + "m";
+        distance = static_cast<int16_t>(next_distance_cm);
       }
-      else if (distance > (DISTANCE_MAX * CM_PER_METER))
+      else if (chosen.confidence >= LIDAR_CONFIDENCE_MEDIUM)
       {
-        distance_cm = "> " + String(DISTANCE_MAX) + "m";
-      }
-      else if (distance < DISTANCE_MIN)
-      {
-        distance_cm = "< " + String(DISTANCE_MIN) + "cm";
+        float blended = (static_cast<float>(prev_distance) * (1.0f - LIDAR_MEDIUM_CONF_BLEND)) +
+                        (static_cast<float>(next_distance_cm) * LIDAR_MEDIUM_CONF_BLEND);
+        distance = static_cast<int16_t>(roundf(blended));
       }
       else
       {
-        distance_cm = cmToReadable(distance, DISTANCE_DECIMAL_PLACES);
+        distance = prev_distance;
       }
+    }
+    else
+    {
+      distance = static_cast<int16_t>(next_distance_cm);
+    }
+
+    if (distance != prev_distance || distance_cm == "...")
+    {
+      setDistanceDisplayString(distance);
       prev_distance = distance;
     }
   }

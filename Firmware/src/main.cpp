@@ -103,6 +103,12 @@ void setup()
     Serial.print(F("LiDAR init error: "));
     Serial.println(static_cast<int>(static_cast<DTSError>(lidarInit)));
   }
+  else
+  {
+    // Stage 1 correction: global linear scale/offset in library space (mm).
+    lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
+    lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
+  }
   delay(LIDAR_SERIAL_STARTUP_DELAY_MS);
 
   // Clear the moving average arrays
