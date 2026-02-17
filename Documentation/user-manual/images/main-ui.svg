@@ -7,6 +7,10 @@
   <text x="46" y="8" font-family="monospace" font-size="6" fill="#000000">f8</text>
   <text x="2" y="14" font-family="monospace" font-size="6" fill="#000000">1/125</text>
   <text x="68" y="8" font-family="monospace" font-size="6" fill="#000000">Dist:2.5m</text>
+  <rect x="112" y="10" width="2" height="2" fill="#000000"/>
+  <rect x="115" y="10" width="2" height="2" fill="#000000"/>
+  <rect x="118" y="10" width="2" height="2" fill="#000000"/>
+  <rect x="121" y="10" width="2" height="2" fill="#ffffff" stroke="#000000" stroke-width="0.3"/>
   <text x="68" y="14" font-family="monospace" font-size="6" fill="#000000">Lens:2.5m</text>
 
   <rect x="0" y="17" width="128" height="109" fill="#000000"/>

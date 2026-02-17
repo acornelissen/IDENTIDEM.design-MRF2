@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 9.0.0
+**Firmware version:** 9.5.0
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -20,7 +20,7 @@ If this is your first time using the camera, this sequence keeps things simple a
 ## Quick start (after initial setup)
 
 1. Power on the camera. The external display shows a short boot screen, then the main UI appears.
-2. Check the **main screen** for ISO, aperture, shutter speed, LiDAR distance, and lens distance.
+2. Check the **main screen** for ISO, aperture, shutter speed, LiDAR distance, LiDAR quality blocks, and lens distance.
 3. Long-press **Right (R)** for 3 seconds to enter **Setup** and make changes.
 4. Use the **advance lever** to move the film; the external display shows the frame counter and progress bar.
 
@@ -54,6 +54,7 @@ The main screen displays:
 - **Aperture** (upper center-left)
 - **Shutter speed** (lower left)
 - **LiDAR distance** (upper right, labeled "Dist")
+- **LiDAR quality indicator** (4 small squares under `Dist:`)
 - **Lens distance** (lower right, labeled "Lens")
 - **Framelines** scaled to the selected film format
 - **Reticle and focus ring**
@@ -62,12 +63,24 @@ The main screen displays:
 ### Distance readouts
 
 - **LiDAR distance (Dist)**
+  - Uses LiDAR v2 primary/secondary returns with confidence scoring and correction for more stable readings.
   - Range: 5 cm to 18 m.
   - Displays `...` if the sensor has no recent data.
   - Displays `> 18m` or `< 5cm` when outside range.
 - **Lens distance (Lens)**
   - Based on calibration and the lens position sensor.
   - Displays `Inf.` when beyond the calibrated infinity threshold.
+
+### LiDAR quality indicator
+
+The four tiny squares under `Dist:` show return quality for the currently selected LiDAR reading:
+
+- **1 square**: Poor
+- **2 squares**: Fair
+- **3 squares**: Good
+- **4 squares**: Excellent
+
+When no valid recent LiDAR data is available (`Dist: ...`), the quality indicator clears.
 
 ### Light meter / shutter speed
 
@@ -189,6 +202,8 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 
 - **LiDAR distance shows `...`**
   - Verify LiDAR wiring and power. The UI updates only with valid sensor data.
+- **LiDAR quality stays at 1 square (Poor)**
+  - Check subject reflectivity/angle and ambient interference; low-intensity or unstable returns reduce confidence.
 - **Shutter speed reads `Bright!` or `Dark!`**
   - Adjust ISO and/or aperture, or verify the light meter sensor.
 - **Lens option does not show your lens**
