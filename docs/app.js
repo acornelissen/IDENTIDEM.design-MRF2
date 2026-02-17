@@ -398,7 +398,7 @@
   }
 
   function autoRetryTransientInstallFailure() {
-    const RETRY_DELAY_MS = 120;
+    const RETRY_DELAY_MS = 420;
     const DIALOG_RESHOW_DELAY_MS = 220;
     const watchedDialogs = new WeakSet();
     const retriedDialogs = new WeakSet();
@@ -463,6 +463,30 @@
       return errorCode === "failed_initialize" || normalizedMessage.includes("failed to initialize");
     };
 
+    const cloneInstallState = (installState) => {
+      if (!installState || typeof installState !== "object") return installState;
+      try {
+        return JSON.parse(JSON.stringify(installState));
+      } catch (error) {
+        return installState;
+      }
+    };
+
+    const maybeOpenPortForRetry = async (dialogEl) => {
+      if (!dialogEl || !dialogEl.port) return;
+      const port = dialogEl.port;
+      if (port.readable && port.writable) {
+        debug.log("install-auto-retry-port-ready");
+        return;
+      }
+      try {
+        await port.open({ baudRate: 115200, bufferSize: 8192 });
+        debug.log("install-auto-retry-port-opened");
+      } catch (error) {
+        debug.log("install-auto-retry-port-open-failed", { error });
+      }
+    };
+
     const maybeRetry = (dialogEl) => {
       if (!dialogEl || retriedDialogs.has(dialogEl)) return;
       logInstallStateIfChanged(dialogEl, "maybe-retry");
@@ -470,38 +494,53 @@
 
       retriedDialogs.add(dialogEl);
       debug.log("install-auto-retry-start");
+      const previousInstallState = cloneInstallState(dialogEl._installState);
+
+      const failRetry = (error) => {
+        console.warn("Automatic install retry failed", error);
+        debug.log("install-auto-retry-failed", { error });
+        if (previousInstallState) {
+          dialogEl._installState = previousInstallState;
+        } else {
+          dialogEl._installState = {
+            state: "error",
+            message: "Automatic retry failed. Please close and retry install.",
+            details: { error: "auto_retry_failed" },
+          };
+        }
+        if (typeof dialogEl.requestUpdate === "function") {
+          dialogEl.requestUpdate();
+        }
+        showDialog(dialogEl);
+        logInstallStateIfChanged(dialogEl, "auto-retry-failed");
+      };
+
       // Hide the first transient initialize failure while we auto-retry.
       hideDialog(dialogEl);
-      dialogEl._installState = {
-        state: "initializing",
-        message: "Retrying initialization...",
-        details: { done: false, autoRetry: true },
-      };
-      logInstallStateIfChanged(dialogEl, "auto-retry-set-state");
-      if (typeof dialogEl.requestUpdate === "function") {
-        dialogEl.requestUpdate();
-      }
       setTimeout(() => {
-        try {
+        (async () => {
+          await maybeOpenPortForRetry(dialogEl);
           if (typeof dialogEl._confirmInstall === "function") {
             const retryResult = dialogEl._confirmInstall();
             debug.log("install-auto-retry-dispatched");
             if (retryResult && typeof retryResult.catch === "function") {
               retryResult.catch((error) => {
-                console.warn("Automatic install retry failed", error);
-                debug.log("install-auto-retry-promise-failed", { error });
+                failRetry(error);
               });
             }
+          } else {
+            throw new Error("Install retry entry point is missing");
           }
-        } catch (error) {
-          console.warn("Automatic install retry failed", error);
-          debug.log("install-auto-retry-throw", { error });
-        } finally {
+        })()
+          .catch((error) => {
+            failRetry(error);
+          })
+          .finally(() => {
           setTimeout(() => {
             showDialog(dialogEl);
             logInstallStateIfChanged(dialogEl, "dialog-reshow");
           }, DIALOG_RESHOW_DELAY_MS);
-        }
+          });
       }, RETRY_DELAY_MS);
     };
 
