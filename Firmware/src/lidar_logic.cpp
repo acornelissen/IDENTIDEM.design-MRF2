@@ -89,6 +89,23 @@ int qualityBaseScore(DataQuality quality)
   }
 }
 
+int qualityLevelFromDataQuality(DataQuality quality)
+{
+  switch (quality)
+  {
+  case DataQuality::POOR:
+    return 1;
+  case DataQuality::FAIR:
+    return 2;
+  case DataQuality::GOOD:
+    return 3;
+  case DataQuality::EXCELLENT:
+    return 4;
+  default:
+    return 0;
+  }
+}
+
 LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
                                    uint16_t intensity,
                                    DataQuality quality,
@@ -97,7 +114,7 @@ LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
                                    bool has_lens_prior,
                                    int lens_prior_cm)
 {
-  LidarCandidate candidate = {false, 0, 0};
+  LidarCandidate candidate = {false, 0, 0, 0};
 
   if (raw_distance_mm == DTS_INVALID_DISTANCE || intensity < LIDAR_FUSION_MIN_INTENSITY)
   {
@@ -145,6 +162,7 @@ LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
   candidate.valid = true;
   candidate.distance_cm = corrected_cm;
   candidate.confidence = confidence;
+  candidate.quality_level = qualityLevelFromDataQuality(quality);
   return candidate;
 }
 } // namespace

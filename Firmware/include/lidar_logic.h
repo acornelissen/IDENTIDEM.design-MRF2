@@ -9,6 +9,7 @@ struct LidarCandidate
   bool valid;
   int distance_cm;
   int confidence;
+  int quality_level; // 1..4 (poor..excellent), 0 when invalid
 };
 
 LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,

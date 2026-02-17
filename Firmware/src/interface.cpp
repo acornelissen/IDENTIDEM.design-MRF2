@@ -118,6 +118,34 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
 #define INVERSE 2
 #endif
 
+static void drawLidarQualityIndicator()
+{
+  const int maxBlocks = 4;
+  int blocks = lidar_quality_level;
+  if (blocks < 0)
+  {
+    blocks = 0;
+  }
+  else if (blocks > maxBlocks)
+  {
+    blocks = maxBlocks;
+  }
+
+  for (int i = 0; i < maxBlocks; i++)
+  {
+    int x = MAIN_LIDAR_QUALITY_X + (i * (MAIN_LIDAR_QUALITY_SIZE + MAIN_LIDAR_QUALITY_GAP));
+    int y = MAIN_LIDAR_QUALITY_Y;
+    if (i < blocks)
+    {
+      display.fillRect(x, y, MAIN_LIDAR_QUALITY_SIZE, MAIN_LIDAR_QUALITY_SIZE, BLACK);
+    }
+    else
+    {
+      display.fillRect(x, y, MAIN_LIDAR_QUALITY_SIZE, MAIN_LIDAR_QUALITY_SIZE, WHITE);
+    }
+  }
+}
+
 // Functions to draw UI
 // ---------------------
 void drawMainUI()
@@ -149,6 +177,7 @@ void drawMainUI()
   u8g2.setCursor(MAIN_DISTANCE_X, MAIN_DISTANCE_Y);
   u8g2.print(F("Dist:"));
   u8g2.print(distance_cm);
+  drawLidarQualityIndicator();
   u8g2.setCursor(MAIN_LENS_X, MAIN_LENS_Y);
   u8g2.print(F("Lens:"));
   u8g2.print(lens_distance_cm);

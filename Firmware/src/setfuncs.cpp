@@ -67,6 +67,7 @@ void setDistance()
     }
 
     lastValidLidarMeasurementMs = now;
+    lidar_quality_level = chosen.quality_level;
 
     distance = static_cast<int16_t>(blendLidarDistance(prev_distance, chosen.distance_cm, chosen.confidence));
     if (distance != prev_distance || distance_cm == "...")
@@ -81,6 +82,7 @@ void setDistance()
     if (now - lastValidLidarMeasurementMs > LIDAR_NO_DATA_TIMEOUT_MS)
     {
       distance_cm = "...";
+      lidar_quality_level = 0;
     }
   }
 }
