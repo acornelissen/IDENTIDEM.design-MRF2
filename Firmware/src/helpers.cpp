@@ -12,14 +12,14 @@
 // ---------------------
 static int lastValidValue[SENSOR_CHANNEL_COUNT] = {0, 0};
 
-float getFirstNonZeroAperture()
+int getFirstNonZeroAperture()
 {
-  for (int i = 0; i < sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]); i++)
+  const int aperture_count = sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]);
+  for (int i = 0; i < aperture_count; i++)
   {
     if (lenses[selected_lens].apertures[i] != 0)
     {
-      return i; // This returns index, function name suggests it returns aperture value.
-                // Keeping original logic.
+      return i;
     }
   }
   return -1;
@@ -48,6 +48,10 @@ void loadPrefs()
     parallaxEnabled = prefs.getBool("parallax", true);
 
     int non_zero_aperture_index = getFirstNonZeroAperture();
+    if (non_zero_aperture_index < 0)
+    {
+      non_zero_aperture_index = 0;
+    }
 
     aperture = prefs.getFloat("aperture", lenses[selected_lens].apertures[non_zero_aperture_index]);
     aperture_index = prefs.getInt("aperture_index", non_zero_aperture_index);

@@ -40,6 +40,7 @@ extern int16_t distance;    // Distance to object in centimeters
 extern int16_t strength;    // Strength or quality of return signal
 extern int16_t temperature; // Internal temperature of Lidar sensor chip
 extern String distance_cm;
+extern int lidar_quality_level; // 0..4 (none, poor..excellent)
 extern bool lidarEnabled;
 
 // Battery gauge

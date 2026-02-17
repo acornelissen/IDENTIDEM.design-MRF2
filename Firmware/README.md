@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 9.0.0  
+**Version**: 9.5.0  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -25,7 +25,7 @@ The project uses PlatformIO with the following libraries (declared in `platformi
 - Adafruit GFX Library (^1.11.9)
 - U8g2_for_Adafruit_GFX (^1.8.0)
 - Adafruit MAX1704X (^1.0.3)
-- DTS6012M_UART (^1.0.0)
+- DTS6012M_UART (^2.1.1)
 - BH1750 (^1.3.0)
 - Bounce2 (^2.72)
 - Adafruit SH110X (^2.1.10)
@@ -49,7 +49,12 @@ Firmware/
 │   ├── helpers.h         # Utility functions
 │   ├── cyclefuncs.h      # Cycling and selection functions
 │   ├── setfuncs.h        # Sensor reading and setting functions
-│   └── inputs.h          # Input handling functions
+│   ├── inputs.h          # Input handling functions
+│   ├── activity.h        # Shared activity/sleep state helpers
+│   ├── lidar_logic.h     # LiDAR fusion and correction logic
+│   ├── lens_logic.h      # Lens sensor-to-distance mapping logic
+│   ├── film_counter_logic.h # Film counter interpolation logic
+│   └── lightmeter_logic.h # Shutter speed formatting logic
 ├── src/              # Implementation files
 │   ├── main.cpp          # Main program logic
 │   ├── hardware.cpp      # Hardware instances
@@ -58,8 +63,13 @@ Firmware/
 │   ├── formats.cpp       # Film format data
 │   ├── interface.cpp     # UI rendering implementation
 │   ├── helpers.cpp       # Helper function implementations
+│   ├── activity.cpp      # Activity and sleep state implementation
 │   ├── cyclefuncs.cpp    # Cycling logic
-│   ├── setfuncs.cpp      # Sensor processing
+│   ├── setfuncs.cpp      # Sensor orchestration
+│   ├── lidar_logic.cpp   # LiDAR processing pipeline
+│   ├── lens_logic.cpp    # Lens distance estimation
+│   ├── film_counter_logic.cpp # Film counter estimation
+│   ├── lightmeter_logic.cpp # Light-meter/shutter conversion
 │   └── inputs.cpp        # Button and encoder handling
 ├── platformio.ini    # PlatformIO configuration
 └── README.md         # This file
@@ -93,9 +103,10 @@ Firmware/
 ### Key Features Implementation
 
 #### Distance Measurement
-- LiDAR sensor provides primary distance reading
-- Moving average filter (13 samples) for stability
-- Configurable offset compensation
+- DTS6012M v2 provides primary and secondary returns per sample
+- Confidence scoring combines data quality, intensity, temporal consistency, and lens-position prior
+- Two-stage correction: library scale/offset in mm, then curve/residual correction in cm
+- Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
 - Range: 5cm to 18m
 
 #### Light Metering
@@ -140,7 +151,13 @@ pio run --target monitor
 - `SLEEPTIMEOUT`: Auto-sleep delay (60000ms)
 - `SMOOTHING_WINDOW_SIZE`: Filter window (13 samples)
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
-- `LIDAR_OFFSET`: Distance calibration offset
+- `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor
+- `LIDAR_LIBRARY_DISTANCE_OFFSET_MM`: LiDAR library distance offset in mm
+- `LIDAR_NO_DATA_TIMEOUT_MS`: Timeout before showing unavailable distance
+- `LIDAR_FUSION_MIN_INTENSITY`: Minimum intensity gate for valid candidates
+- `LIDAR_CONFIDENCE_HIGH` / `LIDAR_CONFIDENCE_MEDIUM`: Confidence thresholds for smoothing behavior
+- `LIDAR_CAL_CUTOFF_CM` / `LIDAR_CAL_REF_RAW_CM` / `LIDAR_CAL_REF_TRUE_CM`: Near-range calibration curve parameters
+- `LIDAR_RESIDUAL_DIST_CM` / `LIDAR_RESIDUAL_DELTA_CM`: Piecewise residual correction table
 
 ### Preferences Storage
 

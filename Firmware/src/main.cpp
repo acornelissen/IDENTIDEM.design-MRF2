@@ -37,6 +37,7 @@
 #include "setfuncs.h"
 #include "interface.h"
 #include "inputs.h"
+#include "activity.h"
 
 // Setup and loop functions
 // ---------------------
@@ -95,10 +96,21 @@ void setup()
   display_ext.clearDisplay();
   display_ext.display();
 
-  // Start the LiDAR sensor
-  lidarSerial.begin(LIDAR_BAUD_RATE, SERIAL_8N1, RXD2, TXD2);
+  // Start the LiDAR sensor using the v2 initialization interface.
+  DTSResult lidarInit = lidar.begin(LIDAR_BAUD_RATE, RXD2, TXD2);
+  if (lidarInit != DTSError::NONE)
+  {
+    lidarEnabled = false;
+    Serial.print(F("LiDAR init error: "));
+    Serial.println(static_cast<int>(static_cast<DTSError>(lidarInit)));
+  }
+  else
+  {
+    // Stage 1 correction: global linear scale/offset in library space (mm).
+    lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
+    lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
+  }
   delay(LIDAR_SERIAL_STARTUP_DELAY_MS);
-  lidar.begin();
 
   // Clear the moving average arrays
   for (int channel = 0; channel < SENSOR_CHANNEL_COUNT; channel++)
@@ -135,12 +147,9 @@ void loop()
   checkButtons();
   setFilmCounter();
 
-  if (millis() - lastActivityTime > SLEEPTIMEOUT)
-  {
-    sleepMode = true;
-  }
+  updateSleepMode(millis());
 
-  if (sleepMode == true)
+  if (sleepMode)
   {
     toggleLidar(false);
     drawSleepUI();
