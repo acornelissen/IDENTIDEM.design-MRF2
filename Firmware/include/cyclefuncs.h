@@ -1,11 +1,15 @@
 #ifndef CYCLEFUNCS_H
 #define CYCLEFUNCS_H
 
-#include <Arduino.h> // For String type used in cycleApertures
+enum class CycleDirection
+{
+  Up,
+  Down
+};
 
 // Functions to cycle values
 // ---------------------
-void cycleApertures(String direction);
+void cycleApertures(CycleDirection direction);
 void cycleISOs();
 void cycleLenses();
 void cycleCalibLenses();

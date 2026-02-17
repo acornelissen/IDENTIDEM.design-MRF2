@@ -49,7 +49,12 @@ Firmware/
 │   ├── helpers.h         # Utility functions
 │   ├── cyclefuncs.h      # Cycling and selection functions
 │   ├── setfuncs.h        # Sensor reading and setting functions
-│   └── inputs.h          # Input handling functions
+│   ├── inputs.h          # Input handling functions
+│   ├── activity.h        # Shared activity/sleep state helpers
+│   ├── lidar_logic.h     # LiDAR fusion and correction logic
+│   ├── lens_logic.h      # Lens sensor-to-distance mapping logic
+│   ├── film_counter_logic.h # Film counter interpolation logic
+│   └── lightmeter_logic.h # Shutter speed formatting logic
 ├── src/              # Implementation files
 │   ├── main.cpp          # Main program logic
 │   ├── hardware.cpp      # Hardware instances
@@ -58,8 +63,13 @@ Firmware/
 │   ├── formats.cpp       # Film format data
 │   ├── interface.cpp     # UI rendering implementation
 │   ├── helpers.cpp       # Helper function implementations
+│   ├── activity.cpp      # Activity and sleep state implementation
 │   ├── cyclefuncs.cpp    # Cycling logic
-│   ├── setfuncs.cpp      # Sensor processing
+│   ├── setfuncs.cpp      # Sensor orchestration
+│   ├── lidar_logic.cpp   # LiDAR processing pipeline
+│   ├── lens_logic.cpp    # Lens distance estimation
+│   ├── film_counter_logic.cpp # Film counter estimation
+│   ├── lightmeter_logic.cpp # Light-meter/shutter conversion
 │   └── inputs.cpp        # Button and encoder handling
 ├── platformio.ini    # PlatformIO configuration
 └── README.md         # This file

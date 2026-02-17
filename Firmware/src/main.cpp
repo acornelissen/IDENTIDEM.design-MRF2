@@ -37,6 +37,7 @@
 #include "setfuncs.h"
 #include "interface.h"
 #include "inputs.h"
+#include "activity.h"
 
 // Setup and loop functions
 // ---------------------
@@ -146,12 +147,9 @@ void loop()
   checkButtons();
   setFilmCounter();
 
-  if (millis() - lastActivityTime > SLEEPTIMEOUT)
-  {
-    sleepMode = true;
-  }
+  updateSleepMode(millis());
 
-  if (sleepMode == true)
+  if (sleepMode)
   {
     toggleLidar(false);
     drawSleepUI();

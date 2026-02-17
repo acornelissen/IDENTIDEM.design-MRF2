@@ -10,6 +10,7 @@
 #include "helpers.h"
 #include "cyclefuncs.h"
 #include "setfuncs.h"
+#include "activity.h"
 
 // Functions to check and act on button presses
 // ---------------------
@@ -29,14 +30,13 @@ void checkButtons()
   lbutton.update();
   if (lbutton.rose() && lbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
   {
-    lastActivityTime = millis();
-    if (sleepMode == true) {
-      sleepMode = false;
-    }
-    else {
+    bool wasSleeping = sleepMode;
+    registerActivity();
+    if (!wasSleeping)
+    {
       if (ui_mode == "main")
       {
-        cycleApertures("down");
+        cycleApertures(CycleDirection::Down);
       }
       else if (ui_mode == "config")
       {
@@ -52,7 +52,7 @@ void checkButtons()
         {
           cycleCalibLenses();
         }
-        if (calib_step == 1) // This should likely be an else if
+        else if (calib_step == 1)
         {
           long sum = 0;
           for (int i = 0; i < CALIB_SAMPLE_COUNT; i++)
@@ -71,7 +71,7 @@ void checkButtons()
               lenses[calib_lens].sensor_reading[i] = calib_distance_set[i];
             }
             savePrefs();
-            selected_lens = calib_lens; // Ensure this is the desired behavior
+            selected_lens = calib_lens;
             ui_mode = "config";
           }
         }
@@ -87,7 +87,7 @@ void checkButtons()
   rbutton.update();
   if (rbutton.isPressed() && rbutton.currentDuration() >= BUTTON_LONG_PRESS_MIN_MS) 
   {
-    lastActivityTime = millis();
+    registerActivity();
     if (ui_mode == "main")
     {
       ui_mode = "config";
@@ -95,14 +95,13 @@ void checkButtons()
   }
   else if (rbutton.rose() && rbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
   {
-    lastActivityTime = millis();
-    if (sleepMode == true) {
-      sleepMode = false;
-    }
-    else {
+    bool wasSleeping = sleepMode;
+    registerActivity();
+    if (!wasSleeping)
+    {
         if (ui_mode == "main")
         {
-          cycleApertures("up");
+          cycleApertures(CycleDirection::Up);
         }
         else if (ui_mode == "config")
         {
@@ -111,6 +110,7 @@ void checkButtons()
           else if (config_step == 2) {
             cycleLenses();
             int non_zero_aperture_index = getFirstNonZeroAperture();
+            if (non_zero_aperture_index < 0) non_zero_aperture_index = 0;
             aperture = lenses[selected_lens].apertures[non_zero_aperture_index];
             aperture_index = non_zero_aperture_index;
           }
@@ -135,7 +135,7 @@ void checkButtons()
         else if (ui_mode == "calib")
         {
           if (calib_step == 0) calib_step = 1;
-          else if (calib_step == 1) { // This should likely be an else if
+          else if (calib_step == 1) {
             calib_step = 0; ui_mode = "config";
           }
         }

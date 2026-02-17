@@ -10,35 +10,33 @@
 
 // Functions to cycle values
 // ---------------------
-void cycleApertures(String direction)
+void cycleApertures(CycleDirection direction)
 {
-  if (direction == "up")
+  const int aperture_count = sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]);
+  int step = (direction == CycleDirection::Up) ? 1 : -1;
+
+  for (int attempts = 0; attempts < aperture_count; attempts++)
   {
-    aperture_index++;
-    if (aperture_index >= sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]))
+    aperture_index += step;
+
+    if (aperture_index >= aperture_count)
     {
       aperture_index = 0;
     }
-    if (lenses[selected_lens].apertures[aperture_index] == 0)
+    else if (aperture_index < 0)
     {
-      cycleApertures("up"); // Recursive call to skip zero values
-      return; // Important to return after recursive call to avoid double savePrefs()
+      aperture_index = aperture_count - 1;
     }
-  }
-  else if (direction == "down")
-  {
-    aperture_index--;
-    if (aperture_index < 0)
+
+    if (lenses[selected_lens].apertures[aperture_index] != 0)
     {
-      aperture_index = sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]) - 1;
-    }
-    if (lenses[selected_lens].apertures[aperture_index] == 0)
-    {
-      cycleApertures("down"); // Recursive call to skip zero values
-      return; // Important to return after recursive call
+      aperture = lenses[selected_lens].apertures[aperture_index];
+      savePrefs();
+      return;
     }
   }
 
+  aperture_index = 0;
   aperture = lenses[selected_lens].apertures[aperture_index];
   savePrefs();
 }

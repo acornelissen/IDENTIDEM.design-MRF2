@@ -4,7 +4,7 @@
 #include <Arduino.h> // For String, int_fast16_t (from stdint.h)
 // Helper functions
 // ---------------------
-float getFirstNonZeroAperture();
+int getFirstNonZeroAperture();
 
 void loadPrefs();
 
