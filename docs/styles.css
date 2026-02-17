@@ -1,0 +1,168 @@
+:root {
+  --bg: #f2efe7;
+  --bg-2: #dfe8f0;
+  --ink: #132033;
+  --muted: #4d5a6c;
+  --accent: #d9622b;
+  --accent-2: #117a65;
+  --panel: rgba(255, 255, 255, 0.75);
+  --line: rgba(19, 32, 51, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 15% 10%, rgba(217, 98, 43, 0.23), transparent 35%),
+    radial-gradient(circle at 85% 20%, rgba(17, 122, 101, 0.2), transparent 32%),
+    linear-gradient(160deg, var(--bg), var(--bg-2));
+  min-height: 100vh;
+}
+
+.page {
+  width: min(960px, 92vw);
+  margin: 0 auto;
+  padding: 3rem 0 4rem;
+  display: grid;
+  gap: 1.6rem;
+}
+
+.hero h1,
+.hero h2,
+.steps h2,
+.notes h2 {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.3rem);
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.subtitle {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  max-width: 50ch;
+}
+
+.panel,
+.steps,
+.notes {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  backdrop-filter: blur(3px);
+  box-shadow: 0 9px 24px rgba(15, 31, 52, 0.08);
+}
+
+.panel {
+  margin-top: 1.2rem;
+  padding: 1.1rem;
+  display: grid;
+  gap: 0.75rem;
+  animation: slide-in 0.45s ease;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+
+.status-row span {
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--muted);
+}
+
+.install-wrap {
+  margin-top: 0.25rem;
+}
+
+esp-web-install-button::part(button),
+esp-web-install-button button,
+button[slot="activate"] {
+  all: unset;
+  display: inline-block;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.78rem 1.1rem;
+  background: linear-gradient(135deg, var(--accent), #ea7f3e);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+esp-web-install-button::part(button):hover,
+button[slot="activate"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(217, 98, 43, 0.36);
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.steps,
+.notes {
+  padding: 1.1rem;
+  animation: fade-in 0.55s ease;
+}
+
+ol,
+ul {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+li {
+  margin-bottom: 0.45rem;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 680px) {
+  .page {
+    padding-top: 1.8rem;
+  }
+
+  .status-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}

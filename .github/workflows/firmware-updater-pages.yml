@@ -1,0 +1,110 @@
+name: Deploy Firmware Updater Site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PIO_ENV: adafruit_feather_esp32s3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Build firmware
+        run: pio run -d Firmware -e "$PIO_ENV"
+
+      - name: Prepare Pages site
+        run: |
+          set -euo pipefail
+
+          BUILD_DIR="Firmware/.pio/build/$PIO_ENV"
+          SITE_DIR="site"
+          FIRMWARE_DIR="$SITE_DIR/firmware/latest"
+          FRAMEWORK_DIR="$HOME/.platformio/packages/framework-arduinoespressif32"
+          VARIANT_DIR="$FRAMEWORK_DIR/variants/adafruit_feather_esp32s3"
+
+          mkdir -p "$FIRMWARE_DIR"
+          cp -R docs/. "$SITE_DIR/"
+
+          cp "$BUILD_DIR/partitions.bin" "$FIRMWARE_DIR/partitions.bin"
+          cp "$BUILD_DIR/firmware.bin" "$FIRMWARE_DIR/firmware.bin"
+
+          BOOTLOADER_BIN="$VARIANT_DIR/bootloader-tinyuf2.bin"
+          BOOT_APP0_BIN="$FRAMEWORK_DIR/tools/partitions/boot_app0.bin"
+          TINYUF2_BIN="$VARIANT_DIR/tinyuf2.bin"
+
+          for REQUIRED in "$BOOTLOADER_BIN" "$BOOT_APP0_BIN" "$TINYUF2_BIN"; do
+            if [ ! -f "$REQUIRED" ]; then
+              echo "Required firmware image not found: $REQUIRED"
+              exit 1
+            fi
+          done
+
+          cp "$BOOTLOADER_BIN" "$FIRMWARE_DIR/bootloader.bin"
+          cp "$BOOT_APP0_BIN" "$FIRMWARE_DIR/boot_app0.bin"
+          cp "$TINYUF2_BIN" "$FIRMWARE_DIR/tinyuf2.bin"
+
+          FW_VERSION=$(grep -E '^#define FWVERSION ' Firmware/include/mrfconstants.h | sed 's/^#define FWVERSION "\(.*\)"$/\1/')
+          if [ -z "$FW_VERSION" ]; then
+            FW_VERSION="unknown"
+          fi
+
+          cat > "$FIRMWARE_DIR/manifest.json" <<MANIFEST
+          {
+            "name": "IDENTIDEM MRF2",
+            "version": "$FW_VERSION",
+            "new_install_prompt_erase": false,
+            "builds": [
+              {
+                "chipFamily": "ESP32-S3",
+                "parts": [
+                  { "path": "bootloader.bin", "offset": 0 },
+                  { "path": "partitions.bin", "offset": 32768 },
+                  { "path": "boot_app0.bin", "offset": 57344 },
+                  { "path": "tinyuf2.bin", "offset": 2949120 },
+                  { "path": "firmware.bin", "offset": 65536 }
+                ]
+              }
+            ]
+          }
+          MANIFEST
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -22,6 +22,7 @@ You can [support me on Patreon](https://patreon.com/IDENTIDEMdesign), or just sh
 ## 📚 Documentation Index
 
 - `Documentation/flash-firmware/README.md` – Flashing the firmware with VS Code + PlatformIO
+- `Documentation/web-updater/README.md` – GitHub Pages browser updater architecture and deployment
 - `Documentation/user-manual/USER_MANUAL.md` – On-device UI and calibration user manual
 - `Firmware/README.md` – Firmware architecture, configuration, and CLI build commands
 
@@ -125,6 +126,9 @@ Assumes single-quantity retail buys (Adafruit/Amazon/AliExpress), optics from Ed
 ## 💾 Firmware
 
 Firmware source and build instructions live in `Firmware/README.md`. PlatformIO is used for builds/flash/monitoring. Calibrate lenses and film formats after first flash.
+
+For browser-based updates, use the GitHub Pages firmware updater:
+`https://acornelissen.github.io/IDENTIDEM.design-MRF2/`
 
 ## 📜 License
 

@@ -1,0 +1,8 @@
+This folder is populated by GitHub Actions during Pages deployment.
+
+Published files:
+- firmware/latest/bootloader.bin
+- firmware/latest/partitions.bin
+- firmware/latest/boot_app0.bin
+- firmware/latest/firmware.bin
+- firmware/latest/manifest.json
