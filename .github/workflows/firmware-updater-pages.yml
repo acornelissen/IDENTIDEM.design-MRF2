@@ -41,21 +41,29 @@ jobs:
           BUILD_DIR="Firmware/.pio/build/$PIO_ENV"
           SITE_DIR="site"
           FIRMWARE_DIR="$SITE_DIR/firmware/latest"
+          FRAMEWORK_DIR="$HOME/.platformio/packages/framework-arduinoespressif32"
+          VARIANT_DIR="$FRAMEWORK_DIR/variants/adafruit_feather_esp32s3"
 
           mkdir -p "$FIRMWARE_DIR"
           cp -R docs/. "$SITE_DIR/"
 
-          cp "$BUILD_DIR/bootloader.bin" "$FIRMWARE_DIR/bootloader.bin"
           cp "$BUILD_DIR/partitions.bin" "$FIRMWARE_DIR/partitions.bin"
           cp "$BUILD_DIR/firmware.bin" "$FIRMWARE_DIR/firmware.bin"
 
-          BOOT_APP0="$HOME/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin"
-          if [ -f "$BOOT_APP0" ]; then
-            cp "$BOOT_APP0" "$FIRMWARE_DIR/boot_app0.bin"
-          else
-            echo "boot_app0.bin not found at expected path: $BOOT_APP0"
-            exit 1
-          fi
+          BOOTLOADER_BIN="$VARIANT_DIR/bootloader-tinyuf2.bin"
+          BOOT_APP0_BIN="$FRAMEWORK_DIR/tools/partitions/boot_app0.bin"
+          TINYUF2_BIN="$VARIANT_DIR/tinyuf2.bin"
+
+          for REQUIRED in "$BOOTLOADER_BIN" "$BOOT_APP0_BIN" "$TINYUF2_BIN"; do
+            if [ ! -f "$REQUIRED" ]; then
+              echo "Required firmware image not found: $REQUIRED"
+              exit 1
+            fi
+          done
+
+          cp "$BOOTLOADER_BIN" "$FIRMWARE_DIR/bootloader.bin"
+          cp "$BOOT_APP0_BIN" "$FIRMWARE_DIR/boot_app0.bin"
+          cp "$TINYUF2_BIN" "$FIRMWARE_DIR/tinyuf2.bin"
 
           FW_VERSION=$(grep -E '^#define FWVERSION ' Firmware/include/mrfconstants.h | sed 's/^#define FWVERSION "\(.*\)"$/\1/')
           if [ -z "$FW_VERSION" ]; then
@@ -74,6 +82,7 @@ jobs:
                   { "path": "bootloader.bin", "offset": 0 },
                   { "path": "partitions.bin", "offset": 32768 },
                   { "path": "boot_app0.bin", "offset": 57344 },
+                  { "path": "tinyuf2.bin", "offset": 2949120 },
                   { "path": "firmware.bin", "offset": 65536 }
                 ]
               }
