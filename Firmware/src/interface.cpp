@@ -133,9 +133,9 @@ static void drawLidarQualityIndicator()
 
   for (int i = 0; i < maxBlocks; i++)
   {
-    int x = MAIN_LIDAR_QUALITY_X + (i * (MAIN_LIDAR_QUALITY_SIZE + MAIN_LIDAR_QUALITY_GAP));
-    int y = MAIN_LIDAR_QUALITY_Y;
-    if (i < blocks)
+    int x = MAIN_LIDAR_QUALITY_X;
+    int y = MAIN_LIDAR_QUALITY_Y + (i * (MAIN_LIDAR_QUALITY_SIZE + MAIN_LIDAR_QUALITY_GAP));
+    if (i >= (maxBlocks - blocks))
     {
       display.fillRect(x, y, MAIN_LIDAR_QUALITY_SIZE, MAIN_LIDAR_QUALITY_SIZE, BLACK);
     }

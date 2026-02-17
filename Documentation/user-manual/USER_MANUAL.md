@@ -54,7 +54,7 @@ The main screen displays:
 - **Aperture** (upper center-left)
 - **Shutter speed** (lower left)
 - **LiDAR distance** (upper right, labeled "Dist")
-- **LiDAR quality indicator** (4 small squares under `Dist:`)
+- **LiDAR quality indicator** (4 small squares in a vertical stack at the right edge of the status bar)
 - **Lens distance** (lower right, labeled "Lens")
 - **Framelines** scaled to the selected film format
 - **Reticle and focus ring**
@@ -73,7 +73,7 @@ The main screen displays:
 
 ### LiDAR quality indicator
 
-The four tiny squares under `Dist:` show return quality for the currently selected LiDAR reading:
+The four tiny squares at the right edge of the top status bar show return quality for the currently selected LiDAR reading:
 
 - **1 square**: Poor
 - **2 squares**: Fair
