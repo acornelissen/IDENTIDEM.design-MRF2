@@ -74,8 +74,22 @@
 
   function autoRetryTransientInstallFailure() {
     const RETRY_DELAY_MS = 900;
+    const DIALOG_RESHOW_DELAY_MS = 200;
     const watchedDialogs = new WeakSet();
     const retriedDialogs = new WeakSet();
+    const hiddenDialogs = new WeakSet();
+
+    const hideDialog = (dialogEl) => {
+      if (!dialogEl || hiddenDialogs.has(dialogEl)) return;
+      dialogEl.style.visibility = "hidden";
+      hiddenDialogs.add(dialogEl);
+    };
+
+    const showDialog = (dialogEl) => {
+      if (!dialogEl || !hiddenDialogs.has(dialogEl)) return;
+      dialogEl.style.visibility = "";
+      hiddenDialogs.delete(dialogEl);
+    };
 
     const maybeRetry = (dialogEl) => {
       if (!dialogEl || retriedDialogs.has(dialogEl)) return;
@@ -90,13 +104,24 @@
       if (!isRetryableInitializeFailure) return;
 
       retriedDialogs.add(dialogEl);
-      setTimeout(async () => {
+      // Hide the first transient initialize failure while we auto-retry.
+      hideDialog(dialogEl);
+      setTimeout(() => {
         try {
           if (typeof dialogEl._confirmInstall === "function") {
-            await dialogEl._confirmInstall();
+            const retryResult = dialogEl._confirmInstall();
+            if (retryResult && typeof retryResult.catch === "function") {
+              retryResult.catch((error) => {
+                console.warn("Automatic install retry failed", error);
+              });
+            }
           }
         } catch (error) {
           console.warn("Automatic install retry failed", error);
+        } finally {
+          setTimeout(() => {
+            showDialog(dialogEl);
+          }, DIALOG_RESHOW_DELAY_MS);
         }
       }, RETRY_DELAY_MS);
     };

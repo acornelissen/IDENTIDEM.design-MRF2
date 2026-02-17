@@ -8,7 +8,15 @@ FilmCounterEstimate estimateFilmCounter(const FilmFormat &film_format, int encod
 {
   FilmCounterEstimate result = {false, 0, 0.0f};
 
-  const int frame_count = sizeof(film_format.sensor) / sizeof(film_format.sensor[0]);
+  int frame_count = sizeof(film_format.sensor) / sizeof(film_format.sensor[0]);
+  while (frame_count > 1 && film_format.sensor[frame_count - 1] == 0 && film_format.frame[frame_count - 1] == 0)
+  {
+    frame_count--;
+  }
+  if (frame_count < 2)
+  {
+    return result;
+  }
   const int last_frame_index = frame_count - 1;
 
   if (encoder_value >= film_format.sensor[last_frame_index])
