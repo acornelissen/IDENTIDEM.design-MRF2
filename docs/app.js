@@ -72,8 +72,66 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  function autoRetryTransientInstallFailure() {
+    const RETRY_DELAY_MS = 900;
+    const watchedDialogs = new WeakSet();
+    const retriedDialogs = new WeakSet();
+
+    const maybeRetry = (dialogEl) => {
+      if (!dialogEl || retriedDialogs.has(dialogEl)) return;
+
+      const installState = dialogEl._installState;
+      const isRetryableInitializeFailure =
+        installState &&
+        installState.state === "error" &&
+        installState.details &&
+        installState.details.error === "failed_initialize";
+
+      if (!isRetryableInitializeFailure) return;
+
+      retriedDialogs.add(dialogEl);
+      setTimeout(async () => {
+        try {
+          if (typeof dialogEl._confirmInstall === "function") {
+            await dialogEl._confirmInstall();
+          }
+        } catch (error) {
+          console.warn("Automatic install retry failed", error);
+        }
+      }, RETRY_DELAY_MS);
+    };
+
+    const watchDialog = (dialogEl) => {
+      if (!dialogEl || watchedDialogs.has(dialogEl)) return;
+      watchedDialogs.add(dialogEl);
+
+      const shadowRoot = dialogEl.shadowRoot;
+      if (!shadowRoot) return;
+
+      const dialogObserver = new MutationObserver(() => {
+        maybeRetry(dialogEl);
+      });
+
+      dialogObserver.observe(shadowRoot, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+      });
+      maybeRetry(dialogEl);
+    };
+
+    const observer = new MutationObserver(() => {
+      const dialogEl = document.querySelector("ewt-install-dialog");
+      if (!dialogEl) return;
+      watchDialog(dialogEl);
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
   detectBrowserSupport();
   detectSecureContext();
   loadManifestVersion();
   patchInstallSuccessMessage();
+  autoRetryTransientInstallFailure();
 })();
