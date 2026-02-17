@@ -10,8 +10,6 @@
 
 // Helper functions
 // ---------------------
-static int lastValidValue[SENSOR_CHANNEL_COUNT] = {0, 0};
-
 int getFirstNonZeroAperture()
 {
   const int aperture_count = sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]);
@@ -94,44 +92,21 @@ String cmToReadable(int cm, int places)
   }
 }
 
-int calcMovingAvg(int index, int sensorVal)
+int calcMovingAvg(int sensorVal)
 {
-  int readIndex = curReadIndex[index];
-  sampleTotal[index] = sampleTotal[index] - (samples[index][readIndex]);
+  sampleTotal = sampleTotal - samples[curReadIndex];
 
-  samples[index][readIndex] = sensorVal;
-  sampleTotal[index] = sampleTotal[index] + samples[index][readIndex];
-  curReadIndex[index] = curReadIndex[index] + 1;
+  samples[curReadIndex] = sensorVal;
+  sampleTotal = sampleTotal + samples[curReadIndex];
+  curReadIndex = curReadIndex + 1;
 
-  if (curReadIndex[index] >= SMOOTHING_WINDOW_SIZE)
+  if (curReadIndex >= SMOOTHING_WINDOW_SIZE)
   {
-    curReadIndex[index] = 0;
+    curReadIndex = 0;
   }
 
-  sampleAvg[index] = sampleTotal[index] / SMOOTHING_WINDOW_SIZE;
-  return sampleAvg[index];
-}
-
-int rejectOutliers(int index, int sensorVal)
-{
-  if (index == LENS_SENSOR_CHANNEL)
-  {
-    return sensorVal;
-  }
-
-  if (lastValidValue[index] == 0)
-  {
-    lastValidValue[index] = sensorVal;
-    return sensorVal;
-  }
-
-  if (abs(sensorVal - lastValidValue[index]) > LENS_OUTLIER_THRESHOLD)
-  {
-    return lastValidValue[index];
-  }
-
-  lastValidValue[index] = sensorVal;
-  return sensorVal;
+  sampleAvg = sampleTotal / SMOOTHING_WINDOW_SIZE;
+  return sampleAvg;
 }
 
 int_fast16_t getFocusRadius()

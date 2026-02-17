@@ -18,7 +18,6 @@ const int BUTTON_DEBOUNCE_MS = 5;
 const unsigned long BUTTON_SHORT_PRESS_MAX_MS = 1000;
 const unsigned long BUTTON_LONG_PRESS_MIN_MS = 3000;
 
-#define SS_SWITCH 24
 #define SS_NEOPIX 6
 #define SEESAW_ADDR 0x36 // Set this to the address of the seesaw
 
@@ -58,8 +57,6 @@ const int DISPLAY_I2C_FREQUENCY_HZ = 1000000;
 const int DISPLAY_COMMAND_FLIP = 0xC8;
 
 const int SMOOTHING_WINDOW_SIZE = 13;
-const int SENSOR_CHANNEL_COUNT = 2;
-const int LENS_SENSOR_CHANNEL = 0;
 const int LENS_INF_THRESHOLD = 5;
 const int LENS_INFINITY_RAW = 9999999;
 const int LENS_ACTIVITY_THRESHOLD = 3;
@@ -76,13 +73,11 @@ const int FOCUS_RING_THICKNESS_MIN = 1;
 const int FOCUS_RING_THICKNESS_MAX = 3;
 const float FOCUS_RING_THICKNESS_SMOOTHING = 0.25f;
 
-const float LENS_OUTLIER_THRESHOLD = 50.0;
 const float CM_TO_MM = 10.0f;
 const int CM_PER_METER = 100;
 
 #define RETICLE_OFFSET_X -5
 #define RETICLE_OFFSET_Y 0
-#define LIDAR_OFFSET 40
 const int LIDAR_DISTANCE_DIVISOR = 10;
 const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 500;
 const float LIDAR_LIBRARY_DISTANCE_SCALE = 1.0f;

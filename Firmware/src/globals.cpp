@@ -20,10 +20,10 @@ int iso_index = DEFAULT_ISO_INDEX;
 int aperture_index;
 
 // Filter algorithm
-int samples[SENSOR_CHANNEL_COUNT][SMOOTHING_WINDOW_SIZE]; // the readings from the analog input
-int curReadIndex[SENSOR_CHANNEL_COUNT] = {0, 0};          // the index of the current reading
-int sampleTotal[SENSOR_CHANNEL_COUNT] = {0, 0};           // the running total
-int sampleAvg[SENSOR_CHANNEL_COUNT] = {0, 0};
+int samples[SMOOTHING_WINDOW_SIZE];
+int curReadIndex = 0;
+int sampleTotal = 0;
+int sampleAvg = 0;
 
 // Lens distance
 int prev_lens_sensor_reading = 0;
@@ -34,8 +34,6 @@ String lens_distance_cm = "...";
 // LiDAR distance
 int prev_distance = 0;
 int16_t distance = 0;    // Distance to object in centimeters
-int16_t strength = 0;    // Strength or quality of return signal
-int16_t temperature = 0; // Internal temperature of Lidar sensor chip
 String distance_cm = "...";
 int lidar_quality_level = 0;
 bool lidarEnabled = true;

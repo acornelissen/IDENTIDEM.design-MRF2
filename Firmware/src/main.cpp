@@ -2,30 +2,11 @@
 // Hardware: DTS6012M LiDAR, STEMMA I2C QT Rotary Encoder (4991), SH1107 main + SSD1306 external OLEDs
 
 #include <Arduino.h>
-#include <Wire.h>
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_SH110X.h>
-#include <Adafruit_MAX1704X.h>
-#include <Adafruit_ADS1X15.h>
-#include <Adafruit_MPU6050.h>
-#include <Adafruit_Sensor.h>
-#include <DTS6012M_UART.h>
-#include <BH1750.h>
-#include <U8g2_for_Adafruit_GFX.h>
-#include <Bounce2.h>
-#include <Adafruit_seesaw.h>
-#include <seesaw_neopixel.h>
-#include <Preferences.h>
-#include <math.h>
-
-#include "driver/rtc_io.h"
 #include "esp_wifi.h"
 #include "esp_bt.h"
 
 // Constants and variables
 #include "mrfconstants.h"
-#include "lenses.h"
-#include "formats.h"
 #include "globals.h"
 
 // Init hardware
@@ -33,7 +14,6 @@
 
 // Functions
 #include "helpers.h"
-#include "cyclefuncs.h"
 #include "setfuncs.h"
 #include "interface.h"
 #include "inputs.h"
@@ -112,14 +92,14 @@ void setup()
   }
   delay(LIDAR_SERIAL_STARTUP_DELAY_MS);
 
-  // Clear the moving average arrays
-  for (int channel = 0; channel < SENSOR_CHANNEL_COUNT; channel++)
+  // Clear the moving average values.
+  for (int i = 0; i < SMOOTHING_WINDOW_SIZE; i++)
   {
-    for (int i = 0; i < SMOOTHING_WINDOW_SIZE; i++)
-    {
-      samples[channel][i] = 0;
-    }
+    samples[i] = 0;
   }
+  curReadIndex = 0;
+  sampleTotal = 0;
+  sampleAvg = 0;
 
   // Start the battery gauge and lightmeter
   maxlipo.begin();

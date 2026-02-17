@@ -32,7 +32,6 @@ extern Adafruit_MAX17048 maxlipo;
 extern BH1750 lightMeter;
 // LiDAR setup
 extern DTS6012M_UART lidar;
-extern HardwareSerial lidarSerial; // Using serial port 2
 // Display setup
 extern Adafruit_SH1107 display;
 extern Adafruit_SSD1306 display_ext;

@@ -4,7 +4,7 @@ This repo includes a static firmware updater site in `docs/` that uses Web Seria
 
 ## Public URL
 
-`https://acornelissen.github.io/IDENTIDEM.design-MRF2/`
+`https://update.mrf2.com/`
 
 ## How it works
 

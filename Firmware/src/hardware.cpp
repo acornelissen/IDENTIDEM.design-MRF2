@@ -31,9 +31,10 @@ Adafruit_MAX17048 maxlipo;
 // Lightmeter
 BH1750 lightMeter;
 // LiDAR setup
-HardwareSerial lidarSerial(LIDAR_SERIAL_PORT); // Using serial port 2
 namespace
 {
+HardwareSerial lidarSerial(LIDAR_SERIAL_PORT); // Using serial port 2
+
 DTSConfig makeLidarConfig()
 {
   DTSConfig config;

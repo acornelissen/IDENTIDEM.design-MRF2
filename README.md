@@ -128,7 +128,7 @@ Assumes single-quantity retail buys (Adafruit/Amazon/AliExpress), optics from Ed
 Firmware source and build instructions live in `Firmware/README.md`. PlatformIO is used for builds/flash/monitoring. Calibrate lenses and film formats after first flash.
 
 For browser-based updates, use the GitHub Pages firmware updater:
-`https://acornelissen.github.io/IDENTIDEM.design-MRF2/`
+`https://update.mrf2.com/`
 
 ## 📜 License
 

@@ -112,8 +112,7 @@ int getLensSensorReading()
     sensorVal += LENS_ADC_MAIN_OFFSET;
   }
 
-  int filteredVal = rejectOutliers(LENS_SENSOR_CHANNEL, sensorVal);
-  return calcMovingAvg(LENS_SENSOR_CHANNEL, filteredVal);
+  return calcMovingAvg(sensorVal);
 }
 
 void setLensDistance()

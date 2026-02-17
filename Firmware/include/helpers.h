@@ -12,9 +12,7 @@ void savePrefs();
 
 String cmToReadable(int cm, int places);
 
-int calcMovingAvg(int index, int sensorVal);
-
-int rejectOutliers(int index, int sensorVal);
+int calcMovingAvg(int sensorVal);
 
 int_fast16_t getFocusRadius();
 // ---------------------
