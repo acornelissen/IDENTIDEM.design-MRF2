@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MRF2 Firmware Updater</title>
+    <meta
+      name="description"
+      content="Update IDENTIDEM.design MRF2 camera firmware directly from your browser."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script
+      type="module"
+      src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"
+    ></script>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">IDENTIDEM.design</p>
+        <h1>MRF2 Firmware Updater</h1>
+        <p class="subtitle">
+          Flash the latest MRF2 firmware directly from a Chromium-based browser.
+        </p>
+
+        <div class="panel">
+          <div class="status-row">
+            <strong>Latest Build</strong>
+            <span id="firmware-version">Checking...</span>
+          </div>
+          <div class="status-row">
+            <strong>Current Browser</strong>
+            <span id="browser-check">Checking...</span>
+          </div>
+          <div class="status-row">
+            <strong>Connection</strong>
+            <span id="secure-check">Checking...</span>
+          </div>
+
+          <div class="install-wrap">
+            <esp-web-install-button id="install-btn" manifest="./firmware/latest/manifest.json">
+              <button slot="activate">Connect Camera and Install</button>
+              <span slot="unsupported">Web Serial is not supported in this browser.</span>
+            </esp-web-install-button>
+          </div>
+
+          <p class="hint">
+            The installer may ask to erase flash. Choose <strong>Install</strong> for updates.
+          </p>
+        </div>
+      </section>
+
+      <section class="steps">
+        <h2>Update Steps</h2>
+        <ol>
+          <li>Use Chrome or Edge on desktop.</li>
+          <li>Connect the MRF2 over USB-C data cable.</li>
+          <li>Click <em>Connect Camera and Install</em>.</li>
+          <li>Select the ESP32-S3 serial device from the prompt.</li>
+          <li>Wait until flashing completes, then reboot the camera.</li>
+        </ol>
+      </section>
+
+      <section class="notes">
+        <h2>Troubleshooting</h2>
+        <ul>
+          <li>No port appears: try a different USB cable or port.</li>
+          <li>Install fails: hold BOOT, tap RESET, then retry.</li>
+          <li>If stuck, use the VS Code guide in the project documentation.</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
