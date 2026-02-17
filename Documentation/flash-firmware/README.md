@@ -2,6 +2,9 @@
 
 This guide walks through building and flashing the firmware using VS Code with the PlatformIO IDE extension. It assumes you have the repo checked out and want to flash the `Firmware/` project.
 
+If you prefer browser-based flashing, use the GitHub Pages updater:
+`https://acornelissen.github.io/IDENTIDEM.design-MRF2/`
+
 ## Prerequisites
 - VS Code installed
 - PlatformIO IDE extension installed
