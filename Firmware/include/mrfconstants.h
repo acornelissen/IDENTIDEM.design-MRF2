@@ -2,7 +2,7 @@
 #define MRFCONSTANTS_H
 
 // Constants
-#define FWVERSION "9.0.0"
+#define FWVERSION "9.5.0"
 #define SLEEPTIMEOUT 60000
 
 const unsigned long SERIAL_BAUD_RATE = 115200;
