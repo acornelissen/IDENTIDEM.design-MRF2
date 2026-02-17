@@ -161,6 +161,54 @@ button[slot="activate"]:hover {
   animation: fade-in 0.55s ease;
 }
 
+.debug-panel {
+  border: 1px dashed rgba(19, 32, 51, 0.35);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 9px 24px rgba(15, 31, 52, 0.08);
+  padding: 1.1rem;
+}
+
+.debug-panel p {
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+}
+
+#debug-copy {
+  all: unset;
+  display: inline-block;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  padding: 0.55rem 0.95rem;
+  background: linear-gradient(135deg, var(--accent-2), #16a58a);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+#debug-copy:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(17, 122, 101, 0.34);
+}
+
+#debug-log {
+  margin: 0.75rem 0 0;
+  border: 1px solid rgba(19, 32, 51, 0.2);
+  border-radius: 10px;
+  padding: 0.7rem;
+  min-height: 120px;
+  max-height: 280px;
+  overflow: auto;
+  background: rgba(14, 26, 43, 0.94);
+  color: #d7e3f0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  font-family: "IBM Plex Mono", monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 ol,
 ul {
   margin: 0.55rem 0 0;

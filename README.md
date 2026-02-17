@@ -130,6 +130,14 @@ Firmware source and build instructions live in `Firmware/README.md`. PlatformIO 
 For browser-based updates, use the GitHub Pages firmware updater:
 `https://update.mrf2.com/`
 
+If a user reports the updater hanging (for example at "Preparing installation"), enable hidden debug mode by adding `?debug=1`:
+`https://update.mrf2.com/?debug=1`
+
+Then:
+1. Reproduce the issue.
+2. Click **Copy Debug Report**.
+3. Send the JSON report back for diagnosis.
+
 ## 📜 License
 
 Firmware and design files are released under the GNU GPL v3.0 (see `LICENSE`). 
