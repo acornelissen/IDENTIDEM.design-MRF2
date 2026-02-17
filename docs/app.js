@@ -403,6 +403,7 @@
     const watchedDialogs = new WeakSet();
     const retriedDialogs = new WeakSet();
     const hiddenDialogs = new WeakSet();
+    let lastSeenDialog = null;
     const stateSignatures = new WeakMap();
 
     const hideDialog = (dialogEl) => {
@@ -528,8 +529,17 @@
 
     const observer = new MutationObserver(() => {
       const dialogEl = document.querySelector("ewt-install-dialog");
-      if (!dialogEl) return;
-      debug.log("install-dialog-detected");
+      if (!dialogEl) {
+        if (lastSeenDialog) {
+          debug.log("install-dialog-removed");
+          lastSeenDialog = null;
+        }
+        return;
+      }
+      if (dialogEl !== lastSeenDialog) {
+        debug.log("install-dialog-detected");
+        lastSeenDialog = dialogEl;
+      }
       if (!watchDialog(dialogEl)) {
         requestAnimationFrame(() => {
           watchDialog(dialogEl);
