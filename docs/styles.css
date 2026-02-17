@@ -119,6 +119,42 @@ button[slot="activate"]:hover {
   font-size: 0.9rem;
 }
 
+.release-notes {
+  margin-top: 0.45rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.release-notes h2 {
+  font-size: 1rem;
+  margin-bottom: 0.45rem;
+}
+
+#latest-changelog {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+#latest-changelog li {
+  margin-bottom: 0.35rem;
+}
+
+.changelog-link-wrap {
+  margin: 0.45rem 0 0;
+}
+
+#changelog-link {
+  color: var(--accent-2);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+#changelog-link:hover {
+  text-decoration: underline;
+}
+
 .steps,
 .notes {
   padding: 1.1rem;

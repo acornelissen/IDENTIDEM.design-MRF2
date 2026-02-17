@@ -2,6 +2,8 @@
   const versionEl = document.getElementById("firmware-version");
   const browserEl = document.getElementById("browser-check");
   const secureEl = document.getElementById("secure-check");
+  const latestChangelogEl = document.getElementById("latest-changelog");
+  const changelogLinkEl = document.getElementById("changelog-link");
 
   function detectBrowserSupport() {
     const hasWebSerial = "serial" in navigator;
@@ -22,11 +24,79 @@
       const manifest = await response.json();
       if (manifest && manifest.version) {
         versionEl.textContent = manifest.version;
+        return manifest.version;
       } else {
         versionEl.textContent = "Available";
       }
     } catch (error) {
       versionEl.textContent = "Not published yet";
+    }
+    return "";
+  }
+
+  function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function extractChangelogNotes(markdown, version) {
+    if (!markdown || !version) return [];
+    const sectionPattern = new RegExp(`^##\\s+${escapeRegex(version)}\\s+-.*$`, "m");
+    const sectionMatch = markdown.match(sectionPattern);
+    if (!sectionMatch || typeof sectionMatch.index !== "number") return [];
+
+    const sectionStart = sectionMatch.index + sectionMatch[0].length;
+    const remaining = markdown.slice(sectionStart);
+    const nextHeadingIndex = remaining.search(/^##\s+/m);
+    const sectionBody = nextHeadingIndex >= 0 ? remaining.slice(0, nextHeadingIndex) : remaining;
+
+    return sectionBody
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("- "))
+      .map((line) => line.slice(2).trim())
+      .filter(
+        (line) =>
+          line.length > 0 && !line.startsWith("Release commit:") && !line.startsWith("Range:")
+      );
+  }
+
+  function renderChangelogNotes(notes) {
+    if (!latestChangelogEl) return;
+    latestChangelogEl.innerHTML = "";
+
+    if (!notes.length) {
+      const li = document.createElement("li");
+      li.textContent = "Latest release notes not available yet.";
+      latestChangelogEl.appendChild(li);
+      return;
+    }
+
+    notes.slice(0, 8).forEach((note) => {
+      const li = document.createElement("li");
+      li.textContent = note;
+      latestChangelogEl.appendChild(li);
+    });
+  }
+
+  async function loadLatestChangelog(version) {
+    if (changelogLinkEl) {
+      changelogLinkEl.href = "./changelog.md";
+    }
+    if (!version) {
+      renderChangelogNotes([]);
+      return;
+    }
+
+    try {
+      const response = await fetch("./changelog.md", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("Changelog not available");
+      }
+      const changelog = await response.text();
+      const notes = extractChangelogNotes(changelog, version);
+      renderChangelogNotes(notes);
+    } catch (error) {
+      renderChangelogNotes([]);
     }
   }
 
@@ -73,8 +143,8 @@
   }
 
   function autoRetryTransientInstallFailure() {
-    const RETRY_DELAY_MS = 900;
-    const DIALOG_RESHOW_DELAY_MS = 200;
+    const RETRY_DELAY_MS = 120;
+    const DIALOG_RESHOW_DELAY_MS = 220;
     const watchedDialogs = new WeakSet();
     const retriedDialogs = new WeakSet();
     const hiddenDialogs = new WeakSet();
@@ -91,21 +161,36 @@
       hiddenDialogs.delete(dialogEl);
     };
 
+    const hasRetryableInitializeFailure = (dialogEl) => {
+      if (!dialogEl) return false;
+      const installState = dialogEl._installState;
+      if (!installState || installState.state !== "error") return false;
+
+      const errorCode =
+        installState.details && typeof installState.details.error === "string"
+          ? installState.details.error
+          : "";
+      const message = typeof installState.message === "string" ? installState.message : "";
+      const normalizedMessage = message.toLowerCase();
+
+      return errorCode === "failed_initialize" || normalizedMessage.includes("failed to initialize");
+    };
+
     const maybeRetry = (dialogEl) => {
       if (!dialogEl || retriedDialogs.has(dialogEl)) return;
-
-      const installState = dialogEl._installState;
-      const isRetryableInitializeFailure =
-        installState &&
-        installState.state === "error" &&
-        installState.details &&
-        installState.details.error === "failed_initialize";
-
-      if (!isRetryableInitializeFailure) return;
+      if (!hasRetryableInitializeFailure(dialogEl)) return;
 
       retriedDialogs.add(dialogEl);
       // Hide the first transient initialize failure while we auto-retry.
       hideDialog(dialogEl);
+      dialogEl._installState = {
+        state: "initializing",
+        message: "Retrying initialization...",
+        details: { done: false, autoRetry: true },
+      };
+      if (typeof dialogEl.requestUpdate === "function") {
+        dialogEl.requestUpdate();
+      }
       setTimeout(() => {
         try {
           if (typeof dialogEl._confirmInstall === "function") {
@@ -127,11 +212,11 @@
     };
 
     const watchDialog = (dialogEl) => {
-      if (!dialogEl || watchedDialogs.has(dialogEl)) return;
-      watchedDialogs.add(dialogEl);
-
+      if (!dialogEl) return false;
       const shadowRoot = dialogEl.shadowRoot;
-      if (!shadowRoot) return;
+      if (!shadowRoot) return false;
+      if (watchedDialogs.has(dialogEl)) return true;
+      watchedDialogs.add(dialogEl);
 
       const dialogObserver = new MutationObserver(() => {
         maybeRetry(dialogEl);
@@ -143,12 +228,17 @@
         attributes: true,
       });
       maybeRetry(dialogEl);
+      return true;
     };
 
     const observer = new MutationObserver(() => {
       const dialogEl = document.querySelector("ewt-install-dialog");
       if (!dialogEl) return;
-      watchDialog(dialogEl);
+      if (!watchDialog(dialogEl)) {
+        requestAnimationFrame(() => {
+          watchDialog(dialogEl);
+        });
+      }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
@@ -156,7 +246,9 @@
 
   detectBrowserSupport();
   detectSecureContext();
-  loadManifestVersion();
+  loadManifestVersion().then((version) => {
+    loadLatestChangelog(version);
+  });
   patchInstallSuccessMessage();
   autoRetryTransientInstallFailure();
 })();

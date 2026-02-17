@@ -46,6 +46,7 @@ jobs:
 
           mkdir -p "$FIRMWARE_DIR"
           cp -R docs/. "$SITE_DIR/"
+          cp Firmware/CHANGELOG.md "$SITE_DIR/changelog.md"
 
           cp "$BUILD_DIR/partitions.bin" "$FIRMWARE_DIR/partitions.bin"
           cp "$BUILD_DIR/firmware.bin" "$FIRMWARE_DIR/firmware.bin"
