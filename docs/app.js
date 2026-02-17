@@ -4,6 +4,70 @@
   const secureEl = document.getElementById("secure-check");
   const latestChangelogEl = document.getElementById("latest-changelog");
   const changelogLinkEl = document.getElementById("changelog-link");
+  const FIRMWARE_FETCH_TIMEOUT_MS = 30000;
+
+  function installFirmwareFetchTimeoutGuard() {
+    if (typeof window.fetch !== "function") return;
+    const originalFetch = window.fetch.bind(window);
+
+    const isFirmwareArtifactRequest = (input) => {
+      try {
+        const rawUrl = typeof input === "string" ? input : input && input.url;
+        if (!rawUrl) return false;
+        const url = new URL(rawUrl, window.location.href);
+        if (!url.pathname.includes("/firmware/latest/")) return false;
+        return /\.(bin|json)$/i.test(url.pathname);
+      } catch (error) {
+        return false;
+      }
+    };
+
+    window.fetch = async (input, init) => {
+      if (!isFirmwareArtifactRequest(input)) {
+        return originalFetch(input, init);
+      }
+
+      const controller = new AbortController();
+      const upstreamSignal = init && init.signal;
+      let timedOut = false;
+      let upstreamAbortListener = null;
+
+      if (upstreamSignal && typeof upstreamSignal.addEventListener === "function") {
+        if (upstreamSignal.aborted) {
+          controller.abort();
+        } else {
+          upstreamAbortListener = () => controller.abort();
+          upstreamSignal.addEventListener("abort", upstreamAbortListener, { once: true });
+        }
+      }
+
+      const timeoutId = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, FIRMWARE_FETCH_TIMEOUT_MS);
+
+      try {
+        const response = await originalFetch(input, {
+          ...(init || {}),
+          signal: controller.signal,
+        });
+        return response;
+      } catch (error) {
+        const abortError = error && error.name === "AbortError";
+        if (timedOut && abortError) {
+          throw new Error(
+            "Timed out downloading firmware files. Check connection, VPN/proxy, and browser extensions, then retry."
+          );
+        }
+        throw error;
+      } finally {
+        clearTimeout(timeoutId);
+        if (upstreamAbortListener && upstreamSignal) {
+          upstreamSignal.removeEventListener("abort", upstreamAbortListener);
+        }
+      }
+    };
+  }
 
   function detectBrowserSupport() {
     const hasWebSerial = "serial" in navigator;
@@ -244,6 +308,7 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  installFirmwareFetchTimeoutGuard();
   detectBrowserSupport();
   detectSecureContext();
   loadManifestVersion().then((version) => {
