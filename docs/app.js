@@ -11,6 +11,26 @@
   const FIRMWARE_FETCH_TIMEOUT_MS = 30000;
   const DEBUG_QUERY_KEY = "debug";
   const DEBUG_LOG_MAX_ENTRIES = 400;
+  const AUTO_RETRY_DISABLE_QUERY_KEY = "noretry";
+  const AUTO_RETRY_QUERY_KEY = "retry";
+
+  function parseBooleanQueryValue(value) {
+    const normalized = (value || "").trim().toLowerCase();
+    if (["1", "true", "yes", "on"].includes(normalized)) return true;
+    if (["0", "false", "no", "off"].includes(normalized)) return false;
+    return null;
+  }
+
+  function shouldDisableAutoRetry() {
+    const queryParams = new URLSearchParams(window.location.search);
+    const disableValue = parseBooleanQueryValue(queryParams.get(AUTO_RETRY_DISABLE_QUERY_KEY));
+    if (disableValue === true) return true;
+
+    const retryValue = parseBooleanQueryValue(queryParams.get(AUTO_RETRY_QUERY_KEY));
+    if (retryValue === false) return true;
+
+    return false;
+  }
 
   function createDebugLogger() {
     const queryParams = new URLSearchParams(window.location.search);
@@ -158,6 +178,7 @@
   }
 
   const debug = createDebugLogger();
+  const autoRetryDisabled = shouldDisableAutoRetry();
 
   function installFirmwareFetchTimeoutGuard(debugLogger) {
     if (typeof window.fetch !== "function") return;
@@ -536,10 +557,10 @@
             failRetry(error);
           })
           .finally(() => {
-          setTimeout(() => {
-            showDialog(dialogEl);
-            logInstallStateIfChanged(dialogEl, "dialog-reshow");
-          }, DIALOG_RESHOW_DELAY_MS);
+            setTimeout(() => {
+              showDialog(dialogEl);
+              logInstallStateIfChanged(dialogEl, "dialog-reshow");
+            }, DIALOG_RESHOW_DELAY_MS);
           });
       }, RETRY_DELAY_MS);
     };
@@ -602,5 +623,12 @@
     loadLatestChangelog(version);
   });
   patchInstallSuccessMessage();
-  autoRetryTransientInstallFailure();
+  if (autoRetryDisabled) {
+    debug.log("install-auto-retry-disabled", {
+      hint: "Pass ?noretry=0 or ?retry=1 to enable auto-retry.",
+      query: window.location.search,
+    });
+  } else {
+    autoRetryTransientInstallFailure();
+  }
 })();
