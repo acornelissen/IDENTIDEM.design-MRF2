@@ -58,3 +58,71 @@ FilmCounterEstimate estimateFilmCounter(const FilmFormat &film_format, int encod
 
   return result;
 }
+
+void resetEncoderFilterState(EncoderFilterState &state, int initial_position, unsigned long now_ms)
+{
+  state.initialized = true;
+  state.stable_position = max(0, initial_position);
+  state.candidate_position = state.stable_position;
+  state.candidate_direction = 0;
+  state.candidate_since_ms = now_ms;
+}
+
+EncoderFilterDecision updateEncoderFilter(
+    EncoderFilterState &state, int raw_position, unsigned long now_ms, bool allow_rewind)
+{
+  if (!state.initialized)
+  {
+    resetEncoderFilterState(state, raw_position, now_ms);
+  }
+
+  raw_position = max(0, raw_position);
+  int delta = raw_position - state.stable_position;
+  if (delta == 0)
+  {
+    state.candidate_direction = 0;
+    state.candidate_position = state.stable_position;
+    state.candidate_since_ms = now_ms;
+    return {false, state.stable_position};
+  }
+
+  int direction = (delta > 0) ? 1 : -1;
+  if (direction < 0 && !allow_rewind)
+  {
+    state.candidate_direction = 0;
+    state.candidate_position = state.stable_position;
+    state.candidate_since_ms = now_ms;
+    return {false, state.stable_position};
+  }
+
+  int hysteresis = (direction > 0) ? FILM_COUNTER_FORWARD_HYSTERESIS : FILM_COUNTER_REWIND_HYSTERESIS;
+  unsigned long debounceMs =
+      (direction > 0) ? FILM_COUNTER_FORWARD_DEBOUNCE_MS : FILM_COUNTER_REWIND_DEBOUNCE_MS;
+  if (abs(delta) < hysteresis)
+  {
+    state.candidate_direction = 0;
+    state.candidate_position = state.stable_position;
+    state.candidate_since_ms = now_ms;
+    return {false, state.stable_position};
+  }
+
+  if (state.candidate_direction != direction)
+  {
+    state.candidate_direction = direction;
+    state.candidate_position = raw_position;
+    state.candidate_since_ms = now_ms;
+    return {false, state.stable_position};
+  }
+
+  state.candidate_position = raw_position;
+  if ((now_ms - state.candidate_since_ms) < debounceMs)
+  {
+    return {false, state.stable_position};
+  }
+
+  state.stable_position = state.candidate_position;
+  state.candidate_direction = 0;
+  state.candidate_position = state.stable_position;
+  state.candidate_since_ms = now_ms;
+  return {true, state.stable_position};
+}

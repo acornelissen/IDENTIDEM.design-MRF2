@@ -66,6 +66,56 @@ void test_frame_counter_snap_and_roll_end()
   TEST_ASSERT_EQUAL_INT(FILM_COUNTER_END, end.frame);
 }
 
+void test_encoder_filter_forward_hysteresis_and_debounce()
+{
+  EncoderFilterState state = {};
+  resetEncoderFilterState(state, 100, 0);
+
+  EncoderFilterDecision jitter = updateEncoderFilter(state, 101, 10, false);
+  TEST_ASSERT_FALSE(jitter.accepted);
+
+  EncoderFilterDecision beginMove = updateEncoderFilter(state, 103, 20, false);
+  TEST_ASSERT_FALSE(beginMove.accepted);
+
+  EncoderFilterDecision bounceBack = updateEncoderFilter(state, 101, 30, false);
+  TEST_ASSERT_FALSE(bounceBack.accepted);
+
+  EncoderFilterDecision rearmMove = updateEncoderFilter(state, 103, 40, false);
+  TEST_ASSERT_FALSE(rearmMove.accepted);
+
+  EncoderFilterDecision tooSoon = updateEncoderFilter(state, 104, 60, false);
+  TEST_ASSERT_FALSE(tooSoon.accepted);
+
+  EncoderFilterDecision accepted = updateEncoderFilter(state, 105, 80, false);
+  TEST_ASSERT_TRUE(accepted.accepted);
+  TEST_ASSERT_EQUAL_INT(105, accepted.accepted_position);
+}
+
+void test_encoder_filter_reverse_requires_rewind_mode()
+{
+  EncoderFilterState disabledRewind = {};
+  resetEncoderFilterState(disabledRewind, 200, 0);
+
+  EncoderFilterDecision reverseIgnored = updateEncoderFilter(disabledRewind, 195, 200, false);
+  TEST_ASSERT_FALSE(reverseIgnored.accepted);
+
+  EncoderFilterState enabledRewind = {};
+  resetEncoderFilterState(enabledRewind, 300, 0);
+
+  EncoderFilterDecision belowHysteresis = updateEncoderFilter(enabledRewind, 298, 10, true);
+  TEST_ASSERT_FALSE(belowHysteresis.accepted);
+
+  EncoderFilterDecision beginReverse = updateEncoderFilter(enabledRewind, 295, 20, true);
+  TEST_ASSERT_FALSE(beginReverse.accepted);
+
+  EncoderFilterDecision reverseTooSoon = updateEncoderFilter(enabledRewind, 294, 80, true);
+  TEST_ASSERT_FALSE(reverseTooSoon.accepted);
+
+  EncoderFilterDecision reverseAccepted = updateEncoderFilter(enabledRewind, 292, 150, true);
+  TEST_ASSERT_TRUE(reverseAccepted.accepted);
+  TEST_ASSERT_EQUAL_INT(292, reverseAccepted.accepted_position);
+}
+
 void test_lidar_candidate_selection_and_blend()
 {
   DTSMeasurement measurement = {};
@@ -141,6 +191,8 @@ int main(int, char **)
   UNITY_BEGIN();
   RUN_TEST(test_frame_counter_exact_and_interpolation);
   RUN_TEST(test_frame_counter_snap_and_roll_end);
+  RUN_TEST(test_encoder_filter_forward_hysteresis_and_debounce);
+  RUN_TEST(test_encoder_filter_reverse_requires_rewind_mode);
   RUN_TEST(test_lidar_candidate_selection_and_blend);
   RUN_TEST(test_lidar_invalid_and_display_formatting);
   RUN_TEST(test_lens_snap_and_distance_estimation);

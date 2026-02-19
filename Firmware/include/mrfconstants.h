@@ -99,6 +99,11 @@ const int LIDAR_RESIDUAL_DELTA_CM[LIDAR_RESIDUAL_POINT_COUNT] = {0, 0, 0, 0, 0, 
 
 const int FILM_COUNTER_SNAP_THRESHOLD = 1;
 const int FILM_COUNTER_END = 99;
+const int FILM_COUNTER_FORWARD_HYSTERESIS = 2;
+const unsigned long FILM_COUNTER_FORWARD_DEBOUNCE_MS = 35;
+const bool FILM_COUNTER_ALLOW_REWIND = false;
+const int FILM_COUNTER_REWIND_HYSTERESIS = 4;
+const unsigned long FILM_COUNTER_REWIND_DEBOUNCE_MS = 120;
 
 // LiDAR correction curve (cm). Below cutoff, apply a smooth correction based on a single reference point.
 const float LIDAR_CAL_CUTOFF_CM = 150.0f;

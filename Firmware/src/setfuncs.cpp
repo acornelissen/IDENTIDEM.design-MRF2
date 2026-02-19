@@ -256,25 +256,35 @@ void setLensDistance()
 
 void setFilmCounter()
 {
-  int encoder_position = encoder.getEncoderPosition();
-
-  if (encoder_position != prev_encoder_value && encoder_position > prev_encoder_value)
+  static EncoderFilterState encoderFilterState = {};
+  const unsigned long now = millis();
+  if (!encoderFilterState.initialized || encoderFilterState.stable_position != prev_encoder_value)
   {
-    registerActivity();
-
-    encoder_value = encoder_position;
-    prev_encoder_value = encoder_value;
-
-    FilmCounterEstimate estimate = estimateFilmCounter(film_formats[selected_format], encoder_value);
-    if (!estimate.valid)
-    {
-      return;
-    }
-
-    film_counter = estimate.frame;
-    frame_progress = estimate.progress;
-    savePrefs();
+    resetEncoderFilterState(encoderFilterState, prev_encoder_value, now);
   }
+
+  int encoder_position = encoder.getEncoderPosition();
+  EncoderFilterDecision decision =
+      updateEncoderFilter(encoderFilterState, encoder_position, now, FILM_COUNTER_ALLOW_REWIND);
+  if (!decision.accepted)
+  {
+    return;
+  }
+
+  registerActivity();
+
+  encoder_value = decision.accepted_position;
+  prev_encoder_value = encoder_value;
+
+  FilmCounterEstimate estimate = estimateFilmCounter(film_formats[selected_format], encoder_value);
+  if (!estimate.valid)
+  {
+    return;
+  }
+
+  film_counter = estimate.frame;
+  frame_progress = estimate.progress;
+  savePrefs();
 }
 
 void setVoltage()
