@@ -15,9 +15,13 @@ float prev_aperture;
 float aperture;
 float prev_lux = 0;
 float lux = 0;
+float ev_readout = 0;
 String shutter_speed = "...";
 int iso_index = DEFAULT_ISO_INDEX;
 int aperture_index;
+int exposure_comp_thirds = DEFAULT_EXPOSURE_COMP_THIRDS;
+int meter_smoothing_mode = DEFAULT_METER_SMOOTHING_MODE;
+bool show_ev_readout = DEFAULT_SHOW_EV_READOUT;
 
 // Filter algorithm
 int samples[SMOOTHING_WINDOW_SIZE];

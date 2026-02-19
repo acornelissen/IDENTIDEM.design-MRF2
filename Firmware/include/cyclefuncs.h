@@ -14,6 +14,9 @@ void cycleISOs();
 void cycleLenses();
 void cycleCalibLenses();
 void cycleFormats();
+void cycleExposureCompensation(CycleDirection direction);
+void cycleMeterSmoothing();
+void toggleEvReadout();
 // ---------------------
 
 #endif // CYCLEFUNCS_H

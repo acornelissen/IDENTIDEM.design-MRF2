@@ -11,6 +11,7 @@
 #include "lens_logic.h"
 #include "lenses.h"
 #include "lidar_logic.h"
+#include "lidar_recovery_logic.h"
 #include "lightmeter_logic.h"
 #include "mrfconstants.h"
 #include "formats.h"
@@ -47,49 +48,23 @@ void clearLidarDisplay()
   }
   lidar_quality_level = 0;
 }
-
-unsigned long computeLidarRecoveryDelayMs(int consecutiveErrors)
-{
-  unsigned long delayMs = LIDAR_RECOVERY_RETRY_BASE_MS;
-  int attempts = min(consecutiveErrors, 6);
-  for (int i = 1; i < attempts; i++)
-  {
-    delayMs = min(delayMs * 2UL, LIDAR_RECOVERY_RETRY_MAX_MS);
-  }
-  return delayMs;
-}
 } // namespace
 
 // Functions to read values from sensors and set variables
 // ---------------------
 void setDistance()
 {
-  struct LidarRecoveryState
-  {
-    unsigned long lastValidMeasurementMs;
-    unsigned long nextRecoveryAttemptMs;
-    int consecutiveErrors;
-    bool recovering;
-    bool wasEnabled;
-  };
-
-  static LidarRecoveryState recoveryState = {0, 0, 0, false, false};
+  static LidarRecoveryState recoveryState = {false, false, 0, 0, 0};
 
   if (!lidarEnabled)
   {
-    recoveryState = {0, 0, 0, false, false};
+    recoveryState = {false, false, 0, 0, 0};
     return;
   }
 
   const unsigned long now = millis();
-  if (!recoveryState.wasEnabled)
-  {
-    recoveryState.wasEnabled = true;
-    recoveryState.lastValidMeasurementMs = now;
-    recoveryState.nextRecoveryAttemptMs = now;
-    recoveryState.consecutiveErrors = 0;
-    recoveryState.recovering = false;
-  }
+  LidarRecoveryDecision recoveryDecision = updateLidarRecoveryState(
+      recoveryState, LidarRecoveryEvent::NO_VALID_MEASUREMENT, now);
 
   DTSError lidarUpdateError = static_cast<DTSError>(lidar.update());
   if (lidarUpdateError == DTSError::NONE)
@@ -102,12 +77,16 @@ void setDistance()
     LidarCandidate chosen = chooseBestLidarCandidate(measurement, prev_distance, has_lens_prior, lens_prior_cm);
     if (!chosen.valid)
     {
+      recoveryDecision = updateLidarRecoveryState(
+          recoveryState, LidarRecoveryEvent::NO_VALID_MEASUREMENT, now);
+      if (recoveryDecision.clear_display)
+      {
+        clearLidarDisplay();
+      }
       return;
     }
 
-    recoveryState.lastValidMeasurementMs = now;
-    recoveryState.consecutiveErrors = 0;
-    recoveryState.recovering = false;
+    updateLidarRecoveryState(recoveryState, LidarRecoveryEvent::VALID_MEASUREMENT, now);
     lidar_quality_level = chosen.quality_level;
 
     distance = static_cast<int16_t>(blendLidarDistance(prev_distance, chosen.distance_cm, chosen.confidence));
@@ -116,49 +95,29 @@ void setDistance()
       distance_cm = formatDistanceDisplay(distance);
       prev_distance = distance;
     }
+    return;
   }
-  else
+
+  LidarRecoveryEvent event = (lidarUpdateError == DTSError::TIMEOUT)
+                                 ? LidarRecoveryEvent::TIMEOUT
+                                 : LidarRecoveryEvent::ERROR;
+  recoveryDecision = updateLidarRecoveryState(recoveryState, event, now);
+
+  if (recoveryDecision.clear_display)
   {
-    if (lidarUpdateError != DTSError::TIMEOUT)
-    {
-      recoveryState.consecutiveErrors++;
-      if (recoveryState.consecutiveErrors >= LIDAR_RECOVERY_ERROR_THRESHOLD)
-      {
-        recoveryState.recovering = true;
-        recoveryState.nextRecoveryAttemptMs = now;
-      }
-    }
-    else if (now - recoveryState.lastValidMeasurementMs > LIDAR_RECOVERY_TIMEOUT_MS)
-    {
-      recoveryState.recovering = true;
-      recoveryState.nextRecoveryAttemptMs = now;
-    }
-
-    if (now - recoveryState.lastValidMeasurementMs > LIDAR_NO_DATA_TIMEOUT_MS)
-    {
-      clearLidarDisplay();
-    }
-
-    if (!recoveryState.recovering || now < recoveryState.nextRecoveryAttemptMs)
-    {
-      return;
-    }
-
-    lidar.clearError();
-    DTSError resetStatus = lidar.resetState();
-    DTSError enableStatus = static_cast<DTSError>(lidar.enableSensor());
-    if (resetStatus == DTSError::NONE && enableStatus == DTSError::NONE)
-    {
-      recoveryState.consecutiveErrors = 0;
-      recoveryState.recovering = false;
-      recoveryState.lastValidMeasurementMs = now;
-      recoveryState.nextRecoveryAttemptMs = now;
-      return;
-    }
-
-    recoveryState.consecutiveErrors = min(recoveryState.consecutiveErrors + 1, 10);
-    recoveryState.nextRecoveryAttemptMs = now + computeLidarRecoveryDelayMs(recoveryState.consecutiveErrors);
+    clearLidarDisplay();
   }
+
+  if (!recoveryDecision.attempt_recovery)
+  {
+    return;
+  }
+
+  lidar.clearError();
+  DTSError resetStatus = lidar.resetState();
+  DTSError enableStatus = static_cast<DTSError>(lidar.enableSensor());
+  bool recovered = (resetStatus == DTSError::NONE && enableStatus == DTSError::NONE);
+  noteLidarRecoveryAttemptResult(recoveryState, recovered, now);
 }
 
 // Borrows moving average code from
@@ -303,21 +262,39 @@ void setVoltage()
 
 void setLightMeter()
 {
-  lux = lightMeter.readLightLevel();
+  static bool smoothingInitialized = false;
+  static float smoothedLux = 0.0f;
 
-  if (lux != prev_lux || iso != prev_iso || aperture != prev_aperture)
+  float rawLux = lightMeter.readLightLevel();
+  if (rawLux < 0.0f)
   {
-    if (aperture == 0 && lux > 0)
-    {
-      cycleApertures(CycleDirection::Up);
-    }
-
-    shutter_speed = formatShutterSpeed(lux, aperture, iso);
-
-    prev_lux = lux;
-    prev_iso = iso;
-    prev_aperture = aperture;
+    rawLux = 0.0f;
   }
+
+  float alpha = getMeterSmoothingAlpha(meter_smoothing_mode);
+  if (!smoothingInitialized || alpha >= 1.0f)
+  {
+    smoothedLux = rawLux;
+    smoothingInitialized = true;
+  }
+  else
+  {
+    smoothedLux = (rawLux * alpha) + (smoothedLux * (1.0f - alpha));
+  }
+
+  float exposureCompEv = static_cast<float>(exposure_comp_thirds) / 3.0f;
+  lux = applyExposureCompensationToLux(smoothedLux, exposureCompEv);
+  ev_readout = calculateEV100(smoothedLux);
+
+  if (aperture == 0 && lux > 0)
+  {
+    cycleApertures(CycleDirection::Up);
+  }
+
+  shutter_speed = formatShutterSpeed(lux, aperture, iso);
+  prev_lux = lux;
+  prev_iso = iso;
+  prev_aperture = aperture;
 }
 
 void toggleLidar(bool lidarStatusParam)

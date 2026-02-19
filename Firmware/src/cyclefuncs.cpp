@@ -92,4 +92,35 @@ void cycleFormats()
   }
   savePrefs();
 }
+
+void cycleExposureCompensation(CycleDirection direction)
+{
+  int step = (direction == CycleDirection::Up) ? 1 : -1;
+  exposure_comp_thirds += step;
+  if (exposure_comp_thirds > LIGHTMETER_EV_COMP_MAX_THIRDS)
+  {
+    exposure_comp_thirds = LIGHTMETER_EV_COMP_MIN_THIRDS;
+  }
+  else if (exposure_comp_thirds < LIGHTMETER_EV_COMP_MIN_THIRDS)
+  {
+    exposure_comp_thirds = LIGHTMETER_EV_COMP_MAX_THIRDS;
+  }
+  savePrefs();
+}
+
+void cycleMeterSmoothing()
+{
+  meter_smoothing_mode++;
+  if (meter_smoothing_mode > LIGHTMETER_SMOOTHING_MODE_MAX)
+  {
+    meter_smoothing_mode = LIGHTMETER_SMOOTHING_MODE_MIN;
+  }
+  savePrefs();
+}
+
+void toggleEvReadout()
+{
+  show_ev_readout = !show_ev_readout;
+  savePrefs();
+}
 // ---------------------

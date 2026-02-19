@@ -10,6 +10,7 @@
 #include "lenses.h"
 #include "formats.h"
 #include "helpers.h" // For getFocusRadius
+#include "lightmeter_logic.h"
 
 struct ParallaxShift
 {
@@ -179,8 +180,23 @@ void drawMainUI()
   u8g2.print(distance_cm);
   drawLidarQualityIndicator();
   u8g2.setCursor(MAIN_LENS_X, MAIN_LENS_Y);
-  u8g2.print(F("Lens:"));
-  u8g2.print(lens_distance_cm);
+  if (show_ev_readout)
+  {
+    u8g2.print(F("EV100:"));
+    if (ev_readout == ev_readout)
+    {
+      u8g2.print(ev_readout, 1);
+    }
+    else
+    {
+      u8g2.print(F("--.-"));
+    }
+  }
+  else
+  {
+    u8g2.print(F("Lens:"));
+    u8g2.print(lens_distance_cm);
+  }
 
   int framelineX = lenses[selected_lens].framelines[0];
   int framelineY = lenses[selected_lens].framelines[1];
@@ -395,34 +411,57 @@ void drawConfigUI()
     }
   };
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 0));
-  setItemColors(config_step == 0);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_ISO));
+  setItemColors(config_step == CONFIG_STEP_ISO);
   u8g2.print(F(" ISO:")); u8g2.print(iso); u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 1));
-  setItemColors(config_step == 1);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_FORMAT));
+  setItemColors(config_step == CONFIG_STEP_FORMAT);
   u8g2.print(F(" Format:")); u8g2.print(film_formats[selected_format].name); u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 2));
-  setItemColors(config_step == 2);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_LENS));
+  setItemColors(config_step == CONFIG_STEP_LENS);
   u8g2.print(F(" Lens:")); u8g2.print(lenses[selected_lens].name); u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 3));
-  setItemColors(config_step == 3);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_PARALLAX));
+  setItemColors(config_step == CONFIG_STEP_PARALLAX);
   u8g2.print(F(" Parallax Correction: "));
   u8g2.print(parallaxEnabled ? F("On") : F("Off"));
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 4));
-  setItemColors(config_step == 4);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_EV_COMP));
+  setItemColors(config_step == CONFIG_STEP_EV_COMP);
+  u8g2.print(F(" EV Comp:"));
+  float evComp = static_cast<float>(exposure_comp_thirds) / 3.0f;
+  if (evComp >= 0.0f)
+  {
+    u8g2.print(F("+"));
+  }
+  u8g2.print(evComp, 1);
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_METER_SMOOTHING));
+  setItemColors(config_step == CONFIG_STEP_METER_SMOOTHING);
+  u8g2.print(F(" Meter Smoothing:"));
+  u8g2.print(getMeterSmoothingLabel(meter_smoothing_mode));
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_EV_READOUT));
+  setItemColors(config_step == CONFIG_STEP_EV_READOUT);
+  u8g2.print(F(" EV Readout:"));
+  u8g2.print(show_ev_readout ? F("On") : F("Off"));
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_LENS_CALIB));
+  setItemColors(config_step == CONFIG_STEP_LENS_CALIB);
   u8g2.print(F(" Lens Calibration > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 5));
-  setItemColors(config_step == 5);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_RESET));
+  setItemColors(config_step == CONFIG_STEP_RESET);
   u8g2.print(F(" Reset count >> "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 6));
-  setItemColors(config_step == 6);
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * CONFIG_STEP_EXIT));
+  setItemColors(config_step == CONFIG_STEP_EXIT);
   u8g2.print(F(" Exit >> "));
 
   u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y);

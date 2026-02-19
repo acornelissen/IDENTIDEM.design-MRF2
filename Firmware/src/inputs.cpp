@@ -11,6 +11,7 @@
 #include "cyclefuncs.h"
 #include "setfuncs.h"
 #include "activity.h"
+#include "calibration_logic.h"
 
 // Functions to check and act on button presses
 // ---------------------
@@ -27,21 +28,6 @@ static void resetFrameCounter()
 
 namespace
 {
-void sortAscending(int *values, int count)
-{
-  for (int i = 1; i < count; i++)
-  {
-    int key = values[i];
-    int j = i - 1;
-    while (j >= 0 && values[j] > key)
-    {
-      values[j + 1] = values[j];
-      j--;
-    }
-    values[j + 1] = key;
-  }
-}
-
 bool captureStableCalibReading(int &averagedReading)
 {
   int samples[CALIB_SAMPLE_COUNT];
@@ -51,72 +37,26 @@ bool captureStableCalibReading(int &averagedReading)
     delay(CALIB_SAMPLE_DELAY_MS);
   }
 
-  int sortedSamples[CALIB_SAMPLE_COUNT];
-  memcpy(sortedSamples, samples, sizeof(samples));
-  sortAscending(sortedSamples, CALIB_SAMPLE_COUNT);
-  const int median = sortedSamples[CALIB_SAMPLE_COUNT / 2];
-
-  long inlierSum = 0;
-  int inlierCount = 0;
-  int minInlier = 32767;
-  int maxInlier = -32768;
-
-  for (int i = 0; i < CALIB_SAMPLE_COUNT; i++)
-  {
-    if (abs(samples[i] - median) <= CALIB_OUTLIER_MAX_DELTA)
-    {
-      inlierSum += samples[i];
-      inlierCount++;
-      minInlier = min(minInlier, samples[i]);
-      maxInlier = max(maxInlier, samples[i]);
-    }
-  }
-
-  if (inlierCount < CALIB_MIN_INLIER_COUNT)
-  {
-    return false;
-  }
-
-  if ((maxInlier - minInlier) > CALIB_INLIER_SPREAD_MAX)
-  {
-    return false;
-  }
-
-  averagedReading = static_cast<int>((inlierSum + (inlierCount / 2)) / inlierCount);
-  return true;
+  return computeStableCalibrationReading(
+      samples,
+      CALIB_SAMPLE_COUNT,
+      CALIB_OUTLIER_MAX_DELTA,
+      CALIB_MIN_INLIER_COUNT,
+      CALIB_INLIER_SPREAD_MAX,
+      averagedReading);
 }
 
 bool isMonotonicCalibSequenceWithCandidate(int candidateReading)
 {
-  if (current_calib_distance == 0)
+  int readingCount = current_calib_distance + 1;
+  int readings[CALIB_DISTANCE_COUNT];
+  for (int i = 0; i < current_calib_distance; i++)
   {
-    return true;
+    readings[i] = calib_distance_set[i];
   }
+  readings[current_calib_distance] = candidateReading;
 
-  int direction = 0;
-  for (int i = 1; i <= current_calib_distance; i++)
-  {
-    int previous = calib_distance_set[i - 1];
-    int current = (i == current_calib_distance) ? candidateReading : calib_distance_set[i];
-    int delta = current - previous;
-
-    if (abs(delta) < CALIB_MONOTONIC_MIN_STEP)
-    {
-      return false;
-    }
-
-    int stepDirection = (delta > 0) ? 1 : -1;
-    if (direction == 0)
-    {
-      direction = stepDirection;
-    }
-    else if (stepDirection != direction)
-    {
-      return false;
-    }
-  }
-
-  return true;
+  return validateMonotonicCalibration(readings, readingCount, CALIB_MONOTONIC_MIN_STEP);
 }
 } // namespace
 
@@ -181,7 +121,7 @@ void checkButtons()
       else if (ui_mode == "reset_confirm")
       {
         ui_mode = "config";
-        config_step = 5;
+        config_step = CONFIG_STEP_RESET;
       }
     }
   }
@@ -207,20 +147,29 @@ void checkButtons()
         }
         else if (ui_mode == "config")
         {
-          if (config_step == 0) cycleISOs();
-          else if (config_step == 1) cycleFormats();
-          else if (config_step == 2) {
+          if (config_step == CONFIG_STEP_ISO) cycleISOs();
+          else if (config_step == CONFIG_STEP_FORMAT) cycleFormats();
+          else if (config_step == CONFIG_STEP_LENS) {
             cycleLenses();
             int non_zero_aperture_index = getFirstNonZeroAperture();
             if (non_zero_aperture_index < 0) non_zero_aperture_index = 0;
             aperture = lenses[selected_lens].apertures[non_zero_aperture_index];
             aperture_index = non_zero_aperture_index;
           }
-          else if (config_step == 3) {
+          else if (config_step == CONFIG_STEP_PARALLAX) {
             parallaxEnabled = !parallaxEnabled;
             savePrefs();
           }
-          else if (config_step == 4) {
+          else if (config_step == CONFIG_STEP_EV_COMP) {
+            cycleExposureCompensation(CycleDirection::Up);
+          }
+          else if (config_step == CONFIG_STEP_METER_SMOOTHING) {
+            cycleMeterSmoothing();
+          }
+          else if (config_step == CONFIG_STEP_EV_READOUT) {
+            toggleEvReadout();
+          }
+          else if (config_step == CONFIG_STEP_LENS_CALIB) {
             calib_step = 0;
             calib_lens = selected_lens; // Use current selected lens for calibration
             current_calib_distance = 0;
@@ -228,10 +177,10 @@ void checkButtons()
             memset(calib_distance_set, 0, sizeof(calib_distance_set));
             ui_mode = "calib";
           }
-          else if (config_step == 5) {
+          else if (config_step == CONFIG_STEP_RESET) {
             ui_mode = "reset_confirm";
           }
-          else if (config_step == 6) {
+          else if (config_step == CONFIG_STEP_EXIT) {
             ui_mode = "main"; config_step = 0;
           }
         }

@@ -26,6 +26,18 @@ const SpeedRange SPEED_RANGES[] = {
     {0.250f, 0.500f, "1/4"},
     {0.500f, 1.000f, "1/2"}};
 
+const float METER_SMOOTHING_ALPHA[LIGHTMETER_SMOOTHING_MODE_COUNT] = {
+    1.0f, // Off
+    0.55f,
+    0.35f,
+    0.20f};
+
+const char *METER_SMOOTHING_LABELS[LIGHTMETER_SMOOTHING_MODE_COUNT] = {
+    "Off",
+    "Low",
+    "Med",
+    "High"};
+
 const int SPEED_RANGE_COUNT = sizeof(SPEED_RANGES) / sizeof(SPEED_RANGES[0]);
 
 const char *getShutterFractionLabel(float speed)
@@ -40,6 +52,50 @@ const char *getShutterFractionLabel(float speed)
   return nullptr;
 }
 } // namespace
+
+float applyExposureCompensationToLux(float lux, float exposure_comp_ev)
+{
+  if (lux <= 0.0f)
+  {
+    return 0.0f;
+  }
+
+  float compensationScale = powf(2.0f, exposure_comp_ev);
+  if (compensationScale <= 0.0f)
+  {
+    return lux;
+  }
+
+  return lux / compensationScale;
+}
+
+float getMeterSmoothingAlpha(int smoothing_mode)
+{
+  int clampedMode = constrain(
+      smoothing_mode,
+      LIGHTMETER_SMOOTHING_MODE_MIN,
+      LIGHTMETER_SMOOTHING_MODE_MAX);
+  return METER_SMOOTHING_ALPHA[clampedMode];
+}
+
+const char *getMeterSmoothingLabel(int smoothing_mode)
+{
+  int clampedMode = constrain(
+      smoothing_mode,
+      LIGHTMETER_SMOOTHING_MODE_MIN,
+      LIGHTMETER_SMOOTHING_MODE_MAX);
+  return METER_SMOOTHING_LABELS[clampedMode];
+}
+
+float calculateEV100(float lux)
+{
+  if (lux <= 0.0f)
+  {
+    return NAN;
+  }
+
+  return log2f((lux * 100.0f) / static_cast<float>(K));
+}
 
 String formatShutterSpeed(float lux, float aperture, int iso)
 {

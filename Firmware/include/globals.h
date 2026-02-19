@@ -18,9 +18,13 @@ extern float prev_aperture;
 extern float aperture;
 extern float prev_lux;
 extern float lux;
+extern float ev_readout;
 extern String shutter_speed;
 extern int iso_index;
 extern int aperture_index;
+extern int exposure_comp_thirds;
+extern int meter_smoothing_mode;
+extern bool show_ev_readout;
 
 // Filter algorithm
 extern int samples[SMOOTHING_WINDOW_SIZE];

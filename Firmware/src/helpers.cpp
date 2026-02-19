@@ -12,6 +12,7 @@
 #include "formats.h"
 #include "lenses.h"       // Now includes NUM_LENSES
 #include "mrfconstants.h" // For SMOOTHING_WINDOW_SIZE
+#include "prefs_migration_logic.h"
 
 namespace
 {
@@ -61,6 +62,9 @@ void writePrefsToOpenNamespace()
   prefs.putInt("selected_format", selected_format);
   prefs.putInt("selected_lens", selected_lens);
   prefs.putBool("parallax", parallaxEnabled);
+  prefs.putInt("ev_comp_thirds", exposure_comp_thirds);
+  prefs.putInt("meter_smooth", meter_smoothing_mode);
+  prefs.putBool("show_ev", show_ev_readout);
   prefs.putInt("film_counter", film_counter);
   prefs.putInt("encoder_value", encoder_value);
   prefs.putInt("prev_encoder_value", prev_encoder_value);
@@ -126,6 +130,16 @@ void clampLoadedState()
   {
     prev_encoder_value = 0;
   }
+
+  exposure_comp_thirds = constrain(
+      exposure_comp_thirds,
+      LIGHTMETER_EV_COMP_MIN_THIRDS,
+      LIGHTMETER_EV_COMP_MAX_THIRDS);
+
+  meter_smoothing_mode = constrain(
+      meter_smoothing_mode,
+      LIGHTMETER_SMOOTHING_MODE_MIN,
+      LIGHTMETER_SMOOTHING_MODE_MAX);
 }
 
 void loadLensCalibrationSchemaV2()
@@ -152,7 +166,7 @@ void loadLensCalibrationSchemaV2()
 bool migrateLegacyLensPrefs()
 {
   const size_t legacyBytes = prefs.getBytesLength(PREFS_KEY_LEGACY_LENSES);
-  const size_t expectedBytes = NUM_LENSES * sizeof(Lens);
+  const size_t expectedBytes = expectedLegacyLensBlobSize(NUM_LENSES);
   if (legacyBytes == 0 || legacyBytes != expectedBytes)
   {
     return false;
@@ -170,22 +184,9 @@ bool migrateLegacyLensPrefs()
     free(buffer);
     return false;
   }
-
-  for (size_t lensIndex = 0; lensIndex < NUM_LENSES; lensIndex++)
-  {
-    uint8_t *lensBytes = buffer + (lensIndex * sizeof(Lens));
-    memcpy(
-        lenses[lensIndex].sensor_reading,
-        lensBytes + offsetof(Lens, sensor_reading),
-        sizeof(lenses[lensIndex].sensor_reading));
-
-    bool calibrated = false;
-    memcpy(&calibrated, lensBytes + offsetof(Lens, calibrated), sizeof(calibrated));
-    lenses[lensIndex].calibrated = calibrated;
-  }
-
+  bool migrated = applyLegacyLensBlob(buffer, legacyBytes, lenses, NUM_LENSES);
   free(buffer);
-  return true;
+  return migrated;
 }
 } // namespace
 
@@ -215,17 +216,27 @@ void loadPrefs()
   selected_lens = prefs.getInt("selected_lens", DEFAULT_SELECTED_LENS);
   selected_format = prefs.getInt("selected_format", DEFAULT_SELECTED_FORMAT);
   parallaxEnabled = prefs.getBool("parallax", true);
+  exposure_comp_thirds = prefs.getInt("ev_comp_thirds", DEFAULT_EXPOSURE_COMP_THIRDS);
+  meter_smoothing_mode = prefs.getInt("meter_smooth", DEFAULT_METER_SMOOTHING_MODE);
+  show_ev_readout = prefs.getBool("show_ev", DEFAULT_SHOW_EV_READOUT);
   film_counter = prefs.getInt("film_counter", 0);
   encoder_value = prefs.getInt("encoder_value", 0);
   prev_encoder_value = prefs.getInt("prev_encoder_value", 0);
 
-  bool migratedLegacy = false;
   uint16_t schemaVersion = prefs.getUShort(PREFS_KEY_SCHEMA, 0);
-  if (schemaVersion >= PREFS_SCHEMA_VERSION)
+  size_t legacyBytes = prefs.getBytesLength(PREFS_KEY_LEGACY_LENSES);
+  PrefsLoadMode loadMode = selectPrefsLoadMode(
+      schemaVersion,
+      PREFS_SCHEMA_VERSION,
+      legacyBytes,
+      expectedLegacyLensBlobSize(NUM_LENSES));
+
+  bool migratedLegacy = false;
+  if (loadMode == PrefsLoadMode::LOAD_SCHEMA)
   {
     loadLensCalibrationSchemaV2();
   }
-  else
+  else if (loadMode == PrefsLoadMode::MIGRATE_LEGACY)
   {
     migratedLegacy = migrateLegacyLensPrefs();
   }

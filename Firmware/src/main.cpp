@@ -19,6 +19,36 @@
 #include "inputs.h"
 #include "activity.h"
 
+namespace
+{
+struct LoopScheduler
+{
+  bool initialized = false;
+  unsigned long lastInputMs = 0;
+  unsigned long lastFilmCounterMs = 0;
+  unsigned long lastSleepCheckMs = 0;
+  unsigned long lastLidarMs = 0;
+  unsigned long lastLensMs = 0;
+  unsigned long lastMeterMs = 0;
+  unsigned long lastBatteryMs = 0;
+  unsigned long lastUiMs = 0;
+  unsigned long lastPrefsFlushMs = 0;
+};
+
+LoopScheduler scheduler;
+
+bool shouldRunTask(unsigned long nowMs, unsigned long &lastRunMs, unsigned long intervalMs)
+{
+  if ((nowMs - lastRunMs) < intervalMs)
+  {
+    return false;
+  }
+
+  lastRunMs = nowMs;
+  return true;
+}
+} // namespace
+
 // Setup and loop functions
 // ---------------------
 void setup()
@@ -124,44 +154,89 @@ void setup()
 
 void loop()
 {
-  checkButtons();
-  setFilmCounter();
+  const unsigned long now = millis();
+  if (!scheduler.initialized)
+  {
+    scheduler.initialized = true;
+    scheduler.lastInputMs = 0;
+    scheduler.lastFilmCounterMs = 0;
+    scheduler.lastSleepCheckMs = 0;
+    scheduler.lastLidarMs = 0;
+    scheduler.lastLensMs = 0;
+    scheduler.lastMeterMs = 0;
+    scheduler.lastBatteryMs = 0;
+    scheduler.lastUiMs = 0;
+    scheduler.lastPrefsFlushMs = 0;
+  }
 
-  updateSleepMode(millis());
+  if (shouldRunTask(now, scheduler.lastInputMs, LOOP_INPUT_INTERVAL_MS))
+  {
+    checkButtons();
+  }
+  if (shouldRunTask(now, scheduler.lastFilmCounterMs, LOOP_FILM_COUNTER_INTERVAL_MS))
+  {
+    setFilmCounter();
+  }
+  if (shouldRunTask(now, scheduler.lastSleepCheckMs, LOOP_SLEEP_CHECK_INTERVAL_MS))
+  {
+    updateSleepMode(now);
+  }
 
   if (sleepMode)
   {
     toggleLidar(false);
-    drawSleepUI();
+    if (shouldRunTask(now, scheduler.lastUiMs, LOOP_UI_INTERVAL_MS))
+    {
+      drawSleepUI();
+    }
   }
   else
   {
     toggleLidar(true);
-    setDistance();
-    setVoltage();
-    setLightMeter();
 
-    if (ui_mode == "main")
+    if (shouldRunTask(now, scheduler.lastLidarMs, LOOP_LIDAR_INTERVAL_MS))
     {
-      drawMainUI();
+      setDistance();
     }
-    else if (ui_mode == "config")
+    if (shouldRunTask(now, scheduler.lastLensMs, LOOP_LENS_INTERVAL_MS))
     {
-      drawConfigUI();
+      lens_sensor_reading = getLensSensorReading();
+      setLensDistance();
     }
-    else if (ui_mode == "calib")
+    if (shouldRunTask(now, scheduler.lastMeterMs, LOOP_LIGHTMETER_INTERVAL_MS))
     {
-      drawCalibUI();
+      setLightMeter();
     }
-    else if (ui_mode == "reset_confirm")
+    if (shouldRunTask(now, scheduler.lastBatteryMs, LOOP_BATTERY_INTERVAL_MS))
     {
-      drawResetConfirmUI();
+      setVoltage();
     }
-    drawExternalUI();
+
+    if (shouldRunTask(now, scheduler.lastUiMs, LOOP_UI_INTERVAL_MS))
+    {
+      if (ui_mode == "main")
+      {
+        drawMainUI();
+      }
+      else if (ui_mode == "config")
+      {
+        drawConfigUI();
+      }
+      else if (ui_mode == "calib")
+      {
+        drawCalibUI();
+      }
+      else if (ui_mode == "reset_confirm")
+      {
+        drawResetConfirmUI();
+      }
+      drawExternalUI();
+    }
   }
 
-  lens_sensor_reading = getLensSensorReading();
-  setLensDistance();
-  flushPrefsIfDirty();
+  if (shouldRunTask(now, scheduler.lastPrefsFlushMs, LOOP_PREFS_FLUSH_INTERVAL_MS))
+  {
+    flushPrefsIfDirty();
+  }
 }
 // ---------------------
