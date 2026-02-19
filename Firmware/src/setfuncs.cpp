@@ -18,6 +18,13 @@
 
 namespace
 {
+void applyLidarCalibrationProfile()
+{
+  // Re-apply library-side distance correction after sensor state changes.
+  lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
+  lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
+}
+
 bool getLensPriorCm(int &lens_prior_cm)
 {
   if (!lenses[selected_lens].calibrated)
@@ -114,6 +121,10 @@ void setDistance()
   DTSError resetStatus = lidar.resetState();
   DTSError enableStatus = static_cast<DTSError>(lidar.enableSensor());
   bool recovered = (resetStatus == DTSError::NONE && enableStatus == DTSError::NONE);
+  if (recovered)
+  {
+    applyLidarCalibrationProfile();
+  }
   noteLidarRecoveryAttemptResult(recoveryState, recovered, now);
 }
 
@@ -330,6 +341,10 @@ void toggleLidar(bool lidarStatusParam)
                                      : static_cast<DTSError>(lidar.disableSensor());
   if (status == DTSError::NONE)
   {
+    if (lidarStatusParam)
+    {
+      applyLidarCalibrationProfile();
+    }
     lidarEnabled = lidarStatusParam;
   }
 }
