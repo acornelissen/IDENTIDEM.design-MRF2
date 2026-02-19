@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <Adafruit_Sensor.h> // For sensors_event_t
 #include <math.h>            // For atan2, sqrt, cos, sin, abs
+#include <string.h>          // For strlen, strcmp, memcpy
 
 #include "globals.h"
 #include "hardware.h"
@@ -17,6 +18,24 @@ struct ParallaxShift
   float x;
   float y;
 };
+
+static String getCompactShutterDisplay(const String &fullShutter)
+{
+  const char *suffix = " sec.";
+  const size_t suffixLen = 5;
+  const char *raw = fullShutter.c_str();
+  size_t rawLen = strlen(raw);
+
+  if (rawLen > suffixLen && strcmp(raw + (rawLen - suffixLen), suffix) == 0)
+  {
+    char compact[16] = {0};
+    size_t copyLen = min(rawLen - suffixLen, sizeof(compact) - 1);
+    memcpy(compact, raw, copyLen);
+    return String(compact);
+  }
+
+  return fullShutter;
+}
 
 static void getFormatWidthHeightMm(const FilmFormat &format, float &widthMm, float &heightMm)
 {
@@ -174,15 +193,11 @@ void drawMainUI()
     u8g2.print(aperture, APERTURE_DECIMAL_PLACES);
   }
   u8g2.setCursor(MAIN_SHUTTER_X, MAIN_SHUTTER_Y);
-  u8g2.print(shutter_speed);
-  u8g2.setCursor(MAIN_DISTANCE_X, MAIN_DISTANCE_Y);
-  u8g2.print(F("Dist:"));
-  u8g2.print(distance_cm);
-  drawLidarQualityIndicator();
-  u8g2.setCursor(MAIN_LENS_X, MAIN_LENS_Y);
   if (show_ev_readout)
   {
-    u8g2.print(F("EV100:"));
+    String compactShutter = getCompactShutterDisplay(shutter_speed);
+    u8g2.print(compactShutter);
+    u8g2.print(F(" EV"));
     if (ev_readout == ev_readout)
     {
       u8g2.print(ev_readout, 1);
@@ -194,9 +209,15 @@ void drawMainUI()
   }
   else
   {
-    u8g2.print(F("Lens:"));
-    u8g2.print(lens_distance_cm);
+    u8g2.print(shutter_speed);
   }
+  u8g2.setCursor(MAIN_DISTANCE_X, MAIN_DISTANCE_Y);
+  u8g2.print(F("Dist:"));
+  u8g2.print(distance_cm);
+  drawLidarQualityIndicator();
+  u8g2.setCursor(MAIN_LENS_X, MAIN_LENS_Y);
+  u8g2.print(F("Lens:"));
+  u8g2.print(lens_distance_cm);
 
   int framelineX = lenses[selected_lens].framelines[0];
   int framelineY = lenses[selected_lens].framelines[1];

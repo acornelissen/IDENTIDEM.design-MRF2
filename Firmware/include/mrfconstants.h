@@ -4,6 +4,7 @@
 // Constants
 #define FWVERSION "9.6.0"
 #define SLEEPTIMEOUT 60000
+const unsigned long SLEEP_BOOT_GRACE_MS = 15000;
 
 const unsigned long SERIAL_BAUD_RATE = 115200;
 const unsigned long LIDAR_BAUD_RATE = 921600;
@@ -101,6 +102,8 @@ const int FILM_COUNTER_SNAP_THRESHOLD = 1;
 const int FILM_COUNTER_END = 99;
 const int FILM_COUNTER_FORWARD_HYSTERESIS = 2;
 const unsigned long FILM_COUNTER_FORWARD_DEBOUNCE_MS = 35;
+const int FILM_COUNTER_ACTIVITY_MIN_DELTA = 1;
+const unsigned long FILM_COUNTER_ACTIVITY_DEBOUNCE_MS = 0;
 const bool FILM_COUNTER_ALLOW_REWIND = false;
 const int FILM_COUNTER_REWIND_HYSTERESIS = 4;
 const unsigned long FILM_COUNTER_REWIND_DEBOUNCE_MS = 120;

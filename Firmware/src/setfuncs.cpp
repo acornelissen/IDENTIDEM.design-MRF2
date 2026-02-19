@@ -216,13 +216,38 @@ void setLensDistance()
 void setFilmCounter()
 {
   static EncoderFilterState encoderFilterState = {};
+  static bool rawPositionInitialized = false;
+  static int lastRawEncoderPosition = 0;
+  static unsigned long lastRawEncoderActivityMs = 0;
   const unsigned long now = millis();
   if (!encoderFilterState.initialized || encoderFilterState.stable_position != prev_encoder_value)
   {
     resetEncoderFilterState(encoderFilterState, prev_encoder_value, now);
+    rawPositionInitialized = false;
   }
 
   int encoder_position = encoder.getEncoderPosition();
+
+  if (!rawPositionInitialized)
+  {
+    rawPositionInitialized = true;
+    lastRawEncoderPosition = encoder_position;
+    lastRawEncoderActivityMs = now;
+  }
+  else
+  {
+    int rawDelta = encoder_position - lastRawEncoderPosition;
+    if (abs(rawDelta) >= FILM_COUNTER_ACTIVITY_MIN_DELTA)
+    {
+      if ((now - lastRawEncoderActivityMs) >= FILM_COUNTER_ACTIVITY_DEBOUNCE_MS)
+      {
+        registerActivity();
+        lastRawEncoderActivityMs = now;
+      }
+      lastRawEncoderPosition = encoder_position;
+    }
+  }
+
   EncoderFilterDecision decision =
       updateEncoderFilter(encoderFilterState, encoder_position, now, FILM_COUNTER_ALLOW_REWIND);
   if (!decision.accepted)

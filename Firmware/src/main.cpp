@@ -150,6 +150,10 @@ void setup()
     encoder.setEncoderPosition(encoder_value);
     encoder.enableEncoderInterrupt();
   }
+
+  // Treat end-of-setup as the idle timer baseline.
+  lastActivityTime = millis();
+  sleepMode = false;
 }
 
 void loop()
