@@ -63,8 +63,6 @@ void setDistance()
   }
 
   const unsigned long now = millis();
-  LidarRecoveryDecision recoveryDecision = updateLidarRecoveryState(
-      recoveryState, LidarRecoveryEvent::NO_VALID_MEASUREMENT, now);
 
   DTSError lidarUpdateError = static_cast<DTSError>(lidar.update());
   if (lidarUpdateError == DTSError::NONE)
@@ -77,9 +75,8 @@ void setDistance()
     LidarCandidate chosen = chooseBestLidarCandidate(measurement, prev_distance, has_lens_prior, lens_prior_cm);
     if (!chosen.valid)
     {
-      recoveryDecision = updateLidarRecoveryState(
-          recoveryState, LidarRecoveryEvent::NO_VALID_MEASUREMENT, now);
-      if (recoveryDecision.clear_display)
+      // Keep main-branch behavior: do not force recovery on filtered/noisy frames.
+      if ((now - recoveryState.last_valid_measurement_ms) > LIDAR_NO_DATA_TIMEOUT_MS)
       {
         clearLidarDisplay();
       }
@@ -101,7 +98,7 @@ void setDistance()
   LidarRecoveryEvent event = (lidarUpdateError == DTSError::TIMEOUT)
                                  ? LidarRecoveryEvent::TIMEOUT
                                  : LidarRecoveryEvent::ERROR;
-  recoveryDecision = updateLidarRecoveryState(recoveryState, event, now);
+  LidarRecoveryDecision recoveryDecision = updateLidarRecoveryState(recoveryState, event, now);
 
   if (recoveryDecision.clear_display)
   {

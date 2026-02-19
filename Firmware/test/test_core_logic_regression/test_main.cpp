@@ -241,6 +241,7 @@ void test_lidar_invalid_and_display_formatting()
   TEST_ASSERT_FALSE(candidate.valid);
 
   TEST_ASSERT_EQUAL_STRING("< 5cm", formatDistanceDisplay(4).c_str());
+  TEST_ASSERT_EQUAL_STRING("75cm", formatDistanceDisplay(75).c_str());
   TEST_ASSERT_EQUAL_STRING("> 18m", formatDistanceDisplay(1900).c_str());
   TEST_ASSERT_EQUAL_STRING("1.5m", formatDistanceDisplay(150).c_str());
 }

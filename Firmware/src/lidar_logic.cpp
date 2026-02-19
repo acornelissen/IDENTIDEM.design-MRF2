@@ -234,5 +234,9 @@ String formatDistanceDisplay(int corrected_cm)
   {
     return "< " + String(DISTANCE_MIN) + "cm";
   }
+  if (corrected_cm < CM_PER_METER)
+  {
+    return String(corrected_cm) + "cm";
+  }
   return String(static_cast<float>(corrected_cm) / CM_PER_METER, DISTANCE_DECIMAL_PLACES) + "m";
 }
