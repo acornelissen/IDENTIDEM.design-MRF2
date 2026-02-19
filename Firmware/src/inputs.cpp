@@ -22,7 +22,7 @@ static void resetFrameCounter()
   film_counter = 0;
   frame_progress = 0;
   prev_frame_progress = 0;
-  savePrefs();
+  savePrefs(true);
 }
 
 void checkButtons()
@@ -70,8 +70,8 @@ void checkButtons()
             {
               lenses[calib_lens].sensor_reading[i] = calib_distance_set[i];
             }
-            savePrefs();
             selected_lens = calib_lens;
+            savePrefs(true);
             ui_mode = "config";
           }
         }

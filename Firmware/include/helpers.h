@@ -8,7 +8,8 @@ int getFirstNonZeroAperture();
 
 void loadPrefs();
 
-void savePrefs();
+void savePrefs(bool force = false);
+void flushPrefsIfDirty();
 
 String cmToReadable(int cm, int places);
 

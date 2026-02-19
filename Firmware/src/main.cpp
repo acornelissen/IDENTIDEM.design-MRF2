@@ -162,5 +162,6 @@ void loop()
 
   lens_sensor_reading = getLensSensorReading();
   setLensDistance();
+  flushPrefsIfDirty();
 }
 // ---------------------

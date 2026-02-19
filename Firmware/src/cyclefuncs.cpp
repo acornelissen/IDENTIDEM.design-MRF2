@@ -80,9 +80,6 @@ void cycleCalibLenses()
   {
     calib_lens = 0;
   }
-  // savePrefs() was here, but typically calibration cycling doesn't save until a value is set.
-  // Keeping original behavior:
-  savePrefs(); 
 }
 
 void cycleFormats()
