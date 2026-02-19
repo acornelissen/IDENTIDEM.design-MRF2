@@ -480,6 +480,17 @@ void drawCalibUI()
   {
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1); u8g2.print(F(" (L) to Select"));
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2); u8g2.print(F(" (R) to Cancel"));
+
+    if (calib_capture_status == CALIB_CAPTURE_STATUS_UNSTABLE)
+    {
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1); u8g2.print(F(" Unstable reading"));
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2); u8g2.print(F(" Hold still + retry"));
+    }
+    else if (calib_capture_status == CALIB_CAPTURE_STATUS_NON_MONOTONIC)
+    {
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1); u8g2.print(F(" Out of sequence"));
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2); u8g2.print(F(" Recheck distance"));
+    }
   }
 
   display.display();

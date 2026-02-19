@@ -38,23 +38,62 @@ void setLensDistanceFromCm(int distance_cm)
   lens_distance_raw = distance_cm;
   lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
 }
+
+void clearLidarDisplay()
+{
+  if (distance_cm != "...")
+  {
+    distance_cm = "...";
+  }
+  lidar_quality_level = 0;
+}
+
+unsigned long computeLidarRecoveryDelayMs(int consecutiveErrors)
+{
+  unsigned long delayMs = LIDAR_RECOVERY_RETRY_BASE_MS;
+  int attempts = min(consecutiveErrors, 6);
+  for (int i = 1; i < attempts; i++)
+  {
+    delayMs = min(delayMs * 2UL, LIDAR_RECOVERY_RETRY_MAX_MS);
+  }
+  return delayMs;
+}
 } // namespace
 
 // Functions to read values from sensors and set variables
 // ---------------------
 void setDistance()
 {
-  static unsigned long lastValidLidarMeasurementMs = 0;
+  struct LidarRecoveryState
+  {
+    unsigned long lastValidMeasurementMs;
+    unsigned long nextRecoveryAttemptMs;
+    int consecutiveErrors;
+    bool recovering;
+    bool wasEnabled;
+  };
+
+  static LidarRecoveryState recoveryState = {0, 0, 0, false, false};
 
   if (!lidarEnabled)
   {
+    recoveryState = {0, 0, 0, false, false};
     return;
+  }
+
+  const unsigned long now = millis();
+  if (!recoveryState.wasEnabled)
+  {
+    recoveryState.wasEnabled = true;
+    recoveryState.lastValidMeasurementMs = now;
+    recoveryState.nextRecoveryAttemptMs = now;
+    recoveryState.consecutiveErrors = 0;
+    recoveryState.recovering = false;
   }
 
   DTSError lidarUpdateError = static_cast<DTSError>(lidar.update());
   if (lidarUpdateError == DTSError::NONE)
   {
-    const unsigned long now = millis();
     DTSMeasurement measurement = lidar.getMeasurement();
 
     int lens_prior_cm = 0;
@@ -66,7 +105,9 @@ void setDistance()
       return;
     }
 
-    lastValidLidarMeasurementMs = now;
+    recoveryState.lastValidMeasurementMs = now;
+    recoveryState.consecutiveErrors = 0;
+    recoveryState.recovering = false;
     lidar_quality_level = chosen.quality_level;
 
     distance = static_cast<int16_t>(blendLidarDistance(prev_distance, chosen.distance_cm, chosen.confidence));
@@ -76,14 +117,47 @@ void setDistance()
       prev_distance = distance;
     }
   }
-  else if (lidarUpdateError == DTSError::TIMEOUT)
+  else
   {
-    const unsigned long now = millis();
-    if (now - lastValidLidarMeasurementMs > LIDAR_NO_DATA_TIMEOUT_MS)
+    if (lidarUpdateError != DTSError::TIMEOUT)
     {
-      distance_cm = "...";
-      lidar_quality_level = 0;
+      recoveryState.consecutiveErrors++;
+      if (recoveryState.consecutiveErrors >= LIDAR_RECOVERY_ERROR_THRESHOLD)
+      {
+        recoveryState.recovering = true;
+        recoveryState.nextRecoveryAttemptMs = now;
+      }
     }
+    else if (now - recoveryState.lastValidMeasurementMs > LIDAR_RECOVERY_TIMEOUT_MS)
+    {
+      recoveryState.recovering = true;
+      recoveryState.nextRecoveryAttemptMs = now;
+    }
+
+    if (now - recoveryState.lastValidMeasurementMs > LIDAR_NO_DATA_TIMEOUT_MS)
+    {
+      clearLidarDisplay();
+    }
+
+    if (!recoveryState.recovering || now < recoveryState.nextRecoveryAttemptMs)
+    {
+      return;
+    }
+
+    lidar.clearError();
+    DTSError resetStatus = lidar.resetState();
+    DTSError enableStatus = static_cast<DTSError>(lidar.enableSensor());
+    if (resetStatus == DTSError::NONE && enableStatus == DTSError::NONE)
+    {
+      recoveryState.consecutiveErrors = 0;
+      recoveryState.recovering = false;
+      recoveryState.lastValidMeasurementMs = now;
+      recoveryState.nextRecoveryAttemptMs = now;
+      return;
+    }
+
+    recoveryState.consecutiveErrors = min(recoveryState.consecutiveErrors + 1, 10);
+    recoveryState.nextRecoveryAttemptMs = now + computeLidarRecoveryDelayMs(recoveryState.consecutiveErrors);
   }
 }
 

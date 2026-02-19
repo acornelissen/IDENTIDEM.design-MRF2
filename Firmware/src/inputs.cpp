@@ -25,6 +25,101 @@ static void resetFrameCounter()
   savePrefs(true);
 }
 
+namespace
+{
+void sortAscending(int *values, int count)
+{
+  for (int i = 1; i < count; i++)
+  {
+    int key = values[i];
+    int j = i - 1;
+    while (j >= 0 && values[j] > key)
+    {
+      values[j + 1] = values[j];
+      j--;
+    }
+    values[j + 1] = key;
+  }
+}
+
+bool captureStableCalibReading(int &averagedReading)
+{
+  int samples[CALIB_SAMPLE_COUNT];
+  for (int i = 0; i < CALIB_SAMPLE_COUNT; i++)
+  {
+    samples[i] = getLensSensorReading();
+    delay(CALIB_SAMPLE_DELAY_MS);
+  }
+
+  int sortedSamples[CALIB_SAMPLE_COUNT];
+  memcpy(sortedSamples, samples, sizeof(samples));
+  sortAscending(sortedSamples, CALIB_SAMPLE_COUNT);
+  const int median = sortedSamples[CALIB_SAMPLE_COUNT / 2];
+
+  long inlierSum = 0;
+  int inlierCount = 0;
+  int minInlier = 32767;
+  int maxInlier = -32768;
+
+  for (int i = 0; i < CALIB_SAMPLE_COUNT; i++)
+  {
+    if (abs(samples[i] - median) <= CALIB_OUTLIER_MAX_DELTA)
+    {
+      inlierSum += samples[i];
+      inlierCount++;
+      minInlier = min(minInlier, samples[i]);
+      maxInlier = max(maxInlier, samples[i]);
+    }
+  }
+
+  if (inlierCount < CALIB_MIN_INLIER_COUNT)
+  {
+    return false;
+  }
+
+  if ((maxInlier - minInlier) > CALIB_INLIER_SPREAD_MAX)
+  {
+    return false;
+  }
+
+  averagedReading = static_cast<int>((inlierSum + (inlierCount / 2)) / inlierCount);
+  return true;
+}
+
+bool isMonotonicCalibSequenceWithCandidate(int candidateReading)
+{
+  if (current_calib_distance == 0)
+  {
+    return true;
+  }
+
+  int direction = 0;
+  for (int i = 1; i <= current_calib_distance; i++)
+  {
+    int previous = calib_distance_set[i - 1];
+    int current = (i == current_calib_distance) ? candidateReading : calib_distance_set[i];
+    int delta = current - previous;
+
+    if (abs(delta) < CALIB_MONOTONIC_MIN_STEP)
+    {
+      return false;
+    }
+
+    int stepDirection = (delta > 0) ? 1 : -1;
+    if (direction == 0)
+    {
+      direction = stepDirection;
+    }
+    else if (stepDirection != direction)
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+} // namespace
+
 void checkButtons()
 {
   lbutton.update();
@@ -50,29 +145,36 @@ void checkButtons()
       {
         if (calib_step == 0)
         {
+          calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
           cycleCalibLenses();
         }
         else if (calib_step == 1)
         {
-          long sum = 0;
-          for (int i = 0; i < CALIB_SAMPLE_COUNT; i++)
+          int averagedReading = 0;
+          if (!captureStableCalibReading(averagedReading))
           {
-            sum += getLensSensorReading();
-            delay(CALIB_SAMPLE_DELAY_MS);
+            calib_capture_status = CALIB_CAPTURE_STATUS_UNSTABLE;
           }
-          int averagedReading = static_cast<int>(sum / CALIB_SAMPLE_COUNT);
-          calib_distance_set[current_calib_distance] = averagedReading;
-          current_calib_distance++;
-          if (current_calib_distance >= CALIB_DISTANCE_COUNT)
+          else if (!isMonotonicCalibSequenceWithCandidate(averagedReading))
           {
-            lenses[calib_lens].calibrated = true;
-            for (int i = 0; i < sizeof(calib_distance_set) / sizeof(calib_distance_set[0]); i++)
+            calib_capture_status = CALIB_CAPTURE_STATUS_NON_MONOTONIC;
+          }
+          else
+          {
+            calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
+            calib_distance_set[current_calib_distance] = averagedReading;
+            current_calib_distance++;
+            if (current_calib_distance >= CALIB_DISTANCE_COUNT)
             {
-              lenses[calib_lens].sensor_reading[i] = calib_distance_set[i];
+              lenses[calib_lens].calibrated = true;
+              for (int i = 0; i < sizeof(calib_distance_set) / sizeof(calib_distance_set[0]); i++)
+              {
+                lenses[calib_lens].sensor_reading[i] = calib_distance_set[i];
+              }
+              selected_lens = calib_lens;
+              savePrefs(true);
+              ui_mode = "config";
             }
-            selected_lens = calib_lens;
-            savePrefs(true);
-            ui_mode = "config";
           }
         }
       }
@@ -122,6 +224,7 @@ void checkButtons()
             calib_step = 0;
             calib_lens = selected_lens; // Use current selected lens for calibration
             current_calib_distance = 0;
+            calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
             memset(calib_distance_set, 0, sizeof(calib_distance_set));
             ui_mode = "calib";
           }
@@ -134,9 +237,15 @@ void checkButtons()
         }
         else if (ui_mode == "calib")
         {
-          if (calib_step == 0) calib_step = 1;
+          if (calib_step == 0)
+          {
+            calib_step = 1;
+            calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
+          }
           else if (calib_step == 1) {
-            calib_step = 0; ui_mode = "config";
+            calib_step = 0;
+            calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
+            ui_mode = "config";
           }
         }
         else if (ui_mode == "reset_confirm")
