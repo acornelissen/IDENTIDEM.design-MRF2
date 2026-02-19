@@ -143,6 +143,14 @@ pio run --target upload
 pio run --target monitor
 ```
 
+### Core Logic Regression Tests
+```bash
+# Runs focused host-side tests for:
+# frame counter, LiDAR fusion/formatting,
+# lens distance calibration logic, and light meter output.
+pio test -e native_core_tests
+```
+
 ## Configuration
 
 ### Constants (mrfconstants.h)
