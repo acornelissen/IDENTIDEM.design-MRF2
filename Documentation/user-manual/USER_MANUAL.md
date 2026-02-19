@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 9.5.0
+**Firmware version:** 9.7.5
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -12,9 +12,9 @@ If this is your first time using the camera, this sequence keeps things simple a
 2. Mount the lens you plan to use.
 3. Load your film, aligning the arrow on the backing paper to the arrow on the top-left edge of the film chamber.
 4. Close and secure the film door, then switch on the camera.
-5. Long-press **Right (R)** to enter **Setup**, then open **Lens Calibration** and run it for the mounted lens.
-6. Still in **Setup**, choose your **frame size** and **ISO**.
-7. In **Setup**, select **Reset count** so the frame counter starts at zero.
+5. Long-press **Right (R)** to enter **Setup**, open **Lens Settings >**, then run **Lens Calibration** for the mounted lens.
+6. Still in **Setup**, choose your **frame size**, **ISO**, and preferred **sleep timeout**.
+7. In **Setup**, select **Reset frame counter >>** so the frame counter starts at zero.
 8. Use the **advance lever** to wind to frame 1. This takes a little while. Power through!
 
 ## Quick start (after initial setup)
@@ -65,6 +65,7 @@ The main screen displays:
 - **LiDAR distance (Dist)**
   - Uses LiDAR v2 primary/secondary returns with confidence scoring and correction for more stable readings.
   - Range: 5 cm to 18 m.
+  - Displays values below 1 meter in centimeters (for example, `75cm`).
   - Displays `...` if the sensor has no recent data.
   - Displays `> 18m` or `< 5cm` when outside range.
 - **Lens distance (Lens)**
@@ -96,26 +97,46 @@ The firmware uses the BH1750 light meter, ISO, and aperture to compute shutter s
 
 The focus ring thickness and radius reflect the difference between the LiDAR distance and the lens distance. When both are close, the ring is thinner and closer to the reticle center.
 
-## Setup (config) menu
+## Setup menus
 
 Enter Setup by **long-pressing Right (R)** from the main screen.
 
-![Setup menu](images/config-ui.svg)
+### Setup root menu
+
+![Setup root menu](images/config-ui.svg)
 
 **Navigation rules**
 
 - **L short press**: move to the next menu item.
 - **R short press**: change the highlighted value or enter the selected submenu.
 
-**Menu items**
+**Setup root items**
 
 1. **ISO**: cycles ISO values.
 2. **Format**: cycles film formats.
-3. **Lens**: cycles calibrated lenses only.
-4. **Parallax Correction**: toggle on/off.
-5. **Lens Calibration >**: enter calibration workflow.
-6. **Reset count >>**: confirm film counter reset.
+3. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
+4. **Lens Settings >**: opens lens submenu.
+5. **Light Meter >**: opens light meter submenu.
+6. **Reset frame counter >>**: confirm film counter reset.
 7. **Exit >>**: return to the main screen.
+
+### Lens Settings submenu
+
+![Lens settings menu](images/config-lens-ui.svg)
+
+1. **Lens**: cycles calibrated lenses only.
+2. **Parallax**: toggle on/off.
+3. **Lens Calibration >**: enter calibration workflow.
+4. **Back <<**: return to setup root menu.
+
+### Light Meter submenu
+
+![Light meter settings menu](images/config-meter-ui.svg)
+
+1. **EV Comp**: adjust exposure compensation in 1/3-stop steps.
+2. **Smoothing**: cycles `Off`, `Low`, `Medium`, `High`.
+3. **EV Readout**: toggle EV display on/off on main screen.
+4. **Back <<**: return to setup root menu.
 
 ### ISO list
 
@@ -157,7 +178,7 @@ When all distances are captured, the lens is marked calibrated and saved.
 
 ## Reset film counter
 
-![Reset count confirmation](images/reset-confirm-ui.svg)
+![Reset frame counter confirmation](images/reset-confirm-ui.svg)
 
 - **L**: cancel
 - **R**: reset the film counter and return to the main screen
@@ -180,11 +201,13 @@ The external display shows:
 
 ## Sleep mode
 
-After **60 seconds** of inactivity, the firmware enters sleep mode:
+After the configured **Sleep timeout** period of inactivity (default **1 minute**), the firmware enters sleep mode:
 
 - LiDAR turns off.
 - Main display is blank.
-- External display shows a sleep message.
+- External display shows a sleep message with 5-second animation:
+- alternating capitalization pattern in the `Z` text
+- animated trailing dots (`.`, `..`, `...`)
 - Status LED is off.
 
 ![Sleep screen](images/sleep-ui.svg)
@@ -196,7 +219,8 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 - ISO: **400**
 - Format: **6x7**
 - Lens: **65/6.3** (pre-calibrated)
-- Parallax Correction: **On**
+- Parallax: **On**
+- Sleep timeout: **1m**
 
 ## Troubleshooting
 

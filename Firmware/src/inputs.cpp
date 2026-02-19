@@ -76,7 +76,23 @@ void checkButtons()
       else if (ui_mode == "config")
       {
         config_step++;
-        if (config_step > CONFIG_STEP_MAX)
+        if (config_step > CONFIG_ROOT_STEP_MAX)
+        {
+          config_step = 0;
+        }
+      }
+      else if (ui_mode == "config_lens")
+      {
+        config_step++;
+        if (config_step > CONFIG_LENS_STEP_MAX)
+        {
+          config_step = 0;
+        }
+      }
+      else if (ui_mode == "config_meter")
+      {
+        config_step++;
+        if (config_step > CONFIG_METER_STEP_MAX)
         {
           config_step = 0;
         }
@@ -113,7 +129,8 @@ void checkButtons()
               }
               selected_lens = calib_lens;
               savePrefs(true);
-              ui_mode = "config";
+              config_step = CONFIG_LENS_STEP_CALIB;
+              ui_mode = "config_lens";
             }
           }
         }
@@ -121,7 +138,7 @@ void checkButtons()
       else if (ui_mode == "reset_confirm")
       {
         ui_mode = "config";
-        config_step = CONFIG_STEP_RESET;
+        config_step = CONFIG_ROOT_STEP_RESET;
       }
     }
   }
@@ -147,29 +164,40 @@ void checkButtons()
         }
         else if (ui_mode == "config")
         {
-          if (config_step == CONFIG_STEP_ISO) cycleISOs();
-          else if (config_step == CONFIG_STEP_FORMAT) cycleFormats();
-          else if (config_step == CONFIG_STEP_LENS) {
+          if (config_step == CONFIG_ROOT_STEP_ISO) cycleISOs();
+          else if (config_step == CONFIG_ROOT_STEP_FORMAT) cycleFormats();
+          else if (config_step == CONFIG_ROOT_STEP_SLEEP_TIMEOUT) {
+            cycleSleepTimeoutMode();
+          }
+          else if (config_step == CONFIG_ROOT_STEP_LENS_MENU) {
+            config_step = CONFIG_LENS_STEP_LENS;
+            ui_mode = "config_lens";
+          }
+          else if (config_step == CONFIG_ROOT_STEP_METER_MENU) {
+            config_step = CONFIG_METER_STEP_EV_COMP;
+            ui_mode = "config_meter";
+          }
+          else if (config_step == CONFIG_ROOT_STEP_RESET) {
+            ui_mode = "reset_confirm";
+          }
+          else if (config_step == CONFIG_ROOT_STEP_EXIT) {
+            ui_mode = "main"; config_step = 0;
+          }
+        }
+        else if (ui_mode == "config_lens")
+        {
+          if (config_step == CONFIG_LENS_STEP_LENS) {
             cycleLenses();
             int non_zero_aperture_index = getFirstNonZeroAperture();
             if (non_zero_aperture_index < 0) non_zero_aperture_index = 0;
             aperture = lenses[selected_lens].apertures[non_zero_aperture_index];
             aperture_index = non_zero_aperture_index;
           }
-          else if (config_step == CONFIG_STEP_PARALLAX) {
+          else if (config_step == CONFIG_LENS_STEP_PARALLAX) {
             parallaxEnabled = !parallaxEnabled;
             savePrefs();
           }
-          else if (config_step == CONFIG_STEP_EV_COMP) {
-            cycleExposureCompensation(CycleDirection::Up);
-          }
-          else if (config_step == CONFIG_STEP_METER_SMOOTHING) {
-            cycleMeterSmoothing();
-          }
-          else if (config_step == CONFIG_STEP_EV_READOUT) {
-            toggleEvReadout();
-          }
-          else if (config_step == CONFIG_STEP_LENS_CALIB) {
+          else if (config_step == CONFIG_LENS_STEP_CALIB) {
             calib_step = 0;
             calib_lens = selected_lens; // Use current selected lens for calibration
             current_calib_distance = 0;
@@ -177,11 +205,25 @@ void checkButtons()
             memset(calib_distance_set, 0, sizeof(calib_distance_set));
             ui_mode = "calib";
           }
-          else if (config_step == CONFIG_STEP_RESET) {
-            ui_mode = "reset_confirm";
+          else if (config_step == CONFIG_LENS_STEP_BACK) {
+            config_step = CONFIG_ROOT_STEP_LENS_MENU;
+            ui_mode = "config";
           }
-          else if (config_step == CONFIG_STEP_EXIT) {
-            ui_mode = "main"; config_step = 0;
+        }
+        else if (ui_mode == "config_meter")
+        {
+          if (config_step == CONFIG_METER_STEP_EV_COMP) {
+            cycleExposureCompensation(CycleDirection::Up);
+          }
+          else if (config_step == CONFIG_METER_STEP_SMOOTHING) {
+            cycleMeterSmoothing();
+          }
+          else if (config_step == CONFIG_METER_STEP_EV_READOUT) {
+            toggleEvReadout();
+          }
+          else if (config_step == CONFIG_METER_STEP_BACK) {
+            config_step = CONFIG_ROOT_STEP_METER_MENU;
+            ui_mode = "config";
           }
         }
         else if (ui_mode == "calib")
@@ -194,7 +236,8 @@ void checkButtons()
           else if (calib_step == 1) {
             calib_step = 0;
             calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
-            ui_mode = "config";
+            config_step = CONFIG_LENS_STEP_CALIB;
+            ui_mode = "config_lens";
           }
         }
         else if (ui_mode == "reset_confirm")

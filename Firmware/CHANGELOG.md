@@ -2,6 +2,22 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 9.7.5 - 2026-02-19
+- Settings UI updates:
+- Split setup into focused submenus for Lens and Light Meter settings.
+- Added top-level configurable sleep timeout setting: `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m`).
+- Unified vertical padding under setup/menu headers for consistent layout.
+- Renamed `Reset count` to `Reset frame counter`.
+- Light meter UX polish:
+- Updated smoothing label from `Med` to `Medium`.
+- Runtime behavior:
+- Sleep timeout now uses the persisted menu setting instead of a fixed constant.
+- LiDAR recovery flow no longer escalates recovery attempts on filtered/noisy (non-error) frames.
+- Sleep screen text now animates every 5 seconds (alternating `Z` capitalization + animated trailing dots) to reduce OLED burn-in risk.
+- LiDAR distance readout now shows values below `1m` in `cm`.
+- Preferences:
+- Added persisted key for sleep timeout mode (`sleep_to_mode`), with load-time clamping.
+
 ## 7.0 - 2025-11-18
 - Initial public firmware import for MRF2.
 - Baseline ESP32-S3 firmware structure, display/UI flow, sensor integration, and build config.

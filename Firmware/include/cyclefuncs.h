@@ -17,6 +17,9 @@ void cycleFormats();
 void cycleExposureCompensation(CycleDirection direction);
 void cycleMeterSmoothing();
 void toggleEvReadout();
+void cycleSleepTimeoutMode();
+const char *getSleepTimeoutModeLabel(int timeout_mode);
+unsigned long getSleepTimeoutModeMs(int timeout_mode);
 // ---------------------
 
 #endif // CYCLEFUNCS_H

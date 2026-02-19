@@ -22,6 +22,7 @@ int aperture_index;
 int exposure_comp_thirds = DEFAULT_EXPOSURE_COMP_THIRDS;
 int meter_smoothing_mode = DEFAULT_METER_SMOOTHING_MODE;
 bool show_ev_readout = DEFAULT_SHOW_EV_READOUT;
+int sleep_timeout_mode = DEFAULT_SLEEP_TIMEOUT_MODE;
 
 // Filter algorithm
 int samples[SMOOTHING_WINDOW_SIZE];

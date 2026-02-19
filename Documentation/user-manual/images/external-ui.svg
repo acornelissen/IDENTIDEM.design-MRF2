@@ -8,8 +8,8 @@
   <text x="37" y="8" font-family="monospace" font-size="6" fill="#000000">65/6.3</text>
   <text x="107" y="8" font-family="monospace" font-size="6" fill="#000000">78%</text>
 
-  <rect x="34" y="13" width="90" height="16" fill="none" stroke="#ffffff" stroke-width="1"/>
-  <rect x="34" y="13" width="60" height="16" fill="#ffffff"/>
+  <rect x="34" y="15" width="90" height="17" fill="none" stroke="#ffffff" stroke-width="1"/>
+  <rect x="34" y="15" width="58" height="17" fill="#ffffff"/>
 
-  <text x="8" y="27" font-family="monospace" font-size="12" fill="#ffffff">8</text>
+  <text x="8" y="30" font-family="monospace" font-size="12" fill="#ffffff">8</text>
 </svg>

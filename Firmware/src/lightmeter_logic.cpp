@@ -35,7 +35,7 @@ const float METER_SMOOTHING_ALPHA[LIGHTMETER_SMOOTHING_MODE_COUNT] = {
 const char *METER_SMOOTHING_LABELS[LIGHTMETER_SMOOTHING_MODE_COUNT] = {
     "Off",
     "Low",
-    "Med",
+    "Medium",
     "High"};
 
 const int SPEED_RANGE_COUNT = sizeof(SPEED_RANGES) / sizeof(SPEED_RANGES[0]);

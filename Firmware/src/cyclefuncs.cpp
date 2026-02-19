@@ -8,6 +8,30 @@
 #include "formats.h"  // Provides FilmFormat struct, film_formats array, and NUM_FILM_FORMATS
 #include "helpers.h" // For savePrefs
 
+namespace
+{
+const char *SLEEP_TIMEOUT_MODE_LABELS[SLEEP_TIMEOUT_MODE_COUNT] = {
+    "Off",
+    "15s",
+    "30sec",
+    "1m",
+    "1m30s",
+    "2m"};
+
+const unsigned long SLEEP_TIMEOUT_MODE_MS[SLEEP_TIMEOUT_MODE_COUNT] = {
+    0,
+    15000,
+    30000,
+    60000,
+    90000,
+    120000};
+
+int clampSleepTimeoutMode(int timeout_mode)
+{
+  return constrain(timeout_mode, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);
+}
+} // namespace
+
 // Functions to cycle values
 // ---------------------
 void cycleApertures(CycleDirection direction)
@@ -122,5 +146,27 @@ void toggleEvReadout()
 {
   show_ev_readout = !show_ev_readout;
   savePrefs();
+}
+
+void cycleSleepTimeoutMode()
+{
+  sleep_timeout_mode++;
+  if (sleep_timeout_mode > SLEEP_TIMEOUT_MODE_MAX)
+  {
+    sleep_timeout_mode = SLEEP_TIMEOUT_MODE_MIN;
+  }
+  savePrefs();
+}
+
+const char *getSleepTimeoutModeLabel(int timeout_mode)
+{
+  int clampedMode = clampSleepTimeoutMode(timeout_mode);
+  return SLEEP_TIMEOUT_MODE_LABELS[clampedMode];
+}
+
+unsigned long getSleepTimeoutModeMs(int timeout_mode)
+{
+  int clampedMode = clampSleepTimeoutMode(timeout_mode);
+  return SLEEP_TIMEOUT_MODE_MS[clampedMode];
 }
 // ---------------------

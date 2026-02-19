@@ -7,10 +7,12 @@
   <text x="46" y="8" font-family="monospace" font-size="6" fill="#000000">f8</text>
   <text x="2" y="14" font-family="monospace" font-size="6" fill="#000000">1/125</text>
   <text x="68" y="8" font-family="monospace" font-size="6" fill="#000000">Dist:2.5m</text>
-  <rect x="123" y="2" width="2" height="2" fill="#ffffff" stroke="#000000" stroke-width="0.3"/>
+
+  <rect x="123" y="2" width="2" height="2" fill="#000000"/>
   <rect x="123" y="5" width="2" height="2" fill="#000000"/>
   <rect x="123" y="8" width="2" height="2" fill="#000000"/>
-  <rect x="123" y="11" width="2" height="2" fill="#000000"/>
+  <rect x="123" y="11" width="2" height="2" fill="#ffffff" stroke="#000000" stroke-width="0.3"/>
+
   <text x="68" y="14" font-family="monospace" font-size="6" fill="#000000">Lens:2.5m</text>
 
   <rect x="0" y="17" width="128" height="109" fill="#000000"/>
@@ -21,6 +23,4 @@
 
   <line x1="18" y1="67" x2="100" y2="67" stroke="#ffffff" stroke-width="1"/>
   <line x1="59" y1="52" x2="59" y2="82" stroke="#ffffff" stroke-width="1"/>
-
-  <text x="4" y="124" font-family="monospace" font-size="5" fill="#000000">Main Screen (example)</text>
 </svg>

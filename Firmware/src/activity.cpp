@@ -4,6 +4,7 @@
 
 #include "globals.h"
 #include "mrfconstants.h"
+#include "cyclefuncs.h"
 
 void registerActivity()
 {
@@ -43,7 +44,14 @@ void updateSleepMode(unsigned long now_ms)
     return;
   }
 
-  if (now_ms - lastActivityTime > SLEEPTIMEOUT)
+  unsigned long sleepTimeoutMs = getSleepTimeoutModeMs(sleep_timeout_mode);
+  if (sleepTimeoutMs == 0)
+  {
+    sleepMode = false;
+    return;
+  }
+
+  if (now_ms - lastActivityTime > sleepTimeoutMs)
   {
     sleepMode = true;
   }

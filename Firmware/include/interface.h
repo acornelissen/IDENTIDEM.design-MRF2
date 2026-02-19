@@ -5,6 +5,8 @@
 // ---------------------
 void drawMainUI();
 void drawConfigUI();
+void drawLensConfigUI();
+void drawMeterConfigUI();
 void drawCalibUI();
 void drawResetConfirmUI();
 void drawExternalUI();

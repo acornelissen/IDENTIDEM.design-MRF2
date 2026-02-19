@@ -65,6 +65,7 @@ void writePrefsToOpenNamespace()
   prefs.putInt("ev_comp_thirds", exposure_comp_thirds);
   prefs.putInt("meter_smooth", meter_smoothing_mode);
   prefs.putBool("show_ev", show_ev_readout);
+  prefs.putInt("sleep_to_mode", sleep_timeout_mode);
   prefs.putInt("film_counter", film_counter);
   prefs.putInt("encoder_value", encoder_value);
   prefs.putInt("prev_encoder_value", prev_encoder_value);
@@ -140,6 +141,11 @@ void clampLoadedState()
       meter_smoothing_mode,
       LIGHTMETER_SMOOTHING_MODE_MIN,
       LIGHTMETER_SMOOTHING_MODE_MAX);
+
+  sleep_timeout_mode = constrain(
+      sleep_timeout_mode,
+      SLEEP_TIMEOUT_MODE_MIN,
+      SLEEP_TIMEOUT_MODE_MAX);
 }
 
 void loadLensCalibrationSchemaV2()
@@ -219,6 +225,7 @@ void loadPrefs()
   exposure_comp_thirds = prefs.getInt("ev_comp_thirds", DEFAULT_EXPOSURE_COMP_THIRDS);
   meter_smoothing_mode = prefs.getInt("meter_smooth", DEFAULT_METER_SMOOTHING_MODE);
   show_ev_readout = prefs.getBool("show_ev", DEFAULT_SHOW_EV_READOUT);
+  sleep_timeout_mode = prefs.getInt("sleep_to_mode", DEFAULT_SLEEP_TIMEOUT_MODE);
   film_counter = prefs.getInt("film_counter", 0);
   encoder_value = prefs.getInt("encoder_value", 0);
   prev_encoder_value = prefs.getInt("prev_encoder_value", 0);
