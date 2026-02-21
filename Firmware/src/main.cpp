@@ -218,29 +218,33 @@ void loop()
 
     if (shouldRunTask(now, scheduler.lastUiMs, LOOP_UI_INTERVAL_MS))
     {
-      if (ui_mode == "main")
+      if (ui_mode == UiMode::Main)
       {
         drawMainUI();
       }
-      else if (ui_mode == "config")
+      else if (ui_mode == UiMode::Config)
       {
         drawConfigUI();
       }
-      else if (ui_mode == "config_lens")
+      else if (ui_mode == UiMode::ConfigLens)
       {
         drawLensConfigUI();
       }
-      else if (ui_mode == "config_meter")
+      else if (ui_mode == UiMode::ConfigMeter)
       {
         drawMeterConfigUI();
       }
-      else if (ui_mode == "calib")
+      else if (ui_mode == UiMode::Calib)
       {
         drawCalibUI();
       }
-      else if (ui_mode == "reset_confirm")
+      else if (ui_mode == UiMode::ResetConfirm)
       {
         drawResetConfirmUI();
+      }
+      else if (ui_mode == UiMode::Health)
+      {
+        drawHealthUI();
       }
       drawExternalUI();
     }

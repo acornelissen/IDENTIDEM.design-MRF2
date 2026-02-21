@@ -72,6 +72,7 @@ void setDistance()
   const unsigned long now = millis();
 
   DTSError lidarUpdateError = static_cast<DTSError>(lidar.update());
+  last_lidar_error_code = static_cast<int>(lidarUpdateError);
   if (lidarUpdateError == DTSError::NONE)
   {
     DTSMeasurement measurement = lidar.getMeasurement();
@@ -117,6 +118,7 @@ void setDistance()
     return;
   }
 
+  lidar_recovery_count++;
   lidar.clearError();
   DTSError resetStatus = lidar.resetState();
   DTSError enableStatus = static_cast<DTSError>(lidar.enableSensor());
@@ -148,7 +150,7 @@ int getLensSensorReading()
   }
 
   int sensorVal = static_cast<int>(sampleTotal / LENS_ADC_SAMPLE_COUNT);
-  if (ui_mode == "main")
+  if (ui_mode == UiMode::Main)
   {
     sensorVal += LENS_ADC_MAIN_OFFSET;
   }

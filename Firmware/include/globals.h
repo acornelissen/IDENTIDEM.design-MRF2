@@ -5,6 +5,17 @@
 #include <Arduino.h>     // For String type and int16_t
 #include "mrfconstants.h" // For SMOOTHING_WINDOW_SIZE
 
+enum class UiMode : uint8_t
+{
+  Main,
+  Config,
+  ConfigLens,
+  ConfigMeter,
+  Calib,
+  ResetConfirm,
+  Health
+};
+
 // Preferences
 extern Preferences prefs;
 
@@ -51,7 +62,7 @@ extern int prev_bat_per;
 extern int bat_per;
 
 // Camera state
-extern String ui_mode;
+extern UiMode ui_mode;
 extern int config_step;
 extern int calib_step;
 extern int selected_lens;
@@ -71,6 +82,14 @@ extern float prev_frame_progress;
 
 extern unsigned long lastActivityTime;
 extern bool sleepMode;
+
+// Health/diagnostics
+extern bool prefsSchemaValid;
+extern bool prefsLoadedLegacy;
+extern uint16_t prefsSchemaVersionLoaded;
+extern bool watchdogEnabled;
+extern int last_lidar_error_code;
+extern int lidar_recovery_count;
 // ---------------------
 
 #endif // GLOBALS_H

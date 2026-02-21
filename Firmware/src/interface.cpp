@@ -13,6 +13,7 @@
 #include "helpers.h" // For getFocusRadius
 #include "lightmeter_logic.h"
 #include "cyclefuncs.h"
+#include "activity.h"
 
 struct ParallaxShift
 {
@@ -462,6 +463,10 @@ void drawConfigUI()
   setItemColors(config_step == CONFIG_ROOT_STEP_RESET);
   u8g2.print(F(" Reset frame counter >> "));
 
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_HEALTH));
+  setItemColors(config_step == CONFIG_ROOT_STEP_HEALTH);
+  u8g2.print(F(" System Health > "));
+
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_EXIT));
   setItemColors(config_step == CONFIG_ROOT_STEP_EXIT);
   u8g2.print(F(" Exit >> "));
@@ -658,6 +663,69 @@ void drawResetConfirmUI()
   u8g2.print(F(" (L) Cancel"));
   u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y2);
   u8g2.print(F(" (R) Reset"));
+
+  display.display();
+}
+
+void drawHealthUI()
+{
+  const unsigned long now = millis();
+  const unsigned long idleMs = getIdleDurationMs(now);
+
+  display.clearDisplay();
+
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+
+  u8g2.setFont(u8g2_font_6x10_mf);
+  u8g2.setCursor(HEALTH_TITLE_X, HEALTH_TITLE_Y);
+  u8g2.print(F("System Health"));
+
+  u8g2.setFont(u8g2_font_4x6_mf);
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 0));
+  u8g2.print(F("FW: "));
+  u8g2.print(FWVERSION);
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 1));
+  u8g2.print(F("Prefs: "));
+  if (prefsSchemaValid)
+  {
+    u8g2.print(F("v"));
+    u8g2.print(prefsSchemaVersionLoaded);
+    u8g2.print(F(" OK"));
+  }
+  else if (prefsLoadedLegacy)
+  {
+    u8g2.print(F("Legacy migrated"));
+  }
+  else
+  {
+    u8g2.print(F("Defaults"));
+  }
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 2));
+  u8g2.print(F("LiDAR: "));
+  u8g2.print(lidarEnabled ? F("On") : F("Off"));
+  u8g2.print(F(" err:"));
+  u8g2.print(last_lidar_error_code);
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 3));
+  u8g2.print(F("Recoveries: "));
+  u8g2.print(lidar_recovery_count);
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 4));
+  u8g2.print(F("Idle: "));
+  u8g2.print(idleMs / 1000);
+  u8g2.print(F("s"));
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 5));
+  u8g2.print(F("Watchdog: "));
+  u8g2.print(watchdogEnabled ? F("On") : F("Off"));
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y);
+  u8g2.print(F(" (L/R) Back"));
 
   display.display();
 }

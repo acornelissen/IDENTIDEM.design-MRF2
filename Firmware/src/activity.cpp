@@ -39,7 +39,7 @@ void updateSleepMode(unsigned long now_ms)
   }
 
   // Keep the device awake while navigating menus/calibration flows.
-  if (ui_mode != "main")
+  if (ui_mode != UiMode::Main)
   {
     return;
   }
@@ -55,4 +55,9 @@ void updateSleepMode(unsigned long now_ms)
   {
     sleepMode = true;
   }
+}
+
+unsigned long getIdleDurationMs(unsigned long now_ms)
+{
+  return (now_ms > lastActivityTime) ? (now_ms - lastActivityTime) : 0;
 }

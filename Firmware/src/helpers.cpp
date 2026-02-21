@@ -20,7 +20,6 @@ const char *PREFS_NAMESPACE = "mrf";
 const char *PREFS_KEY_SCHEMA = "schema";
 const char *PREFS_KEY_LEGACY_LENSES = "lenses";
 const char *PREFS_KEY_LENS_COUNT = "lc_count";
-const uint16_t PREFS_SCHEMA_VERSION = 2;
 const unsigned long PREFS_FLUSH_DELAY_MS = 2000;
 
 bool prefsDirty = false;
@@ -238,6 +237,10 @@ void loadPrefs()
       legacyBytes,
       expectedLegacyLensBlobSize(NUM_LENSES));
 
+  prefsSchemaVersionLoaded = schemaVersion;
+  prefsSchemaValid = (loadMode == PrefsLoadMode::LOAD_SCHEMA && schemaVersion == PREFS_SCHEMA_VERSION);
+  prefsLoadedLegacy = false;
+
   bool migratedLegacy = false;
   if (loadMode == PrefsLoadMode::LOAD_SCHEMA)
   {
@@ -254,6 +257,9 @@ void loadPrefs()
   {
     writePrefsToOpenNamespace();
     prefs.remove(PREFS_KEY_LEGACY_LENSES);
+    prefsSchemaVersionLoaded = PREFS_SCHEMA_VERSION;
+    prefsSchemaValid = true;
+    prefsLoadedLegacy = true;
   }
 
   prefs.end();
@@ -269,6 +275,9 @@ void savePrefs(bool force)
   {
     writePrefsNow();
     prefsDirty = false;
+    prefsSchemaVersionLoaded = PREFS_SCHEMA_VERSION;
+    prefsSchemaValid = true;
+    prefsLoadedLegacy = false;
   }
 }
 
@@ -287,6 +296,9 @@ void flushPrefsIfDirty()
 
   writePrefsNow();
   prefsDirty = false;
+  prefsSchemaVersionLoaded = PREFS_SCHEMA_VERSION;
+  prefsSchemaValid = true;
+  prefsLoadedLegacy = false;
 }
 
 String cmToReadable(int cm, int places)

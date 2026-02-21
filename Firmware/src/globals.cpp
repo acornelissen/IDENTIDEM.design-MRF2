@@ -48,7 +48,7 @@ int prev_bat_per = 0;
 int bat_per = 0;
 
 // Camera state
-String ui_mode = "main";
+UiMode ui_mode = UiMode::Main;
 int config_step = 0;
 int calib_step = 0;
 int selected_lens = DEFAULT_SELECTED_LENS;
@@ -68,4 +68,12 @@ float prev_frame_progress = 0;
 
 unsigned long lastActivityTime; // Definition for the extern declaration
 bool sleepMode = false;
+
+// Health/diagnostics
+bool prefsSchemaValid = false;
+bool prefsLoadedLegacy = false;
+uint16_t prefsSchemaVersionLoaded = 0;
+bool watchdogEnabled = false;
+int last_lidar_error_code = 0;
+int lidar_recovery_count = 0;
 // ---------------------

@@ -1,6 +1,8 @@
 #ifndef MRFCONSTANTS_H
 #define MRFCONSTANTS_H
 
+#include <stdint.h>
+
 // Constants
 #define FWVERSION "9.7.5"
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000;
@@ -159,6 +161,7 @@ const int DEFAULT_EXPOSURE_COMP_THIRDS = 0;
 const int DEFAULT_METER_SMOOTHING_MODE = 2;
 const bool DEFAULT_SHOW_EV_READOUT = false;
 const int DEFAULT_SLEEP_TIMEOUT_MODE = SLEEP_TIMEOUT_MODE_1M;
+const uint16_t PREFS_SCHEMA_VERSION = 2;
 
 const unsigned long LOOP_INPUT_INTERVAL_MS = 5;
 const unsigned long LOOP_FILM_COUNTER_INTERVAL_MS = 5;
@@ -176,7 +179,8 @@ const int CONFIG_ROOT_STEP_SLEEP_TIMEOUT = 2;
 const int CONFIG_ROOT_STEP_LENS_MENU = 3;
 const int CONFIG_ROOT_STEP_METER_MENU = 4;
 const int CONFIG_ROOT_STEP_RESET = 5;
-const int CONFIG_ROOT_STEP_EXIT = 6;
+const int CONFIG_ROOT_STEP_HEALTH = 6;
+const int CONFIG_ROOT_STEP_EXIT = 7;
 const int CONFIG_ROOT_STEP_MAX = CONFIG_ROOT_STEP_EXIT;
 
 const int CONFIG_LENS_STEP_LENS = 0;
@@ -228,6 +232,12 @@ const int CALIB_LENS_Y = 35;
 const int CALIB_DISTANCE_Y = 47;
 const int CALIB_HELP_Y1 = 70;
 const int CALIB_HELP_Y2 = 81;
+const int HEALTH_TITLE_X = 3;
+const int HEALTH_TITLE_Y = 15;
+const int HEALTH_ITEM_X = 3;
+const int HEALTH_ITEM_Y_START = 30;
+const int HEALTH_ITEM_Y_STEP = 10;
+const int HEALTH_FOOTER_Y = 112;
 const int EXT_HEADER_HEIGHT = 10;
 const int EXT_HEADER_FORMAT_X = 2;
 const int EXT_HEADER_FORMAT_Y = 8;
