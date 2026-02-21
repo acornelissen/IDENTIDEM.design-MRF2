@@ -177,8 +177,7 @@ void checkButtons()
         }
         else if (ui_mode == UiMode::Config)
         {
-          if (config_step == CONFIG_ROOT_STEP_ISO) cycleISOs();
-          else if (config_step == CONFIG_ROOT_STEP_FILM_MENU) {
+          if (config_step == CONFIG_ROOT_STEP_FILM_MENU) {
             config_step = CONFIG_FILM_STEP_FORMAT;
             ui_mode = UiMode::ConfigFilm;
           }
@@ -190,7 +189,7 @@ void checkButtons()
             ui_mode = UiMode::ConfigLens;
           }
           else if (config_step == CONFIG_ROOT_STEP_METER_MENU) {
-            config_step = CONFIG_METER_STEP_EV_COMP;
+            config_step = CONFIG_METER_STEP_ISO;
             ui_mode = UiMode::ConfigMeter;
           }
           else if (config_step == CONFIG_ROOT_STEP_RESET) {
@@ -252,7 +251,10 @@ void checkButtons()
         }
         else if (ui_mode == UiMode::ConfigMeter)
         {
-          if (config_step == CONFIG_METER_STEP_EV_COMP) {
+          if (config_step == CONFIG_METER_STEP_ISO) {
+            cycleISOs();
+          }
+          else if (config_step == CONFIG_METER_STEP_EV_COMP) {
             cycleExposureCompensation(CycleDirection::Up);
           }
           else if (config_step == CONFIG_METER_STEP_SMOOTHING) {

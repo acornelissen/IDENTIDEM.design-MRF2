@@ -90,7 +90,6 @@ extern bool sleepMode;
 extern bool prefsSchemaValid;
 extern bool prefsLoadedLegacy;
 extern uint16_t prefsSchemaVersionLoaded;
-extern bool watchdogEnabled;
 extern int last_lidar_error_code;
 extern int lidar_recovery_count;
 // ---------------------

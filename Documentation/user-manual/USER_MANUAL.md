@@ -13,7 +13,7 @@ If this is your first time using the camera, this sequence keeps things simple a
 3. Load your film, aligning the arrow on the backing paper to the arrow on the top-left edge of the film chamber.
 4. Close and secure the film door, then switch on the camera.
 5. Long-press **Right (R)** to enter **Setup**, open **Lens Settings >**, then run **Lens Calibration** for the mounted lens.
-6. Still in **Setup**, choose your **frame size**, **ISO**, and preferred **sleep timeout**.
+6. Still in **Setup**, open **Film >** to set frame size and frame tuning, open **Light Meter >** to set ISO, then set your preferred **sleep timeout**.
 7. In **Setup**, select **Reset frame counter >>** so the frame counter starts at zero.
 8. Use the **advance lever** to wind to frame 1. This takes a little while. Power through!
 
@@ -112,13 +112,22 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 
 **Setup root items**
 
-1. **ISO**: cycles ISO values.
-2. **Format**: cycles film formats.
-3. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
-4. **Lens Settings >**: opens lens submenu.
-5. **Light Meter >**: opens light meter submenu.
-6. **Reset frame counter >>**: confirm film counter reset.
+1. **Film >**: opens film submenu.
+2. **Lens Settings >**: opens lens submenu.
+3. **Light Meter >**: opens light meter submenu.
+4. **Reset frame counter >>**: confirm film counter reset.
+5. **System Health >**: opens diagnostics screen.
+6. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
 7. **Exit >>**: return to the main screen.
+
+### Film submenu
+
+![Film settings menu](images/config-film-ui.svg)
+
+1. **Format**: cycles film formats.
+2. **Frame 1 offset**: shifts where frame 1 starts (`-10` to `+10`, default `0`).
+3. **Frame spacing**: adjusts spacing between frames (`-10` to `+10`, default `0`).
+4. **Back <<**: return to setup root menu.
 
 ### Lens Settings submenu
 
@@ -133,10 +142,23 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 
 ![Light meter settings menu](images/config-meter-ui.svg)
 
-1. **EV Comp**: adjust exposure compensation in 1/3-stop steps.
-2. **Smoothing**: cycles `Off`, `Low`, `Medium`, `High`.
-3. **EV Readout**: toggle EV display on/off on main screen.
-4. **Back <<**: return to setup root menu.
+1. **ISO**: cycles ISO values.
+2. **EV Comp**: adjust exposure compensation in 1/3-stop steps.
+3. **Smoothing**: cycles `Off`, `Low`, `Medium`, `High`.
+4. **EV Readout**: toggle EV display on/off on main screen.
+5. **Back <<**: return to setup root menu.
+
+### System Health screen
+
+![System health screen](images/health-ui.svg)
+
+Shows quick diagnostics:
+
+- Firmware version (`FW`)
+- Preferences schema status (`Prefs`)
+- LiDAR enabled status and last error code
+- LiDAR recovery counter
+- Idle timer in seconds
 
 ### ISO list
 

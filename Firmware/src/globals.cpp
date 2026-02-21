@@ -75,7 +75,6 @@ bool sleepMode = false;
 bool prefsSchemaValid = false;
 bool prefsLoadedLegacy = false;
 uint16_t prefsSchemaVersionLoaded = 0;
-bool watchdogEnabled = false;
 int last_lidar_error_code = 0;
 int lidar_recovery_count = 0;
 // ---------------------

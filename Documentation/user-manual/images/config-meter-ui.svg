@@ -3,9 +3,10 @@
   <text x="3" y="15" font-family="monospace" font-size="12" fill="#ffffff">Meter</text>
 
   <rect x="2" y="19" width="124" height="10" fill="#ffffff"/>
-  <text x="4" y="26" font-family="monospace" font-size="6" fill="#000000"> EV Comp:+0.0 </text>
+  <text x="4" y="26" font-family="monospace" font-size="6" fill="#000000"> ISO:400 </text>
 
-  <text x="4" y="35" font-family="monospace" font-size="6" fill="#ffffff"> Smoothing:Medium </text>
-  <text x="4" y="44" font-family="monospace" font-size="6" fill="#ffffff"> EV Readout:Off </text>
-  <text x="4" y="53" font-family="monospace" font-size="6" fill="#ffffff"> Back &lt;&lt; </text>
+  <text x="4" y="35" font-family="monospace" font-size="6" fill="#ffffff"> EV Comp:+0.0 </text>
+  <text x="4" y="44" font-family="monospace" font-size="6" fill="#ffffff"> Smoothing:Medium </text>
+  <text x="4" y="53" font-family="monospace" font-size="6" fill="#ffffff"> EV Readout:Off </text>
+  <text x="4" y="62" font-family="monospace" font-size="6" fill="#ffffff"> Back &lt;&lt; </text>
 </svg>

@@ -437,19 +437,9 @@ void drawConfigUI()
     }
   };
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_ISO));
-  setItemColors(config_step == CONFIG_ROOT_STEP_ISO);
-  u8g2.print(F(" ISO:")); u8g2.print(iso); u8g2.print(F(" "));
-
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_FILM_MENU));
   setItemColors(config_step == CONFIG_ROOT_STEP_FILM_MENU);
   u8g2.print(F(" Film > "));
-
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_SLEEP_TIMEOUT));
-  setItemColors(config_step == CONFIG_ROOT_STEP_SLEEP_TIMEOUT);
-  u8g2.print(F(" Sleep timeout:"));
-  u8g2.print(getSleepTimeoutModeLabel(sleep_timeout_mode));
-  u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_LENS_MENU));
   setItemColors(config_step == CONFIG_ROOT_STEP_LENS_MENU);
@@ -466,6 +456,12 @@ void drawConfigUI()
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_HEALTH));
   setItemColors(config_step == CONFIG_ROOT_STEP_HEALTH);
   u8g2.print(F(" System Health > "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_SLEEP_TIMEOUT));
+  setItemColors(config_step == CONFIG_ROOT_STEP_SLEEP_TIMEOUT);
+  u8g2.print(F(" Sleep timeout:"));
+  u8g2.print(getSleepTimeoutModeLabel(sleep_timeout_mode));
+  u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_EXIT));
   setItemColors(config_step == CONFIG_ROOT_STEP_EXIT);
@@ -611,6 +607,12 @@ void drawMeterConfigUI()
       u8g2.setForegroundColor(WHITE);
     }
   };
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_ISO));
+  setItemColors(config_step == CONFIG_METER_STEP_ISO);
+  u8g2.print(F(" ISO:"));
+  u8g2.print(iso);
+  u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_EV_COMP));
   setItemColors(config_step == CONFIG_METER_STEP_EV_COMP);
@@ -778,10 +780,6 @@ void drawHealthUI()
   u8g2.print(F("Idle: "));
   u8g2.print(idleMs / 1000);
   u8g2.print(F("s"));
-
-  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 5));
-  u8g2.print(F("Watchdog: "));
-  u8g2.print(watchdogEnabled ? F("On") : F("Off"));
 
   u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y);
   u8g2.print(F(" (L/R) Back"));

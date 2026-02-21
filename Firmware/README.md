@@ -97,9 +97,11 @@ Firmware/
 
 - **Main Mode**: Normal operation with rangefinder display
 - **Config Mode**: Settings and configuration menu
-- **Setup Root Menu**: ISO, format, sleep timeout, lens submenu, light-meter submenu, reset, and exit
+- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, reset, system health screen, sleep timeout, and exit
+- **Film Submenu**: format selection, frame-1 offset, and frame-spacing offset
 - **Lens Submenu**: Lens profile, parallax toggle, and lens calibration entry
-- **Light Meter Submenu**: EV compensation, smoothing strength, EV readout toggle
+- **Light Meter Submenu**: ISO, EV compensation, smoothing strength, EV readout toggle
+- **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, and idle timer
 - **Calibration Mode**: Lens calibration interface
 - **Sleep Mode**: Low-power state with minimal display
 
@@ -179,6 +181,7 @@ The system saves:
 
 - Selected lens profile
 - Film format selection
+- Frame 1 offset and frame spacing offset
 - ISO setting
 - Aperture setting
 - Film counter and encoder position
