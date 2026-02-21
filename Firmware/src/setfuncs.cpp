@@ -270,7 +270,11 @@ void setFilmCounter()
   encoder_value = decision.accepted_position;
   prev_encoder_value = encoder_value;
 
-  FilmCounterEstimate estimate = estimateFilmCounter(film_formats[selected_format], encoder_value);
+  FilmCounterEstimate estimate = estimateFilmCounter(
+      film_formats[selected_format],
+      encoder_value,
+      frame_one_offset,
+      frame_spacing_offset);
   if (!estimate.valid)
   {
     return;

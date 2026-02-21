@@ -226,6 +226,10 @@ void loop()
       {
         drawConfigUI();
       }
+      else if (ui_mode == UiMode::ConfigFilm)
+      {
+        drawFilmConfigUI();
+      }
       else if (ui_mode == UiMode::ConfigLens)
       {
         drawLensConfigUI();

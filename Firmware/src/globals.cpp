@@ -65,6 +65,8 @@ int prev_encoder_value = 0;
 int encoder_value = 0;
 float frame_progress = 0;
 float prev_frame_progress = 0;
+int frame_one_offset = DEFAULT_FRAME_ONE_OFFSET;
+int frame_spacing_offset = DEFAULT_FRAME_SPACING_OFFSET;
 
 unsigned long lastActivityTime; // Definition for the extern declaration
 bool sleepMode = false;

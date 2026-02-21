@@ -30,6 +30,16 @@ int clampSleepTimeoutMode(int timeout_mode)
 {
   return constrain(timeout_mode, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);
 }
+
+int cycleFrameTuningValue(int current)
+{
+  current++;
+  if (current > FRAME_TUNING_MAX)
+  {
+    current = FRAME_TUNING_MIN;
+  }
+  return current;
+}
 } // namespace
 
 // Functions to cycle values
@@ -114,6 +124,18 @@ void cycleFormats()
   {
     selected_format = 0;
   }
+  savePrefs();
+}
+
+void cycleFrameOneOffset()
+{
+  frame_one_offset = cycleFrameTuningValue(frame_one_offset);
+  savePrefs();
+}
+
+void cycleFrameSpacingOffset()
+{
+  frame_spacing_offset = cycleFrameTuningValue(frame_spacing_offset);
   savePrefs();
 }
 

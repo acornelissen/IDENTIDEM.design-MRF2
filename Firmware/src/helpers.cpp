@@ -68,6 +68,8 @@ void writePrefsToOpenNamespace()
   prefs.putInt("film_counter", film_counter);
   prefs.putInt("encoder_value", encoder_value);
   prefs.putInt("prev_encoder_value", prev_encoder_value);
+  prefs.putInt("frame1_offset", frame_one_offset);
+  prefs.putInt("frame_spacing", frame_spacing_offset);
   writeLensCalibrationPrefs();
 }
 
@@ -145,6 +147,9 @@ void clampLoadedState()
       sleep_timeout_mode,
       SLEEP_TIMEOUT_MODE_MIN,
       SLEEP_TIMEOUT_MODE_MAX);
+
+  frame_one_offset = constrain(frame_one_offset, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
+  frame_spacing_offset = constrain(frame_spacing_offset, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
 }
 
 void loadLensCalibrationSchemaV2()
@@ -228,6 +233,8 @@ void loadPrefs()
   film_counter = prefs.getInt("film_counter", 0);
   encoder_value = prefs.getInt("encoder_value", 0);
   prev_encoder_value = prefs.getInt("prev_encoder_value", 0);
+  frame_one_offset = prefs.getInt("frame1_offset", DEFAULT_FRAME_ONE_OFFSET);
+  frame_spacing_offset = prefs.getInt("frame_spacing", DEFAULT_FRAME_SPACING_OFFSET);
 
   uint16_t schemaVersion = prefs.getUShort(PREFS_KEY_SCHEMA, 0);
   size_t legacyBytes = prefs.getBytesLength(PREFS_KEY_LEGACY_LENSES);

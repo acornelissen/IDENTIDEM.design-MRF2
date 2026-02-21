@@ -9,6 +9,7 @@ enum class UiMode : uint8_t
 {
   Main,
   Config,
+  ConfigFilm,
   ConfigLens,
   ConfigMeter,
   Calib,
@@ -79,6 +80,8 @@ extern int prev_encoder_value;
 extern int encoder_value;
 extern float frame_progress;
 extern float prev_frame_progress;
+extern int frame_one_offset;
+extern int frame_spacing_offset;
 
 extern unsigned long lastActivityTime;
 extern bool sleepMode;

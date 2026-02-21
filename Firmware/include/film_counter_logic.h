@@ -25,7 +25,11 @@ struct EncoderFilterDecision
   int accepted_position;
 };
 
-FilmCounterEstimate estimateFilmCounter(const FilmFormat &film_format, int encoder_value);
+FilmCounterEstimate estimateFilmCounter(
+    const FilmFormat &film_format,
+    int encoder_value,
+    int frame_one_offset = 0,
+    int frame_spacing_offset = 0);
 void resetEncoderFilterState(EncoderFilterState &state, int initial_position, unsigned long now_ms);
 EncoderFilterDecision updateEncoderFilter(
     EncoderFilterState &state, int raw_position, unsigned long now_ms, bool allow_rewind);

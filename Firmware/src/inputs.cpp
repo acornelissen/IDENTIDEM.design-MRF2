@@ -81,6 +81,14 @@ void checkButtons()
           config_step = 0;
         }
       }
+      else if (ui_mode == UiMode::ConfigFilm)
+      {
+        config_step++;
+        if (config_step > CONFIG_FILM_STEP_MAX)
+        {
+          config_step = 0;
+        }
+      }
       else if (ui_mode == UiMode::ConfigLens)
       {
         config_step++;
@@ -170,7 +178,10 @@ void checkButtons()
         else if (ui_mode == UiMode::Config)
         {
           if (config_step == CONFIG_ROOT_STEP_ISO) cycleISOs();
-          else if (config_step == CONFIG_ROOT_STEP_FORMAT) cycleFormats();
+          else if (config_step == CONFIG_ROOT_STEP_FILM_MENU) {
+            config_step = CONFIG_FILM_STEP_FORMAT;
+            ui_mode = UiMode::ConfigFilm;
+          }
           else if (config_step == CONFIG_ROOT_STEP_SLEEP_TIMEOUT) {
             cycleSleepTimeoutMode();
           }
@@ -191,6 +202,26 @@ void checkButtons()
           else if (config_step == CONFIG_ROOT_STEP_EXIT) {
             ui_mode = UiMode::Main;
             config_step = 0;
+          }
+        }
+        else if (ui_mode == UiMode::ConfigFilm)
+        {
+          if (config_step == CONFIG_FILM_STEP_FORMAT)
+          {
+            cycleFormats();
+          }
+          else if (config_step == CONFIG_FILM_STEP_FRAME_ONE_OFFSET)
+          {
+            cycleFrameOneOffset();
+          }
+          else if (config_step == CONFIG_FILM_STEP_FRAME_SPACING)
+          {
+            cycleFrameSpacingOffset();
+          }
+          else if (config_step == CONFIG_FILM_STEP_BACK)
+          {
+            config_step = CONFIG_ROOT_STEP_FILM_MENU;
+            ui_mode = UiMode::Config;
           }
         }
         else if (ui_mode == UiMode::ConfigLens)

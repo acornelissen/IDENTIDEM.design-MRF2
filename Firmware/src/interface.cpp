@@ -441,9 +441,9 @@ void drawConfigUI()
   setItemColors(config_step == CONFIG_ROOT_STEP_ISO);
   u8g2.print(F(" ISO:")); u8g2.print(iso); u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_FORMAT));
-  setItemColors(config_step == CONFIG_ROOT_STEP_FORMAT);
-  u8g2.print(F(" Format:")); u8g2.print(film_formats[selected_format].name); u8g2.print(F(" "));
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_FILM_MENU));
+  setItemColors(config_step == CONFIG_ROOT_STEP_FILM_MENU);
+  u8g2.print(F(" Film > "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_SLEEP_TIMEOUT));
   setItemColors(config_step == CONFIG_ROOT_STEP_SLEEP_TIMEOUT);
@@ -476,6 +476,65 @@ void drawConfigUI()
   u8g2.setForegroundColor(WHITE);
   u8g2.print(F(" IDENTIDEM.design MRF "));
   u8g2.print(FWVERSION);
+
+  display.display();
+}
+
+void drawFilmConfigUI()
+{
+  display.clearDisplay();
+
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+
+  u8g2.setFont(u8g2_font_9x15_mf);
+  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
+  u8g2.print(F("Film"));
+
+  u8g2.setFont(u8g2_font_4x6_mf);
+  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
+
+  auto setItemColors = [&](bool selected) {
+    if (selected) {
+      u8g2.setBackgroundColor(WHITE);
+      u8g2.setForegroundColor(BLACK);
+    } else {
+      u8g2.setBackgroundColor(BLACK);
+      u8g2.setForegroundColor(WHITE);
+    }
+  };
+
+  auto printSignedValue = [&](int value) {
+    if (value > 0)
+    {
+      u8g2.print(F("+"));
+    }
+    u8g2.print(value);
+  };
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FORMAT));
+  setItemColors(config_step == CONFIG_FILM_STEP_FORMAT);
+  u8g2.print(F(" Format: "));
+  u8g2.print(film_formats[selected_format].name);
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FRAME_ONE_OFFSET));
+  setItemColors(config_step == CONFIG_FILM_STEP_FRAME_ONE_OFFSET);
+  u8g2.print(F(" Frame 1 offset: "));
+  printSignedValue(frame_one_offset);
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FRAME_SPACING));
+  setItemColors(config_step == CONFIG_FILM_STEP_FRAME_SPACING);
+  u8g2.print(F(" Frame spacing: "));
+  printSignedValue(frame_spacing_offset);
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_BACK));
+  setItemColors(config_step == CONFIG_FILM_STEP_BACK);
+  u8g2.print(F(" Back << "));
 
   display.display();
 }
