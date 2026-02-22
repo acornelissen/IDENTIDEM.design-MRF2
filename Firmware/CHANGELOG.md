@@ -2,6 +2,12 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.0.2 - 2026-02-22
+- LiDAR outdoor range tuning:
+  - Lowered library minimum intensity threshold (`200` -> `80`) to preserve marginal long-range returns in bright light.
+  - Relaxed mid/far fusion intensity gates (`14/8/4` -> `10/6/3`) to reduce long-range dropouts.
+  - Reduced temporal penalty cap (`18` -> `14`) so far-distance updates recover faster after noisy frames.
+
 ## 10.0.1 - 2026-02-22
 - Film submenu updates:
   - Added configurable `Current frame` setting in Film menu.

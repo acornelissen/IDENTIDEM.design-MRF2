@@ -42,7 +42,7 @@ DTSConfig makeLidarConfig()
   config.timeout_ms = LIDAR_NO_DATA_TIMEOUT_MS;
   config.minValidDistance_mm = DISTANCE_MIN * LIDAR_DISTANCE_DIVISOR;
   config.maxValidDistance_mm = DISTANCE_MAX * CM_PER_METER * LIDAR_DISTANCE_DIVISOR;
-  config.minIntensityThreshold = 200;
+  config.minIntensityThreshold = LIDAR_LIBRARY_MIN_INTENSITY_THRESHOLD;
   config.crcByteOrder = DTSCRCByteOrder::AUTO;
   config.crcAutoSwitchErrorThreshold = 10;
   return config;
