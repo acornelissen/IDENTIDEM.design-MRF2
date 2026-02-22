@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.0.1  
+**Version**: 10.0.3  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -97,7 +97,7 @@ Firmware/
 
 - **Main Mode**: Normal operation with rangefinder display
 - **Config Mode**: Settings and configuration menu
-- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, reset, system health screen, sleep timeout, and exit
+- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, system health screen, reset, sleep timeout, and exit
 - **Film Submenu**: format selection, frame-1 offset, and frame-spacing offset
 - **Lens Submenu**: Lens profile, parallax correction toggle, and lens calibration entry
 - **Light Meter Submenu**: ISO, EV compensation, smoothing strength, EV readout toggle
@@ -109,7 +109,7 @@ Firmware/
 
 #### Distance Measurement
 - DTS6012M v2 provides primary and secondary returns per sample
-- Confidence scoring combines data quality, intensity, temporal consistency, and lens-position prior
+- Confidence scoring combines data quality, intensity, ambient sunlight ratio (SNR), temporal consistency, and lens-position prior
 - Two-stage correction: library scale/offset in mm, then curve/residual correction in cm
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
 - Distance display uses `cm` below `1m`, with `< 5cm` and `> 18m` bounds

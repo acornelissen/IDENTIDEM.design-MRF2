@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.0.1
+**Firmware version:** 10.0.3
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -64,6 +64,7 @@ The main screen displays:
 
 - **LiDAR distance (Dist)**
   - Uses LiDAR v2 primary/secondary returns with confidence scoring and correction for more stable readings.
+  - Confidence now accounts for ambient sunlight (`sunlightBase`) relative to return intensity, which helps retain usable long-range readings in bright conditions.
   - Measurement range: 5 cm to 18 m.
   - Displays values below 1 meter in centimeters (for example, `75cm`), and 1 meter and above in meters.
   - Displays `...` if the sensor has no recent data.
@@ -116,8 +117,8 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 1. **Film >**: opens film submenu.
 2. **Lens Settings >**: opens lens submenu.
 3. **Light Meter >**: opens light meter submenu.
-4. **Reset frame counter >>**: confirm film counter reset.
-5. **System Health >**: opens diagnostics screen.
+4. **System Health >**: opens diagnostics screen.
+5. **Reset frame counter >>**: confirm film counter reset.
 6. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
 7. **Exit >>**: return to the main screen.
 
@@ -258,7 +259,7 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 - **LiDAR distance shows `...`**
   - Verify LiDAR wiring and power. The UI updates only with valid sensor data.
 - **LiDAR quality stays at 1 square (Poor)**
-  - Check subject reflectivity/angle and ambient interference; low-intensity or unstable returns reduce confidence.
+  - Check subject reflectivity/angle and ambient interference; low-SNR returns under strong sunlight are deprioritized and may update more slowly.
 - **Shutter speed reads `Bright!` or `Dark!`**
   - Adjust ISO and/or aperture, or verify the light meter sensor.
 - **Lens option does not show your lens**

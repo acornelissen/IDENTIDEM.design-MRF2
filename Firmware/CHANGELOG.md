@@ -8,6 +8,8 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
   - Low-SNR frames now reduce confidence first, with hard rejects reserved for very weak signals under strong ambient light.
 - Setup menu ordering:
   - Moved `Reset frame counter` to sit directly above `Sleep timeout` in the root Setup menu.
+- Docs/UI snapshots:
+  - Updated firmware README, user manual, and camera setup/health UI SVG snapshots for 10.0.3.
 
 ## 10.0.2 - 2026-02-22
 - LiDAR outdoor range tuning:
