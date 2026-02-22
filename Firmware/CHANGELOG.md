@@ -2,6 +2,13 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.0.3 - 2026-02-22
+- LiDAR ambient-light handling:
+  - Added sunlight-aware SNR scoring (`intensity` relative to `sunlightBase`) for primary/secondary/fallback candidates.
+  - Low-SNR frames now reduce confidence first, with hard rejects reserved for very weak signals under strong ambient light.
+- Setup menu ordering:
+  - Moved `Reset frame counter` to sit directly above `Sleep timeout` in the root Setup menu.
+
 ## 10.0.2 - 2026-02-22
 - LiDAR outdoor range tuning:
   - Lowered library minimum intensity threshold (`200` -> `80`) to preserve marginal long-range returns in bright light.

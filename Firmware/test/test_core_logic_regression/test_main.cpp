@@ -363,6 +363,43 @@ void test_lidar_lens_prior_is_range_weighted()
   TEST_ASSERT_LESS_THAN_INT(farCandidate.confidence, nearCandidate.confidence);
 }
 
+void test_lidar_sunlight_penalizes_confidence_without_dropping_valid_measurement()
+{
+  DTSMeasurement lowAmbientMeasurement = {};
+  lowAmbientMeasurement.primaryDistance_mm = 4500; // 450cm
+  lowAmbientMeasurement.primaryIntensity = 40;
+  lowAmbientMeasurement.sunlightBase = 25;
+  lowAmbientMeasurement.primaryQuality = DataQuality::GOOD;
+  lowAmbientMeasurement.secondaryDistance_mm = DTS_INVALID_DISTANCE;
+  lowAmbientMeasurement.secondaryIntensity = 0;
+  lowAmbientMeasurement.secondaryQuality = DataQuality::INVALID;
+
+  DTSMeasurement highAmbientMeasurement = lowAmbientMeasurement;
+  highAmbientMeasurement.sunlightBase = 650;
+
+  LidarCandidate lowAmbientCandidate = chooseBestLidarCandidate(lowAmbientMeasurement, 0, false, 0);
+  LidarCandidate highAmbientCandidate = chooseBestLidarCandidate(highAmbientMeasurement, 0, false, 0);
+
+  TEST_ASSERT_TRUE(lowAmbientCandidate.valid);
+  TEST_ASSERT_TRUE(highAmbientCandidate.valid);
+  TEST_ASSERT_LESS_THAN_INT(lowAmbientCandidate.confidence, highAmbientCandidate.confidence);
+}
+
+void test_lidar_sunlight_hard_rejects_very_low_snr_measurement()
+{
+  DTSMeasurement measurement = {};
+  measurement.primaryDistance_mm = 7000; // 700cm
+  measurement.primaryIntensity = LIDAR_FUSION_MIN_INTENSITY_FAR;
+  measurement.sunlightBase = 1500;
+  measurement.primaryQuality = DataQuality::GOOD;
+  measurement.secondaryDistance_mm = DTS_INVALID_DISTANCE;
+  measurement.secondaryIntensity = 0;
+  measurement.secondaryQuality = DataQuality::INVALID;
+
+  LidarCandidate candidate = chooseBestLidarCandidate(measurement, 0, false, 0);
+  TEST_ASSERT_FALSE(candidate.valid);
+}
+
 void test_lens_snap_and_distance_estimation()
 {
   Lens lens = makeTestLens();
@@ -413,6 +450,8 @@ int main(int, char **)
   RUN_TEST(test_lidar_far_fallback_prevents_dropouts);
   RUN_TEST(test_lidar_candidate_fusion_when_returns_agree);
   RUN_TEST(test_lidar_lens_prior_is_range_weighted);
+  RUN_TEST(test_lidar_sunlight_penalizes_confidence_without_dropping_valid_measurement);
+  RUN_TEST(test_lidar_sunlight_hard_rejects_very_low_snr_measurement);
   RUN_TEST(test_lens_snap_and_distance_estimation);
   RUN_TEST(test_lightmeter_dark_bright_fraction_and_seconds);
   return UNITY_END();

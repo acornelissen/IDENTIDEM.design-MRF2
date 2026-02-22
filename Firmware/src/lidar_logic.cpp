@@ -149,6 +149,71 @@ int minIntensityThresholdForDistanceCm(int raw_cm)
   return LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE;
 }
 
+int snrTargetPermilleForDistanceCm(int raw_cm)
+{
+  if (raw_cm <= LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM)
+  {
+    return LIDAR_SNR_PERMILLE_TARGET_NEAR;
+  }
+  if (raw_cm <= LIDAR_FUSION_INTENSITY_MID_RANGE_CM)
+  {
+    return LIDAR_SNR_PERMILLE_TARGET_MID;
+  }
+  if (raw_cm <= LIDAR_FUSION_INTENSITY_FAR_RANGE_CM)
+  {
+    return LIDAR_SNR_PERMILLE_TARGET_FAR;
+  }
+  return LIDAR_SNR_PERMILLE_TARGET_MAX_RANGE;
+}
+
+int computeSnrPermille(uint16_t intensity, uint16_t sunlight_base)
+{
+  if (sunlight_base == 0)
+  {
+    return -1;
+  }
+
+  int sunlight = max(1, static_cast<int>(sunlight_base));
+  return static_cast<int>((static_cast<unsigned long>(intensity) * 1000UL) /
+                          static_cast<unsigned long>(sunlight));
+}
+
+bool shouldRejectBySnrFloor(int raw_cm, uint16_t intensity, uint16_t sunlight_base)
+{
+  int snr_permille = computeSnrPermille(intensity, sunlight_base);
+  if (snr_permille < 0)
+  {
+    return false;
+  }
+
+  int min_intensity = minIntensityThresholdForDistanceCm(raw_cm);
+  int hard_reject_intensity = min_intensity * LIDAR_SNR_HARD_REJECT_INTENSITY_MULTIPLIER;
+  return snr_permille < LIDAR_SNR_PERMILLE_HARD_REJECT &&
+         static_cast<int>(intensity) < hard_reject_intensity;
+}
+
+int snrPenaltyForAmbientLight(int raw_cm,
+                              uint16_t intensity,
+                              uint16_t sunlight_base,
+                              int penalty_max)
+{
+  int snr_permille = computeSnrPermille(intensity, sunlight_base);
+  if (snr_permille < 0)
+  {
+    return 0;
+  }
+
+  int target_snr = snrTargetPermilleForDistanceCm(raw_cm);
+  if (snr_permille >= target_snr)
+  {
+    return 0;
+  }
+
+  int deficit = target_snr - snr_permille;
+  int penalty = (deficit + (LIDAR_SNR_PENALTY_DIVISOR - 1)) / LIDAR_SNR_PENALTY_DIVISOR;
+  return min(penalty_max, penalty);
+}
+
 int qualityLevelFromDataQuality(DataQuality quality)
 {
   switch (quality)
@@ -168,6 +233,7 @@ int qualityLevelFromDataQuality(DataQuality quality)
 
 LidarCandidate buildFallbackLidarCandidate(uint16_t raw_distance_mm,
                                            uint16_t intensity,
+                                           uint16_t sunlight_base,
                                            DataQuality quality,
                                            int previous_distance_cm)
 {
@@ -179,6 +245,11 @@ LidarCandidate buildFallbackLidarCandidate(uint16_t raw_distance_mm,
 
   int raw_cm = static_cast<int>(raw_distance_mm) / LIDAR_DISTANCE_DIVISOR;
   if (raw_cm <= LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM)
+  {
+    return candidate;
+  }
+
+  if (shouldRejectBySnrFloor(raw_cm, intensity, sunlight_base))
   {
     return candidate;
   }
@@ -202,6 +273,8 @@ LidarCandidate buildFallbackLidarCandidate(uint16_t raw_distance_mm,
     confidence -= min(LIDAR_TEMPORAL_PENALTY_MAX,
                       abs(corrected_cm - previous_distance_cm) / LIDAR_TEMPORAL_PENALTY_DIVISOR);
   }
+  confidence -= snrPenaltyForAmbientLight(
+      raw_cm, intensity, sunlight_base, LIDAR_SNR_FALLBACK_PENALTY_MAX);
   confidence = constrain(confidence, 0, LIDAR_FALLBACK_MAX_CONFIDENCE);
   if (confidence <= 0)
   {
@@ -217,6 +290,7 @@ LidarCandidate buildFallbackLidarCandidate(uint16_t raw_distance_mm,
 
 LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
                                    uint16_t intensity,
+                                   uint16_t sunlight_base,
                                    DataQuality quality,
                                    bool secondary_candidate,
                                    int previous_distance_cm,
@@ -241,6 +315,11 @@ LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
     return candidate;
   }
 
+  if (shouldRejectBySnrFloor(raw_cm, intensity, sunlight_base))
+  {
+    return candidate;
+  }
+
   int corrected_cm = applyLidarDoubleCorrectionCm(raw_cm);
   if (corrected_cm <= 0)
   {
@@ -255,6 +334,7 @@ LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
     confidence -= min(LIDAR_TEMPORAL_PENALTY_MAX,
                       abs(corrected_cm - previous_distance_cm) / LIDAR_TEMPORAL_PENALTY_DIVISOR);
   }
+  confidence -= snrPenaltyForAmbientLight(raw_cm, intensity, sunlight_base, LIDAR_SNR_PENALTY_MAX);
 
   if (has_lens_prior)
   {
@@ -312,6 +392,7 @@ LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,
 
   LidarCandidate primary = buildLidarCandidate(measurement.primaryDistance_mm,
                                                measurement.primaryIntensity,
+                                               measurement.sunlightBase,
                                                measurement.primaryQuality,
                                                false,
                                                previous_distance_cm,
@@ -320,6 +401,7 @@ LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,
 
   LidarCandidate secondary = buildLidarCandidate(measurement.secondaryDistance_mm,
                                                  measurement.secondaryIntensity,
+                                                 measurement.sunlightBase,
                                                  secondary_quality,
                                                  true,
                                                  previous_distance_cm,
@@ -345,10 +427,12 @@ LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,
   // low-confidence distance fallback to avoid prolonged "..." dropouts.
   LidarCandidate fallbackPrimary = buildFallbackLidarCandidate(measurement.primaryDistance_mm,
                                                                measurement.primaryIntensity,
+                                                               measurement.sunlightBase,
                                                                measurement.primaryQuality,
                                                                previous_distance_cm);
   LidarCandidate fallbackSecondary = buildFallbackLidarCandidate(measurement.secondaryDistance_mm,
                                                                  measurement.secondaryIntensity,
+                                                                 measurement.sunlightBase,
                                                                  secondary_quality,
                                                                  previous_distance_cm);
 

@@ -18,6 +18,7 @@ struct DTSMeasurement
   uint16_t secondaryDistance_mm = 0;
   uint16_t primaryIntensity = 0;
   uint16_t secondaryIntensity = 0;
+  uint16_t sunlightBase = 0;
   DataQuality primaryQuality = DataQuality::INVALID;
   DataQuality secondaryQuality = DataQuality::INVALID;
 };
