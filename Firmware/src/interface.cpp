@@ -21,8 +21,6 @@ struct ParallaxShift
   float y;
 };
 
-const unsigned long SLEEP_TEXT_ANIMATION_INTERVAL_MS = 5000;
-
 static String getCompactShutterDisplay(const String &fullShutter)
 {
   const char *suffix = " sec.";
@@ -876,23 +874,10 @@ void drawSleepUI()
   u8g2_ext.setBackgroundColor(BLACK);
   u8g2_ext.setFont(u8g2_font_10x20_mf);
 
-  const unsigned long animationPhase = millis() / SLEEP_TEXT_ANIMATION_INTERVAL_MS;
-  const char *sleepLabel = (animationPhase % 2 == 0) ? "ZzzZZzZz" : "zZZzzZzZ";
-  char animatedDots[4] = {' ', ' ', ' ', '\0'};
-  int dotCount = static_cast<int>(animationPhase % 3) + 1;
-  for (int i = 0; i < dotCount; i++)
-  {
-    animatedDots[i] = '.';
-  }
-
   u8g2_ext.setCursor(EXT_SLEEP_TEXT_X, EXT_SLEEP_TEXT_Y);
-  u8g2_ext.print(sleepLabel);
-  u8g2_ext.print(animatedDots);
+  u8g2_ext.print(F("Sleep mode"));
 
   display.display();
   display_ext.display();
-
-  sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B)); // Off
-  sspixel.show();
 }
 // ---------------------
