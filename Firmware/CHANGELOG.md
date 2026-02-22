@@ -2,6 +2,12 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.0.1 - 2026-02-22
+- Film submenu updates:
+- Added configurable `Current frame` setting in Film menu.
+- `Current frame` range is now constrained by selected format maximum (for example, `6x6: 0..12`, `6x7: 0..10`).
+- Manual frame changes now re-sync encoder position and frame-progress state.
+
 ## 10.0.0 - 2026-02-22
 - Settings UI updates:
 - Split setup into focused submenus for Lens and Light Meter settings.
