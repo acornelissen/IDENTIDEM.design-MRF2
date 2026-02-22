@@ -662,34 +662,83 @@
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  function extractChangelogNotesFromSection(sectionBody) {
-    const rootItems = [];
-    const stack = [{ indent: -1, items: rootItems }];
+  function extractChangelogBlocksFromSection(sectionBody) {
+    const blocks = [];
+    let listRootItems = null;
+    let listStack = null;
 
-    sectionBody.split(/\r?\n/).forEach((rawLine) => {
-      const bulletMatch = rawLine.match(/^(\s*)-\s+(.*)$/);
-      if (!bulletMatch) return;
-
-      const noteText = (bulletMatch[2] || "").trim();
-      if (
-        !noteText ||
-        noteText.startsWith("Release commit:") ||
-        noteText.startsWith("Range:")
-      ) {
+    const flushListBlock = () => {
+      if (!Array.isArray(listRootItems) || !listRootItems.length) {
+        listRootItems = null;
+        listStack = null;
         return;
       }
 
-      const indentWidth = (bulletMatch[1] || "").replace(/\t/g, "  ").length;
-      while (stack.length > 1 && indentWidth <= stack[stack.length - 1].indent) {
-        stack.pop();
+      blocks.push({ type: "list", items: listRootItems });
+      listRootItems = null;
+      listStack = null;
+    };
+
+    const ensureListContext = () => {
+      if (!Array.isArray(listRootItems)) {
+        listRootItems = [];
+        listStack = [{ indent: -1, items: listRootItems }];
+      }
+      return listStack;
+    };
+
+    const appendParagraphBlock = (text) => {
+      const normalized = (text || "").trim();
+      if (!normalized) return;
+
+      const lastBlock = blocks.length ? blocks[blocks.length - 1] : null;
+      if (lastBlock && lastBlock.type === "paragraph") {
+        lastBlock.text = `${lastBlock.text} ${normalized}`;
+        return;
       }
 
-      const item = { text: noteText, children: [] };
-      stack[stack.length - 1].items.push(item);
-      stack.push({ indent: indentWidth, items: item.children });
+      blocks.push({ type: "paragraph", text: normalized });
+    };
+
+    sectionBody.split(/\r?\n/).forEach((rawLine) => {
+      const bulletMatch = rawLine.match(/^(\s*)-\s+(.*)$/);
+      if (bulletMatch) {
+        const noteText = (bulletMatch[2] || "").trim();
+        if (
+          !noteText ||
+          noteText.startsWith("Release commit:") ||
+          noteText.startsWith("Range:")
+        ) {
+          return;
+        }
+
+        const stack = ensureListContext();
+        const indentWidth = (bulletMatch[1] || "").replace(/\t/g, "  ").length;
+        while (stack.length > 1 && indentWidth <= stack[stack.length - 1].indent) {
+          stack.pop();
+        }
+
+        const item = { text: noteText, children: [] };
+        stack[stack.length - 1].items.push(item);
+        stack.push({ indent: indentWidth, items: item.children });
+        return;
+      }
+
+      flushListBlock();
+      const trimmedLine = rawLine.trim();
+      if (!trimmedLine) return;
+
+      const headingMatch = trimmedLine.match(/^#{3,6}\s+(.*)$/);
+      if (headingMatch && headingMatch[1]) {
+        blocks.push({ type: "heading", text: headingMatch[1].trim() });
+        return;
+      }
+
+      appendParagraphBlock(trimmedLine);
     });
 
-    return rootItems;
+    flushListBlock();
+    return blocks;
   }
 
   function countChangelogNotes(notes) {
@@ -701,6 +750,28 @@
     }, 0);
   }
 
+  function countChangelogContentItems(blocks) {
+    if (!Array.isArray(blocks)) return 0;
+
+    return blocks.reduce((sum, block) => {
+      if (!block || typeof block.type !== "string") return sum;
+
+      if (block.type === "list") {
+        return sum + countChangelogNotes(block.items);
+      }
+
+      if (
+        (block.type === "heading" || block.type === "paragraph") &&
+        typeof block.text === "string" &&
+        block.text.length
+      ) {
+        return sum + 1;
+      }
+
+      return sum;
+    }, 0);
+  }
+
   function appendChangelogNotes(listEl, notes) {
     if (!listEl || !Array.isArray(notes) || !notes.length) return;
 
@@ -708,7 +779,7 @@
       if (!note || typeof note.text !== "string" || !note.text.length) return;
 
       const li = document.createElement("li");
-      li.textContent = note.text;
+      appendInlineCodeSpans(li, note.text);
       listEl.appendChild(li);
 
       if (Array.isArray(note.children) && note.children.length) {
@@ -717,6 +788,61 @@
         li.appendChild(nestedList);
       }
     });
+  }
+
+  function appendInlineCodeSpans(containerEl, text) {
+    if (!containerEl || typeof text !== "string" || !text.length) return;
+
+    const parts = text.split(/(`[^`]+`)/g);
+    parts.forEach((part) => {
+      if (!part) return;
+
+      const isCodeSpan = part.length >= 3 && part.startsWith("`") && part.endsWith("`");
+      if (isCodeSpan) {
+        const code = document.createElement("code");
+        code.textContent = part.slice(1, -1);
+        containerEl.appendChild(code);
+        return;
+      }
+
+      containerEl.appendChild(document.createTextNode(part));
+    });
+  }
+
+  function appendChangelogSectionBlocks(sectionItem, blocks) {
+    if (!sectionItem || !Array.isArray(blocks) || !blocks.length) return false;
+
+    let appendedAny = false;
+
+    blocks.forEach((block) => {
+      if (!block || typeof block.type !== "string") return;
+
+      if (block.type === "list" && Array.isArray(block.items) && block.items.length) {
+        const sectionList = document.createElement("ul");
+        sectionList.className = "release-section-list";
+        appendChangelogNotes(sectionList, block.items);
+        if (sectionList.childElementCount) {
+          sectionItem.appendChild(sectionList);
+          appendedAny = true;
+        }
+        return;
+      }
+
+      if (
+        (block.type === "heading" || block.type === "paragraph") &&
+        typeof block.text === "string" &&
+        block.text.length
+      ) {
+        const textBlock = document.createElement("p");
+        textBlock.className =
+          block.type === "heading" ? "release-section-subheading" : "release-section-text";
+        appendInlineCodeSpans(textBlock, block.text);
+        sectionItem.appendChild(textBlock);
+        appendedAny = true;
+      }
+    });
+
+    return appendedAny;
   }
 
   function extractChangelogSections(markdown) {
@@ -742,7 +868,7 @@
       const sectionBody = markdown.slice(section.sectionBodyStart, nextSectionStart);
       return {
         version: section.version,
-        notes: extractChangelogNotesFromSection(sectionBody),
+        blocks: extractChangelogBlocksFromSection(sectionBody),
       };
     });
   }
@@ -773,7 +899,7 @@
     let renderedSectionCount = 0;
 
     sections.forEach((section) => {
-      if (!section || !Array.isArray(section.notes) || !section.notes.length) {
+      if (!section || !Array.isArray(section.blocks) || !section.blocks.length) {
         return;
       }
 
@@ -782,13 +908,11 @@
 
       const sectionHeading = document.createElement("p");
       sectionHeading.className = "release-section-heading";
-      sectionHeading.textContent = `Release ${section.version}`;
+      appendInlineCodeSpans(sectionHeading, `Release ${section.version}`);
       sectionItem.appendChild(sectionHeading);
 
-      const sectionList = document.createElement("ul");
-      sectionList.className = "release-section-list";
-      appendChangelogNotes(sectionList, section.notes);
-      sectionItem.appendChild(sectionList);
+      const hasRenderedBlocks = appendChangelogSectionBlocks(sectionItem, section.blocks);
+      if (!hasRenderedBlocks) return;
 
       latestChangelogEl.appendChild(sectionItem);
       renderedSectionCount += 1;
@@ -798,7 +922,7 @@
 
     const li = document.createElement("li");
     li.className = "release-empty";
-    li.textContent = "Release notes not available yet.";
+    appendInlineCodeSpans(li, "Release notes not available yet.");
     latestChangelogEl.appendChild(li);
   }
 
@@ -817,7 +941,7 @@
       const sectionsToRender = selectCurrentAndPreviousSections(changelogSections, version);
       renderChangelogNotes(sectionsToRender);
       const noteCount = sectionsToRender.reduce(
-        (sum, section) => sum + countChangelogNotes(section.notes),
+        (sum, section) => sum + countChangelogContentItems(section.blocks),
         0
       );
       debug.log("changelog-load-success", {
