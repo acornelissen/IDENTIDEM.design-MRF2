@@ -52,6 +52,9 @@ jobs:
           mkdir -p "$LATEST_DIR" "$VERSIONS_DIR"
           cp -R docs/. "$SITE_DIR/"
           cp Firmware/CHANGELOG.md "$SITE_DIR/changelog.md"
+          BUILD_SHA_SHORT="${GITHUB_SHA:-local}"
+          BUILD_SHA_SHORT="${BUILD_SHA_SHORT:0:7}"
+          sed -i "s/__BUILD_SHA__/$BUILD_SHA_SHORT/g" "$SITE_DIR/index.html"
 
           BOOTLOADER_BIN="$VARIANT_DIR/bootloader-tinyuf2.bin"
           BOOT_APP0_BIN="$FRAMEWORK_DIR/tools/partitions/boot_app0.bin"

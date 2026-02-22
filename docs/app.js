@@ -325,6 +325,16 @@
     installBtnEl.setAttribute("manifest", manifestPath);
   }
 
+  function renderUnavailableVersionOption(message) {
+    if (!versionSelectEl) return;
+    versionSelectEl.innerHTML = "";
+    const option = document.createElement("option");
+    option.value = FALLBACK_MANIFEST_PATH;
+    option.textContent = message;
+    versionSelectEl.appendChild(option);
+    versionSelectEl.disabled = true;
+  }
+
   function renderVersionOptions(entries, latestVersion) {
     if (!versionSelectEl) return;
     versionSelectEl.innerHTML = "";
@@ -406,47 +416,55 @@
   }
 
   async function initializeFirmwareCatalog() {
-    const catalog = (await loadVersionCatalog()) || (await loadFallbackCatalog());
-    const entries = catalog && Array.isArray(catalog.entries) ? catalog.entries : [];
-    const latestVersion =
-      catalog && typeof catalog.latestVersion === "string" ? catalog.latestVersion : "";
+    try {
+      const catalog = (await loadVersionCatalog()) || (await loadFallbackCatalog());
+      const entries = catalog && Array.isArray(catalog.entries) ? catalog.entries : [];
+      const latestVersion =
+        catalog && typeof catalog.latestVersion === "string" ? catalog.latestVersion : "";
 
-    renderVersionOptions(entries, latestVersion);
+      renderVersionOptions(entries, latestVersion);
 
-    if (!entries.length) {
+      if (!entries.length) {
+        setInstallManifest(FALLBACK_MANIFEST_PATH);
+        loadLatestChangelog("");
+        return;
+      }
+
+      const findEntryByManifest = (manifestPath) =>
+        entries.find((entry) => entry.manifest === manifestPath) || null;
+
+      const applySelection = (entry, source) => {
+        if (!entry) return;
+        setInstallManifest(entry.manifest);
+        if (versionSelectEl) {
+          versionSelectEl.value = entry.manifest;
+        }
+        loadLatestChangelog(entry.version);
+        debug.log("firmware-selection", {
+          source,
+          version: entry.version || "",
+          manifest: entry.manifest,
+        });
+      };
+
+      const defaultEntry =
+        entries.find((entry) => latestVersion && entry.version === latestVersion) || entries[0];
+      applySelection(defaultEntry, "default");
+
+      if (versionSelectEl) {
+        versionSelectEl.addEventListener("change", () => {
+          const selectedEntry = findEntryByManifest(versionSelectEl.value);
+          if (selectedEntry) {
+            applySelection(selectedEntry, "user");
+          }
+        });
+      }
+    } catch (error) {
+      debug.log("firmware-catalog-init-failed", { error });
+      versionEl.textContent = "Available";
+      renderUnavailableVersionOption("Version list unavailable");
       setInstallManifest(FALLBACK_MANIFEST_PATH);
       loadLatestChangelog("");
-      return;
-    }
-
-    const findEntryByManifest = (manifestPath) =>
-      entries.find((entry) => entry.manifest === manifestPath) || null;
-
-    const applySelection = (entry, source) => {
-      if (!entry) return;
-      setInstallManifest(entry.manifest);
-      if (versionSelectEl) {
-        versionSelectEl.value = entry.manifest;
-      }
-      loadLatestChangelog(entry.version);
-      debug.log("firmware-selection", {
-        source,
-        version: entry.version || "",
-        manifest: entry.manifest,
-      });
-    };
-
-    const defaultEntry =
-      entries.find((entry) => latestVersion && entry.version === latestVersion) || entries[0];
-    applySelection(defaultEntry, "default");
-
-    if (versionSelectEl) {
-      versionSelectEl.addEventListener("change", () => {
-        const selectedEntry = findEntryByManifest(versionSelectEl.value);
-        if (selectedEntry) {
-          applySelection(selectedEntry, "user");
-        }
-      });
     }
   }
 
