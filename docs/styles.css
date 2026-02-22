@@ -89,6 +89,26 @@ body {
   color: var(--muted);
 }
 
+.version-select-row {
+  align-items: center;
+}
+
+#firmware-version-select {
+  min-width: 180px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.88rem;
+}
+
+#firmware-version-select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .install-wrap {
   margin-top: 0.25rem;
 }
@@ -248,5 +268,9 @@ li {
   .status-row {
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  #firmware-version-select {
+    width: 100%;
   }
 }

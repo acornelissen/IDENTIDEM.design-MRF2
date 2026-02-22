@@ -26,13 +26,19 @@
         <p class="eyebrow">IDENTIDEM.design</p>
         <h1>MRF2 Firmware Updater</h1>
         <p class="subtitle">
-          Flash the latest MRF2 firmware directly from a Chromium-based browser.
+          Flash the latest or a previous MRF2 firmware version directly from a Chromium-based browser.
         </p>
 
         <div class="panel">
           <div class="status-row">
             <strong>Latest Build</strong>
             <span id="firmware-version">Checking...</span>
+          </div>
+          <div class="status-row version-select-row">
+            <label for="firmware-version-select"><strong>Version To Install</strong></label>
+            <select id="firmware-version-select" aria-label="Firmware version to install">
+              <option>Loading...</option>
+            </select>
           </div>
           <div class="status-row">
             <strong>Current Browser</strong>
@@ -55,9 +61,9 @@
           </p>
 
           <div class="release-notes">
-            <h2>Latest Changelog</h2>
+            <h2>Release Notes</h2>
             <ul id="latest-changelog">
-              <li>Loading latest release notes...</li>
+              <li>Loading release notes...</li>
             </ul>
             <p class="changelog-link-wrap">
               <a id="changelog-link" href="./changelog.md" target="_blank" rel="noopener">

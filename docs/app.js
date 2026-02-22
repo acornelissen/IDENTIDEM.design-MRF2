@@ -1,5 +1,6 @@
 (function () {
   const versionEl = document.getElementById("firmware-version");
+  const versionSelectEl = document.getElementById("firmware-version-select");
   const browserEl = document.getElementById("browser-check");
   const secureEl = document.getElementById("secure-check");
   const latestChangelogEl = document.getElementById("latest-changelog");
@@ -13,6 +14,8 @@
   const DEBUG_LOG_MAX_ENTRIES = 400;
   const AUTO_RETRY_DISABLE_QUERY_KEY = "noretry";
   const AUTO_RETRY_QUERY_KEY = "retry";
+  const VERSION_INDEX_PATH = "./firmware/versions.json";
+  const FALLBACK_MANIFEST_PATH = "./firmware/latest/manifest.json";
 
   function parseBooleanQueryValue(value) {
     const normalized = (value || "").trim().toLowerCase();
@@ -189,7 +192,7 @@
         const rawUrl = typeof input === "string" ? input : input && input.url;
         if (!rawUrl) return false;
         const url = new URL(rawUrl, window.location.href);
-        if (!url.pathname.includes("/firmware/latest/")) return false;
+        if (!url.pathname.includes("/firmware/")) return false;
         return /\.(bin|json)$/i.test(url.pathname);
       } catch (error) {
         return false;
@@ -283,28 +286,168 @@
     debug.log("secure-context", { secure: window.isSecureContext });
   }
 
-  async function loadManifestVersion() {
-    debug.log("manifest-load-start");
+  function normalizeManifestPath(manifestPath) {
+    if (!manifestPath) return "";
+    if (/^https?:\/\//i.test(manifestPath)) return manifestPath;
+    const trimmedPath = manifestPath.replace(/^\/+/, "");
+    if (!trimmedPath) return "";
+    return trimmedPath.startsWith("./") ? trimmedPath : `./${trimmedPath}`;
+  }
+
+  function compareVersionsDescending(lhs, rhs) {
+    return rhs.localeCompare(lhs, undefined, { numeric: true, sensitivity: "base" });
+  }
+
+  async function fetchManifest(manifestPath) {
+    const response = await fetch(manifestPath, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("Manifest not available");
+    }
+    return response.json();
+  }
+
+  function normalizeVersionEntry(entry) {
+    if (!entry || typeof entry !== "object") return null;
+    const version = typeof entry.version === "string" ? entry.version.trim() : "";
+    const manifestPath =
+      typeof entry.manifest === "string" && entry.manifest.trim()
+        ? entry.manifest.trim()
+        : version
+          ? `firmware/versions/${version}/manifest.json`
+          : "";
+    const manifest = normalizeManifestPath(manifestPath);
+    if (!manifest) return null;
+    return { version, manifest };
+  }
+
+  function setInstallManifest(manifestPath) {
+    if (!installBtnEl || !manifestPath) return;
+    installBtnEl.setAttribute("manifest", manifestPath);
+  }
+
+  function renderVersionOptions(entries, latestVersion) {
+    if (!versionSelectEl) return;
+    versionSelectEl.innerHTML = "";
+
+    if (!entries.length) {
+      const option = document.createElement("option");
+      option.value = FALLBACK_MANIFEST_PATH;
+      option.textContent = "No published builds";
+      versionSelectEl.appendChild(option);
+      versionSelectEl.disabled = true;
+      return;
+    }
+
+    entries.forEach((entry) => {
+      const option = document.createElement("option");
+      option.value = entry.manifest;
+      const baseLabel = entry.version || "Latest";
+      option.textContent =
+        latestVersion && entry.version === latestVersion ? `${baseLabel} (Latest)` : baseLabel;
+      versionSelectEl.appendChild(option);
+    });
+
+    versionSelectEl.disabled = entries.length <= 1;
+  }
+
+  async function loadVersionCatalog() {
+    debug.log("version-catalog-load-start", { path: VERSION_INDEX_PATH });
     try {
-      const response = await fetch("./firmware/latest/manifest.json", { cache: "no-store" });
+      const response = await fetch(VERSION_INDEX_PATH, { cache: "no-store" });
       if (!response.ok) {
-        throw new Error("Manifest not available yet");
+        throw new Error("Version catalog not available");
       }
 
-      const manifest = await response.json();
-      if (manifest && manifest.version) {
-        versionEl.textContent = manifest.version;
-        debug.log("manifest-load-success", { version: manifest.version });
-        return manifest.version;
-      } else {
-        versionEl.textContent = "Available";
-        debug.log("manifest-load-success", { version: "" });
+      const payload = await response.json();
+      const entries = (Array.isArray(payload.versions) ? payload.versions : [])
+        .map(normalizeVersionEntry)
+        .filter((entry) => !!entry);
+
+      if (!entries.length) {
+        throw new Error("Version catalog is empty");
       }
+
+      entries.sort((lhs, rhs) => compareVersionsDescending(lhs.version, rhs.version));
+
+      let latestVersion = typeof payload.latest === "string" ? payload.latest.trim() : "";
+      if (!latestVersion || !entries.some((entry) => entry.version === latestVersion)) {
+        latestVersion = entries[0].version;
+      }
+
+      versionEl.textContent = latestVersion || "Available";
+      debug.log("version-catalog-load-success", {
+        latestVersion,
+        versionCount: entries.length,
+      });
+      return { entries, latestVersion };
+    } catch (error) {
+      debug.log("version-catalog-load-failed", { error });
+      return null;
+    }
+  }
+
+  async function loadFallbackCatalog() {
+    debug.log("manifest-load-start", { manifest: FALLBACK_MANIFEST_PATH });
+    try {
+      const manifest = await fetchManifest(FALLBACK_MANIFEST_PATH);
+      const version =
+        manifest && typeof manifest.version === "string" ? manifest.version.trim() : "";
+      versionEl.textContent = version || "Available";
+      debug.log("manifest-load-success", { version });
+      return {
+        entries: [{ version, manifest: FALLBACK_MANIFEST_PATH }],
+        latestVersion: version,
+      };
     } catch (error) {
       versionEl.textContent = "Not published yet";
       debug.log("manifest-load-failed", { error });
+      return { entries: [], latestVersion: "" };
     }
-    return "";
+  }
+
+  async function initializeFirmwareCatalog() {
+    const catalog = (await loadVersionCatalog()) || (await loadFallbackCatalog());
+    const entries = catalog && Array.isArray(catalog.entries) ? catalog.entries : [];
+    const latestVersion =
+      catalog && typeof catalog.latestVersion === "string" ? catalog.latestVersion : "";
+
+    renderVersionOptions(entries, latestVersion);
+
+    if (!entries.length) {
+      setInstallManifest(FALLBACK_MANIFEST_PATH);
+      loadLatestChangelog("");
+      return;
+    }
+
+    const findEntryByManifest = (manifestPath) =>
+      entries.find((entry) => entry.manifest === manifestPath) || null;
+
+    const applySelection = (entry, source) => {
+      if (!entry) return;
+      setInstallManifest(entry.manifest);
+      if (versionSelectEl) {
+        versionSelectEl.value = entry.manifest;
+      }
+      loadLatestChangelog(entry.version);
+      debug.log("firmware-selection", {
+        source,
+        version: entry.version || "",
+        manifest: entry.manifest,
+      });
+    };
+
+    const defaultEntry =
+      entries.find((entry) => latestVersion && entry.version === latestVersion) || entries[0];
+    applySelection(defaultEntry, "default");
+
+    if (versionSelectEl) {
+      versionSelectEl.addEventListener("change", () => {
+        const selectedEntry = findEntryByManifest(versionSelectEl.value);
+        if (selectedEntry) {
+          applySelection(selectedEntry, "user");
+        }
+      });
+    }
   }
 
   function escapeRegex(value) {
@@ -339,7 +482,7 @@
 
     if (!notes.length) {
       const li = document.createElement("li");
-      li.textContent = "Latest release notes not available yet.";
+      li.textContent = "Release notes not available yet.";
       latestChangelogEl.appendChild(li);
       return;
     }
@@ -612,16 +755,16 @@
 
   if (installBtnEl) {
     installBtnEl.addEventListener("click", () => {
-      debug.log("install-button-click");
+      debug.log("install-button-click", {
+        manifest: installBtnEl.getAttribute("manifest") || "",
+      });
     });
   }
 
   installFirmwareFetchTimeoutGuard(debug);
   detectBrowserSupport();
   detectSecureContext();
-  loadManifestVersion().then((version) => {
-    loadLatestChangelog(version);
-  });
+  initializeFirmwareCatalog();
   patchInstallSuccessMessage();
   if (autoRetryDisabled) {
     debug.log("install-auto-retry-disabled", {
