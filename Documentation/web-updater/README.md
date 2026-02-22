@@ -6,6 +6,10 @@ This repo includes a static firmware updater site in `docs/` that uses Web Seria
 
 `https://update.mrf2.com/`
 
+## UI snapshot
+
+![Web updater UI](../user-manual/images/web-updater-ui.svg)
+
 ## How it works
 
 1. The GitHub Actions workflow `.github/workflows/firmware-updater-pages.yml` builds firmware from `Firmware/` using PlatformIO.
@@ -21,6 +25,7 @@ This repo includes a static firmware updater site in `docs/` that uses Web Seria
    - `firmware/versions/<version>/manifest.json` for each published version
    - `firmware/versions.json` catalog (used by the UI dropdown)
 5. The static app in `docs/` loads `firmware/versions.json`, defaults the selector to the latest entry, and points ESP Web Tools to the selected manifest.
+6. The release notes panel shows notes for the selected version and the immediately previous version, with a link to the full changelog.
 
 ## Browser requirements
 
