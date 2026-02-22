@@ -89,6 +89,49 @@ int qualityBaseScore(DataQuality quality)
   }
 }
 
+int priorPenaltyCapForQuality(DataQuality quality)
+{
+  switch (quality)
+  {
+  case DataQuality::EXCELLENT:
+    return LIDAR_PRIOR_PENALTY_MAX_EXCELLENT;
+  case DataQuality::GOOD:
+    return LIDAR_PRIOR_PENALTY_MAX_GOOD;
+  case DataQuality::FAIR:
+    return LIDAR_PRIOR_PENALTY_MAX_FAIR;
+  case DataQuality::POOR:
+    return LIDAR_PRIOR_PENALTY_MAX_POOR;
+  default:
+    return LIDAR_PRIOR_PENALTY_MAX_POOR;
+  }
+}
+
+float priorWeightForQuality(DataQuality quality)
+{
+  if (quality == DataQuality::EXCELLENT)
+  {
+    return LIDAR_LENS_PRIOR_WEIGHT_EXCELLENT;
+  }
+  return LIDAR_LENS_PRIOR_WEIGHT_GOOD;
+}
+
+float priorRangeScaleForDistanceCm(int corrected_cm)
+{
+  if (corrected_cm <= LIDAR_PRIOR_RANGE_NEAR_CM)
+  {
+    return LIDAR_PRIOR_RANGE_SCALE_NEAR;
+  }
+  if (corrected_cm <= LIDAR_PRIOR_RANGE_MID_CM)
+  {
+    return LIDAR_PRIOR_RANGE_SCALE_MID;
+  }
+  if (corrected_cm <= LIDAR_PRIOR_RANGE_FAR_CM)
+  {
+    return LIDAR_PRIOR_RANGE_SCALE_FAR;
+  }
+  return LIDAR_PRIOR_RANGE_SCALE_VERY_FAR;
+}
+
 int qualityLevelFromDataQuality(DataQuality quality)
 {
   switch (quality)
@@ -138,14 +181,17 @@ LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
 
   if (previous_distance_cm > 0)
   {
-    confidence -= min(25, abs(corrected_cm - previous_distance_cm) / 8);
+    confidence -= min(LIDAR_TEMPORAL_PENALTY_MAX,
+                      abs(corrected_cm - previous_distance_cm) / LIDAR_TEMPORAL_PENALTY_DIVISOR);
   }
 
   if (has_lens_prior)
   {
-    float prior_weight = (quality == DataQuality::EXCELLENT) ? LIDAR_LENS_PRIOR_WEIGHT_EXCELLENT : LIDAR_LENS_PRIOR_WEIGHT_GOOD;
-    int prior_penalty = static_cast<int>(roundf(static_cast<float>(abs(corrected_cm - lens_prior_cm)) * prior_weight));
-    confidence -= min(20, prior_penalty);
+    int prior_error_cm = abs(corrected_cm - lens_prior_cm);
+    int effective_error_cm = max(0, prior_error_cm - LIDAR_PRIOR_DEADBAND_CM);
+    float prior_weight = priorWeightForQuality(quality) * priorRangeScaleForDistanceCm(corrected_cm);
+    int prior_penalty = static_cast<int>(roundf(static_cast<float>(effective_error_cm) * prior_weight));
+    confidence -= min(priorPenaltyCapForQuality(quality), prior_penalty);
   }
 
   if (secondary_candidate)
@@ -164,6 +210,21 @@ LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
   candidate.confidence = confidence;
   candidate.quality_level = qualityLevelFromDataQuality(quality);
   return candidate;
+}
+
+LidarCandidate fuseLidarCandidates(const LidarCandidate &primary, const LidarCandidate &secondary)
+{
+  int weight_sum = max(1, primary.confidence + secondary.confidence);
+  int weighted_distance_sum = (primary.distance_cm * primary.confidence) +
+                              (secondary.distance_cm * secondary.confidence);
+  int fused_distance_cm = static_cast<int>(roundf(static_cast<float>(weighted_distance_sum) /
+                                                  static_cast<float>(weight_sum)));
+  int fused_confidence = constrain(((primary.confidence + secondary.confidence) / 2) +
+                                       LIDAR_FUSION_CONF_BONUS,
+                                   0,
+                                   100);
+  int fused_quality_level = max(primary.quality_level, secondary.quality_level);
+  return {true, fused_distance_cm, fused_confidence, fused_quality_level};
 }
 } // namespace
 
@@ -194,6 +255,12 @@ LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,
                                                  has_lens_prior,
                                                  lens_prior_cm);
 
+  if (primary.valid && secondary.valid &&
+      abs(primary.distance_cm - secondary.distance_cm) <= LIDAR_FUSION_AGREE_DELTA_CM)
+  {
+    return fuseLidarCandidates(primary, secondary);
+  }
+
   if (!primary.valid || (secondary.valid && secondary.confidence > primary.confidence))
   {
     return secondary;
@@ -221,7 +288,17 @@ int blendLidarDistance(int previous_distance_cm, int next_distance_cm, int confi
     return static_cast<int>(roundf(blended));
   }
 
-  return previous_distance_cm;
+  // Avoid "stuck" readings in harsh light where confidence drops but still carries signal.
+  float confidence_ratio = static_cast<float>(confidence) / static_cast<float>(LIDAR_CONFIDENCE_MEDIUM);
+  float blend_weight = LIDAR_LOW_CONF_BLEND_MIN +
+                       ((LIDAR_LOW_CONF_BLEND_MAX - LIDAR_LOW_CONF_BLEND_MIN) * confidence_ratio);
+  blend_weight = constrain(blend_weight, LIDAR_LOW_CONF_BLEND_MIN, LIDAR_LOW_CONF_BLEND_MAX);
+  float blended = (static_cast<float>(previous_distance_cm) * (1.0f - blend_weight)) +
+                  (static_cast<float>(next_distance_cm) * blend_weight);
+  int blended_cm = static_cast<int>(roundf(blended));
+  int upper_bound = previous_distance_cm + LIDAR_LOW_CONF_MAX_STEP_CM;
+  int lower_bound = previous_distance_cm - LIDAR_LOW_CONF_MAX_STEP_CM;
+  return constrain(blended_cm, lower_bound, upper_bound);
 }
 
 String formatDistanceDisplay(int corrected_cm)

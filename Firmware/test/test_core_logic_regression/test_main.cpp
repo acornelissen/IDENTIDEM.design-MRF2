@@ -246,14 +246,14 @@ void test_lidar_candidate_selection_and_blend()
 
   TEST_ASSERT_EQUAL_INT(200, blendLidarDistance(100, 200, 80));
   TEST_ASSERT_EQUAL_INT(135, blendLidarDistance(100, 200, 60));
-  TEST_ASSERT_EQUAL_INT(100, blendLidarDistance(100, 200, 40));
+  TEST_ASSERT_EQUAL_INT(124, blendLidarDistance(100, 200, 40));
 }
 
 void test_lidar_invalid_and_display_formatting()
 {
   DTSMeasurement measurement = {};
   measurement.primaryDistance_mm = 1000;
-  measurement.primaryIntensity = 100; // Below LIDAR_FUSION_MIN_INTENSITY
+  measurement.primaryIntensity = 50; // Below LIDAR_FUSION_MIN_INTENSITY
   measurement.primaryQuality = DataQuality::GOOD;
   measurement.secondaryDistance_mm = DTS_INVALID_DISTANCE;
   measurement.secondaryIntensity = 0;
@@ -266,6 +266,69 @@ void test_lidar_invalid_and_display_formatting()
   TEST_ASSERT_EQUAL_STRING("75cm", formatDistanceDisplay(75).c_str());
   TEST_ASSERT_EQUAL_STRING("> 18m", formatDistanceDisplay(1900).c_str());
   TEST_ASSERT_EQUAL_STRING("1.5m", formatDistanceDisplay(150).c_str());
+}
+
+void test_lidar_low_confidence_tracks_beyond_previous_distance()
+{
+  DTSMeasurement measurement = {};
+  measurement.primaryDistance_mm = 6000;   // 6.0m target
+  measurement.primaryIntensity = 100;      // low/harsh-light like return, but valid
+  measurement.primaryQuality = DataQuality::POOR;
+  measurement.secondaryDistance_mm = DTS_INVALID_DISTANCE;
+  measurement.secondaryIntensity = 0;
+  measurement.secondaryQuality = DataQuality::INVALID;
+
+  int filtered_distance_cm = 250;
+  const int lens_prior_cm = 250;
+  for (int i = 0; i < 8; i++)
+  {
+    LidarCandidate candidate =
+        chooseBestLidarCandidate(measurement, filtered_distance_cm, true, lens_prior_cm);
+    TEST_ASSERT_TRUE(candidate.valid);
+    filtered_distance_cm =
+        blendLidarDistance(filtered_distance_cm, candidate.distance_cm, candidate.confidence);
+  }
+
+  TEST_ASSERT_GREATER_THAN_INT(350, filtered_distance_cm);
+}
+
+void test_lidar_candidate_fusion_when_returns_agree()
+{
+  DTSMeasurement measurement = {};
+  measurement.primaryDistance_mm = 3000;     // 300cm
+  measurement.primaryIntensity = 180;
+  measurement.primaryQuality = DataQuality::GOOD;
+  measurement.secondaryDistance_mm = 3120;   // 312cm (within fusion delta)
+  measurement.secondaryIntensity = 170;
+  measurement.secondaryQuality = DataQuality::FAIR;
+
+  LidarCandidate candidate = chooseBestLidarCandidate(measurement, 0, false, 0);
+  TEST_ASSERT_TRUE(candidate.valid);
+  TEST_ASSERT_INT_WITHIN(2, 305, candidate.distance_cm);
+  TEST_ASSERT_GREATER_THAN_INT(55, candidate.confidence);
+  TEST_ASSERT_EQUAL_INT(3, candidate.quality_level);
+}
+
+void test_lidar_lens_prior_is_range_weighted()
+{
+  DTSMeasurement nearMeasurement = {};
+  nearMeasurement.primaryDistance_mm = 2000; // 200cm
+  nearMeasurement.primaryIntensity = 200;
+  nearMeasurement.primaryQuality = DataQuality::GOOD;
+  nearMeasurement.secondaryDistance_mm = DTS_INVALID_DISTANCE;
+  nearMeasurement.secondaryIntensity = 0;
+  nearMeasurement.secondaryQuality = DataQuality::INVALID;
+
+  DTSMeasurement farMeasurement = nearMeasurement;
+  farMeasurement.primaryDistance_mm = 8000; // 800cm
+
+  // Keep equal prior mismatch (100cm) in both ranges; near range should be penalized more.
+  LidarCandidate nearCandidate = chooseBestLidarCandidate(nearMeasurement, 0, true, 100);
+  LidarCandidate farCandidate = chooseBestLidarCandidate(farMeasurement, 0, true, 700);
+
+  TEST_ASSERT_TRUE(nearCandidate.valid);
+  TEST_ASSERT_TRUE(farCandidate.valid);
+  TEST_ASSERT_LESS_THAN_INT(farCandidate.confidence, nearCandidate.confidence);
 }
 
 void test_lens_snap_and_distance_estimation()
@@ -313,6 +376,9 @@ int main(int, char **)
   RUN_TEST(test_prefs_migration_mode_and_blob_apply);
   RUN_TEST(test_lidar_candidate_selection_and_blend);
   RUN_TEST(test_lidar_invalid_and_display_formatting);
+  RUN_TEST(test_lidar_low_confidence_tracks_beyond_previous_distance);
+  RUN_TEST(test_lidar_candidate_fusion_when_returns_agree);
+  RUN_TEST(test_lidar_lens_prior_is_range_weighted);
   RUN_TEST(test_lens_snap_and_distance_estimation);
   RUN_TEST(test_lightmeter_dark_bright_fraction_and_seconds);
   return UNITY_END();
