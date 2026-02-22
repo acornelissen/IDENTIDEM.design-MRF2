@@ -15,5 +15,7 @@ struct FilmFormat
 
 extern FilmFormat film_formats[];
 extern const size_t NUM_FILM_FORMATS; // Declare the size constant
+int getFilmFormatPointCount(const FilmFormat &film_format);
+int getFilmFormatMaxFrame(const FilmFormat &film_format);
 
 #endif // FORMATS_H
