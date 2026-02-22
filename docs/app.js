@@ -12,10 +12,7 @@
   const FIRMWARE_FETCH_TIMEOUT_MS = 30000;
   const DEBUG_QUERY_KEY = "debug";
   const DEBUG_LOG_MAX_ENTRIES = 400;
-  const AUTO_RETRY_DISABLE_QUERY_KEY = "noretry";
-  const AUTO_RETRY_QUERY_KEY = "retry";
   const SERIAL_FILTER_DISABLE_QUERY_KEY = "allports";
-  const SERIAL_FILTER_DISABLE_QUERY_KEY_ALT = "nofilter";
   const ALLOW_RUNTIME_PORT_QUERY_KEY = "allowruntime";
   const ADAFRUIT_USB_VENDOR_ID = 0x239a;
   const ADAFRUIT_RUNTIME_PID_MASK = 0x8000;
@@ -34,6 +31,7 @@
     { usbVendorId: 0x1a86 },
     { usbVendorId: 0x0403 },
   ];
+  const queryParams = new URLSearchParams(window.location.search);
 
   function parseBooleanQueryValue(value) {
     const normalized = (value || "").trim().toLowerCase();
@@ -42,35 +40,16 @@
     return null;
   }
 
-  function shouldDisableAutoRetry() {
-    const queryParams = new URLSearchParams(window.location.search);
-    const disableValue = parseBooleanQueryValue(queryParams.get(AUTO_RETRY_DISABLE_QUERY_KEY));
-    if (disableValue === true) return true;
-
-    const retryValue = parseBooleanQueryValue(queryParams.get(AUTO_RETRY_QUERY_KEY));
-    if (retryValue === true) return false;
-
-    // Default: keep auto-retry off unless explicitly enabled with ?retry=1.
-    return true;
+  function isQueryFlagEnabled(queryKey) {
+    return parseBooleanQueryValue(queryParams.get(queryKey)) === true;
   }
 
   function shouldDisableSerialFiltering() {
-    const queryParams = new URLSearchParams(window.location.search);
-    const disableValue = parseBooleanQueryValue(
-      queryParams.get(SERIAL_FILTER_DISABLE_QUERY_KEY)
-    );
-    if (disableValue === true) return true;
-
-    const disableAltValue = parseBooleanQueryValue(
-      queryParams.get(SERIAL_FILTER_DISABLE_QUERY_KEY_ALT)
-    );
-    return disableAltValue === true;
+    return isQueryFlagEnabled(SERIAL_FILTER_DISABLE_QUERY_KEY);
   }
 
   function shouldAllowRuntimePortFlashing() {
-    const queryParams = new URLSearchParams(window.location.search);
-    const allowValue = parseBooleanQueryValue(queryParams.get(ALLOW_RUNTIME_PORT_QUERY_KEY));
-    return allowValue === true;
+    return isQueryFlagEnabled(ALLOW_RUNTIME_PORT_QUERY_KEY);
   }
 
   function delay(ms) {
@@ -167,7 +146,6 @@
   }
 
   function createDebugLogger() {
-    const queryParams = new URLSearchParams(window.location.search);
     const debugValue = (queryParams.get(DEBUG_QUERY_KEY) || "").toLowerCase();
     const enabled = debugValue === "1" || debugValue === "true";
     const entries = [];
@@ -312,8 +290,6 @@
   }
 
   const debug = createDebugLogger();
-  const autoRetryDisabled = shouldDisableAutoRetry();
-
   function installFirmwareFetchTimeoutGuard(debugLogger) {
     if (typeof window.fetch !== "function") return;
     const originalFetch = window.fetch.bind(window);
@@ -837,198 +813,6 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  function autoRetryTransientInstallFailure() {
-    const RETRY_DELAY_MS = 420;
-    const DIALOG_RESHOW_DELAY_MS = 220;
-    const watchedDialogs = new WeakSet();
-    const retriedDialogs = new WeakSet();
-    const hiddenDialogs = new WeakSet();
-    let lastSeenDialog = null;
-    const stateSignatures = new WeakMap();
-
-    const hideDialog = (dialogEl) => {
-      if (!dialogEl || hiddenDialogs.has(dialogEl)) return;
-      dialogEl.style.visibility = "hidden";
-      hiddenDialogs.add(dialogEl);
-      debug.log("install-dialog-hidden");
-    };
-
-    const showDialog = (dialogEl) => {
-      if (!dialogEl || !hiddenDialogs.has(dialogEl)) return;
-      dialogEl.style.visibility = "";
-      hiddenDialogs.delete(dialogEl);
-      debug.log("install-dialog-shown");
-    };
-
-    const buildStateSummary = (dialogEl) => {
-      if (!dialogEl || !dialogEl._installState) {
-        return { state: "missing" };
-      }
-
-      const installState = dialogEl._installState;
-      const details =
-        installState && installState.details && typeof installState.details === "object"
-          ? installState.details
-          : {};
-
-      return {
-        state: typeof installState.state === "string" ? installState.state : "",
-        message: typeof installState.message === "string" ? installState.message : "",
-        error: typeof details.error === "string" ? details.error : "",
-        done: typeof details.done === "boolean" ? details.done : null,
-        autoRetry: !!details.autoRetry,
-      };
-    };
-
-    const logInstallStateIfChanged = (dialogEl, source) => {
-      const summary = buildStateSummary(dialogEl);
-      const signature = JSON.stringify(summary);
-      if (stateSignatures.get(dialogEl) === signature) return;
-      stateSignatures.set(dialogEl, signature);
-      debug.log("install-state", { source, ...summary });
-    };
-
-    const hasRetryableInitializeFailure = (dialogEl) => {
-      if (!dialogEl) return false;
-      const installState = dialogEl._installState;
-      if (!installState || installState.state !== "error") return false;
-
-      const errorCode =
-        installState.details && typeof installState.details.error === "string"
-          ? installState.details.error
-          : "";
-      const message = typeof installState.message === "string" ? installState.message : "";
-      const normalizedMessage = message.toLowerCase();
-
-      return errorCode === "failed_initialize" || normalizedMessage.includes("failed to initialize");
-    };
-
-    const cloneInstallState = (installState) => {
-      if (!installState || typeof installState !== "object") return installState;
-      try {
-        return JSON.parse(JSON.stringify(installState));
-      } catch (error) {
-        return installState;
-      }
-    };
-
-    const maybeOpenPortForRetry = async (dialogEl) => {
-      if (!dialogEl || !dialogEl.port) return;
-      const port = dialogEl.port;
-      if (port.readable && port.writable) {
-        debug.log("install-auto-retry-port-ready");
-        return;
-      }
-      try {
-        await port.open({ baudRate: 115200, bufferSize: 8192 });
-        debug.log("install-auto-retry-port-opened");
-      } catch (error) {
-        debug.log("install-auto-retry-port-open-failed", { error });
-      }
-    };
-
-    const maybeRetry = (dialogEl) => {
-      if (!dialogEl || retriedDialogs.has(dialogEl)) return;
-      logInstallStateIfChanged(dialogEl, "maybe-retry");
-      if (!hasRetryableInitializeFailure(dialogEl)) return;
-
-      retriedDialogs.add(dialogEl);
-      debug.log("install-auto-retry-start");
-      const previousInstallState = cloneInstallState(dialogEl._installState);
-
-      const failRetry = (error) => {
-        console.warn("Automatic install retry failed", error);
-        debug.log("install-auto-retry-failed", { error });
-        if (previousInstallState) {
-          dialogEl._installState = previousInstallState;
-        } else {
-          dialogEl._installState = {
-            state: "error",
-            message: "Automatic retry failed. Please close and retry install.",
-            details: { error: "auto_retry_failed" },
-          };
-        }
-        if (typeof dialogEl.requestUpdate === "function") {
-          dialogEl.requestUpdate();
-        }
-        showDialog(dialogEl);
-        logInstallStateIfChanged(dialogEl, "auto-retry-failed");
-      };
-
-      // Hide the first transient initialize failure while we auto-retry.
-      hideDialog(dialogEl);
-      setTimeout(() => {
-        (async () => {
-          await maybeOpenPortForRetry(dialogEl);
-          if (typeof dialogEl._confirmInstall === "function") {
-            const retryResult = dialogEl._confirmInstall();
-            debug.log("install-auto-retry-dispatched");
-            if (retryResult && typeof retryResult.catch === "function") {
-              retryResult.catch((error) => {
-                failRetry(error);
-              });
-            }
-          } else {
-            throw new Error("Install retry entry point is missing");
-          }
-        })()
-          .catch((error) => {
-            failRetry(error);
-          })
-          .finally(() => {
-            setTimeout(() => {
-              showDialog(dialogEl);
-              logInstallStateIfChanged(dialogEl, "dialog-reshow");
-            }, DIALOG_RESHOW_DELAY_MS);
-          });
-      }, RETRY_DELAY_MS);
-    };
-
-    const watchDialog = (dialogEl) => {
-      if (!dialogEl) return false;
-      const shadowRoot = dialogEl.shadowRoot;
-      if (!shadowRoot) return false;
-      if (watchedDialogs.has(dialogEl)) return true;
-      watchedDialogs.add(dialogEl);
-
-      const dialogObserver = new MutationObserver(() => {
-        logInstallStateIfChanged(dialogEl, "dialog-mutation");
-        maybeRetry(dialogEl);
-      });
-
-      dialogObserver.observe(shadowRoot, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-      });
-      logInstallStateIfChanged(dialogEl, "watch-dialog");
-      maybeRetry(dialogEl);
-      return true;
-    };
-
-    const observer = new MutationObserver(() => {
-      const dialogEl = document.querySelector("ewt-install-dialog");
-      if (!dialogEl) {
-        if (lastSeenDialog) {
-          debug.log("install-dialog-removed");
-          lastSeenDialog = null;
-        }
-        return;
-      }
-      if (dialogEl !== lastSeenDialog) {
-        debug.log("install-dialog-detected");
-        lastSeenDialog = dialogEl;
-      }
-      if (!watchDialog(dialogEl)) {
-        requestAnimationFrame(() => {
-          watchDialog(dialogEl);
-        });
-      }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-
   if (installBtnEl) {
     installBtnEl.addEventListener("click", () => {
       debug.log("install-button-click", {
@@ -1044,12 +828,4 @@
   initializeFirmwareCatalog();
   patchInstallSuccessMessage();
   patchInstallErrorHints();
-  if (autoRetryDisabled) {
-    debug.log("install-auto-retry-disabled", {
-      hint: "Auto-retry is disabled by default. Pass ?retry=1 to enable it.",
-      query: window.location.search,
-    });
-  } else {
-    autoRetryTransientInstallFailure();
-  }
 })();
