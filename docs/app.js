@@ -30,9 +30,10 @@
     if (disableValue === true) return true;
 
     const retryValue = parseBooleanQueryValue(queryParams.get(AUTO_RETRY_QUERY_KEY));
-    if (retryValue === false) return true;
+    if (retryValue === true) return false;
 
-    return false;
+    // Default: keep auto-retry off unless explicitly enabled with ?retry=1.
+    return true;
   }
 
   function createDebugLogger() {
@@ -786,7 +787,7 @@
   patchInstallSuccessMessage();
   if (autoRetryDisabled) {
     debug.log("install-auto-retry-disabled", {
-      hint: "Pass ?noretry=0 or ?retry=1 to enable auto-retry.",
+      hint: "Auto-retry is disabled by default. Pass ?retry=1 to enable it.",
       query: window.location.search,
     });
   } else {
