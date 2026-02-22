@@ -663,15 +663,60 @@
   }
 
   function extractChangelogNotesFromSection(sectionBody) {
-    return sectionBody
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.startsWith("- "))
-      .map((line) => line.slice(2).trim())
-      .filter(
-        (line) =>
-          line.length > 0 && !line.startsWith("Release commit:") && !line.startsWith("Range:")
-      );
+    const rootItems = [];
+    const stack = [{ indent: -1, items: rootItems }];
+
+    sectionBody.split(/\r?\n/).forEach((rawLine) => {
+      const bulletMatch = rawLine.match(/^(\s*)-\s+(.*)$/);
+      if (!bulletMatch) return;
+
+      const noteText = (bulletMatch[2] || "").trim();
+      if (
+        !noteText ||
+        noteText.startsWith("Release commit:") ||
+        noteText.startsWith("Range:")
+      ) {
+        return;
+      }
+
+      const indentWidth = (bulletMatch[1] || "").replace(/\t/g, "  ").length;
+      while (stack.length > 1 && indentWidth <= stack[stack.length - 1].indent) {
+        stack.pop();
+      }
+
+      const item = { text: noteText, children: [] };
+      stack[stack.length - 1].items.push(item);
+      stack.push({ indent: indentWidth, items: item.children });
+    });
+
+    return rootItems;
+  }
+
+  function countChangelogNotes(notes) {
+    if (!Array.isArray(notes)) return 0;
+
+    return notes.reduce((sum, note) => {
+      const nestedCount = countChangelogNotes(note && note.children);
+      return sum + 1 + nestedCount;
+    }, 0);
+  }
+
+  function appendChangelogNotes(listEl, notes) {
+    if (!listEl || !Array.isArray(notes) || !notes.length) return;
+
+    notes.forEach((note) => {
+      if (!note || typeof note.text !== "string" || !note.text.length) return;
+
+      const li = document.createElement("li");
+      li.textContent = note.text;
+      listEl.appendChild(li);
+
+      if (Array.isArray(note.children) && note.children.length) {
+        const nestedList = document.createElement("ul");
+        appendChangelogNotes(nestedList, note.children);
+        li.appendChild(nestedList);
+      }
+    });
   }
 
   function extractChangelogSections(markdown) {
@@ -725,25 +770,34 @@
     if (!latestChangelogEl) return;
     latestChangelogEl.innerHTML = "";
 
-    const notesPerSection = 6;
-    let renderedNoteCount = 0;
+    let renderedSectionCount = 0;
 
     sections.forEach((section) => {
       if (!section || !Array.isArray(section.notes) || !section.notes.length) {
         return;
       }
 
-      section.notes.slice(0, notesPerSection).forEach((note) => {
-        const li = document.createElement("li");
-        li.textContent = `${section.version}: ${note}`;
-        latestChangelogEl.appendChild(li);
-        renderedNoteCount += 1;
-      });
+      const sectionItem = document.createElement("li");
+      sectionItem.className = "release-section";
+
+      const sectionHeading = document.createElement("p");
+      sectionHeading.className = "release-section-heading";
+      sectionHeading.textContent = `Release ${section.version}`;
+      sectionItem.appendChild(sectionHeading);
+
+      const sectionList = document.createElement("ul");
+      sectionList.className = "release-section-list";
+      appendChangelogNotes(sectionList, section.notes);
+      sectionItem.appendChild(sectionList);
+
+      latestChangelogEl.appendChild(sectionItem);
+      renderedSectionCount += 1;
     });
 
-    if (renderedNoteCount > 0) return;
+    if (renderedSectionCount > 0) return;
 
     const li = document.createElement("li");
+    li.className = "release-empty";
     li.textContent = "Release notes not available yet.";
     latestChangelogEl.appendChild(li);
   }
@@ -763,7 +817,7 @@
       const sectionsToRender = selectCurrentAndPreviousSections(changelogSections, version);
       renderChangelogNotes(sectionsToRender);
       const noteCount = sectionsToRender.reduce(
-        (sum, section) => sum + (Array.isArray(section.notes) ? section.notes.length : 0),
+        (sum, section) => sum + countChangelogNotes(section.notes),
         0
       );
       debug.log("changelog-load-success", {

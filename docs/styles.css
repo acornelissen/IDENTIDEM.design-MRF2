@@ -152,13 +152,42 @@ button[slot="activate"]:hover {
 
 #latest-changelog {
   margin: 0;
-  padding-left: 1.1rem;
+  padding-left: 0;
+  list-style: none;
   color: var(--muted);
   font-size: 0.92rem;
 }
 
-#latest-changelog li {
+#latest-changelog > li {
+  margin-bottom: 0.55rem;
+}
+
+#latest-changelog > li:last-child {
+  margin-bottom: 0;
+}
+
+.release-section-heading {
+  margin: 0 0 0.25rem;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.release-section-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.release-section-list li {
   margin-bottom: 0.35rem;
+}
+
+.release-section-list ul {
+  margin-top: 0.25rem;
+  padding-left: 1.1rem;
+}
+
+.release-empty {
+  color: var(--muted);
 }
 
 .changelog-link-wrap {
