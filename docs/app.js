@@ -17,6 +17,11 @@
   const SERIAL_FILTER_DISABLE_QUERY_KEY = "allports";
   const SERIAL_FILTER_DISABLE_QUERY_KEY_ALT = "nofilter";
   const ALLOW_RUNTIME_PORT_QUERY_KEY = "allowruntime";
+  const ADAFRUIT_USB_VENDOR_ID = 0x239a;
+  const ADAFRUIT_RUNTIME_PID_MASK = 0x8000;
+  const ADAFRUIT_TOUCH_1200_BAUD = 1200;
+  const ADAFRUIT_BOOTLOADER_POLL_TIMEOUT_MS = 4200;
+  const ADAFRUIT_BOOTLOADER_POLL_INTERVAL_MS = 140;
   const VERSION_INDEX_PATH = "./firmware/versions.json";
   const FALLBACK_MANIFEST_PATH = "./firmware/latest/manifest.json";
   const DEFAULT_SERIAL_FILTERS = [
@@ -29,7 +34,6 @@
     { usbVendorId: 0x1a86 },
     { usbVendorId: 0x0403 },
   ];
-  const BLOCKED_RUNTIME_PORTS = [{ usbVendorId: 0x239a, usbProductId: 0x811b }];
 
   function parseBooleanQueryValue(value) {
     const normalized = (value || "").trim().toLowerCase();
@@ -67,6 +71,99 @@
     const queryParams = new URLSearchParams(window.location.search);
     const allowValue = parseBooleanQueryValue(queryParams.get(ALLOW_RUNTIME_PORT_QUERY_KEY));
     return allowValue === true;
+  }
+
+  function delay(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  function toHex16(value) {
+    return `0x${(Number(value) >>> 0).toString(16).toUpperCase()}`;
+  }
+
+  function isAdafruitRuntimePort(usbVendorId, usbProductId) {
+    return (
+      usbVendorId === ADAFRUIT_USB_VENDOR_ID &&
+      (usbProductId & ADAFRUIT_RUNTIME_PID_MASK) === ADAFRUIT_RUNTIME_PID_MASK
+    );
+  }
+
+  function runtimePidToBootloaderPid(usbProductId) {
+    return usbProductId & ~ADAFRUIT_RUNTIME_PID_MASK;
+  }
+
+  function matchesAdafruitBootloaderPort(serialInfo, expectedBootloaderPid) {
+    const usbVendorId = Number(serialInfo.usbVendorId || 0);
+    const usbProductId = Number(serialInfo.usbProductId || 0);
+    if (usbVendorId !== ADAFRUIT_USB_VENDOR_ID) return false;
+    if (!expectedBootloaderPid) return true;
+    return usbProductId === expectedBootloaderPid;
+  }
+
+  async function trySwitchAdafruitRuntimeToBootloader(runtimePort, runtimePid) {
+    const expectedBootloaderPid = runtimePidToBootloaderPid(runtimePid);
+    let openedByGuard = false;
+
+    try {
+      if (!runtimePort.readable || !runtimePort.writable) {
+        await runtimePort.open({ baudRate: ADAFRUIT_TOUCH_1200_BAUD, bufferSize: 256 });
+        openedByGuard = true;
+        debug.log("serial-runtime-touch-opened", {
+          baudRate: ADAFRUIT_TOUCH_1200_BAUD,
+          expectedBootloaderPid,
+        });
+      }
+      if (typeof runtimePort.setSignals === "function") {
+        try {
+          await runtimePort.setSignals({ dataTerminalReady: true, requestToSend: false });
+          await delay(30);
+          await runtimePort.setSignals({ dataTerminalReady: false, requestToSend: false });
+          debug.log("serial-runtime-touch-signals-sent", { expectedBootloaderPid });
+        } catch (signalError) {
+          debug.log("serial-runtime-touch-signals-failed", { error: signalError });
+        }
+      }
+    } catch (openError) {
+      debug.log("serial-runtime-touch-failed", { error: openError });
+    } finally {
+      if (openedByGuard && (runtimePort.readable || runtimePort.writable)) {
+        try {
+          await runtimePort.close();
+          debug.log("serial-runtime-touch-closed");
+        } catch (closeError) {
+          debug.log("serial-runtime-touch-close-failed", { error: closeError });
+        }
+      }
+    }
+
+    const deadline = Date.now() + ADAFRUIT_BOOTLOADER_POLL_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      try {
+        const ports = await navigator.serial.getPorts();
+        const bootloaderPort = ports.find((portCandidate) => {
+          if (typeof portCandidate.getInfo !== "function") return false;
+          const candidateInfo = portCandidate.getInfo();
+          return matchesAdafruitBootloaderPort(candidateInfo, expectedBootloaderPid);
+        });
+        if (bootloaderPort) {
+          const info = bootloaderPort.getInfo();
+          debug.log("serial-runtime-switched-port-found", {
+            usbVendorId: Number(info.usbVendorId || 0),
+            usbProductId: Number(info.usbProductId || 0),
+            expectedBootloaderPid,
+          });
+          return bootloaderPort;
+        }
+      } catch (error) {
+        debug.log("serial-runtime-switch-poll-failed", { error });
+      }
+
+      await delay(ADAFRUIT_BOOTLOADER_POLL_INTERVAL_MS);
+    }
+
+    return null;
   }
 
   function createDebugLogger() {
@@ -354,21 +451,32 @@
           const info = typeof port.getInfo === "function" ? port.getInfo() : {};
           const usbVendorId = Number(info.usbVendorId || 0);
           const usbProductId = Number(info.usbProductId || 0);
-          const isBlockedRuntimePort = BLOCKED_RUNTIME_PORTS.some(
-            (entry) =>
-              entry.usbVendorId === usbVendorId && entry.usbProductId === usbProductId
-          );
-
           debug.log("serial-port-selected", { usbVendorId, usbProductId });
 
-          if (isBlockedRuntimePort && !shouldAllowRuntimePortFlashing()) {
-            const message =
-              "Selected USB runtime port is unstable for flashing (VID 0x239A PID 0x811B). Hold BOOT, tap RESET, release BOOT, then select the ESP32-S3 download port (VID 0x303A). Add ?allowruntime=1 to bypass.";
-            debug.log("serial-port-blocked-runtime", { usbVendorId, usbProductId, message });
+          if (isAdafruitRuntimePort(usbVendorId, usbProductId) && !shouldAllowRuntimePortFlashing()) {
+            const bootloaderPort = await trySwitchAdafruitRuntimeToBootloader(port, usbProductId);
+            if (bootloaderPort) {
+              const bootloaderInfo = bootloaderPort.getInfo();
+              debug.log("serial-port-auto-switched", {
+                fromUsbVendorId: usbVendorId,
+                fromUsbProductId: usbProductId,
+                toUsbVendorId: Number(bootloaderInfo.usbVendorId || 0),
+                toUsbProductId: Number(bootloaderInfo.usbProductId || 0),
+              });
+              return bootloaderPort;
+            }
+
+            const expectedBootloaderPid = runtimePidToBootloaderPid(usbProductId);
+            const message = `Selected Adafruit runtime port ${toHex16(usbVendorId)}:${toHex16(usbProductId)} and failed to auto-switch to bootloader ${toHex16(ADAFRUIT_USB_VENDOR_ID)}:${toHex16(expectedBootloaderPid)}. Retry and select the bootloader port, or use BOOT then RESET. Add ?allowruntime=1 to bypass runtime switching.`;
+            debug.log("serial-port-auto-switch-failed", {
+              usbVendorId,
+              usbProductId,
+              expectedBootloaderPid,
+            });
             throw new Error(message);
           }
         } catch (error) {
-          if (error instanceof Error && error.message.includes("Selected USB runtime port")) {
+          if (error instanceof Error && error.message.includes("Selected Adafruit runtime port")) {
             throw error;
           }
           debug.log("serial-port-info-check-failed", { error });
