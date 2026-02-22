@@ -132,6 +132,23 @@ float priorRangeScaleForDistanceCm(int corrected_cm)
   return LIDAR_PRIOR_RANGE_SCALE_VERY_FAR;
 }
 
+int minIntensityThresholdForDistanceCm(int raw_cm)
+{
+  if (raw_cm <= LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM)
+  {
+    return LIDAR_FUSION_MIN_INTENSITY;
+  }
+  if (raw_cm <= LIDAR_FUSION_INTENSITY_MID_RANGE_CM)
+  {
+    return LIDAR_FUSION_MIN_INTENSITY_MID;
+  }
+  if (raw_cm <= LIDAR_FUSION_INTENSITY_FAR_RANGE_CM)
+  {
+    return LIDAR_FUSION_MIN_INTENSITY_FAR;
+  }
+  return LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE;
+}
+
 int qualityLevelFromDataQuality(DataQuality quality)
 {
   switch (quality)
@@ -149,6 +166,55 @@ int qualityLevelFromDataQuality(DataQuality quality)
   }
 }
 
+LidarCandidate buildFallbackLidarCandidate(uint16_t raw_distance_mm,
+                                           uint16_t intensity,
+                                           DataQuality quality,
+                                           int previous_distance_cm)
+{
+  LidarCandidate candidate = {false, 0, 0, 0};
+  if (raw_distance_mm == DTS_INVALID_DISTANCE)
+  {
+    return candidate;
+  }
+
+  int raw_cm = static_cast<int>(raw_distance_mm) / LIDAR_DISTANCE_DIVISOR;
+  if (raw_cm <= LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM)
+  {
+    return candidate;
+  }
+
+  // Only allow distance-only fallback when there is at least some return signal
+  // or the sensor reports non-invalid quality.
+  if (intensity < LIDAR_FALLBACK_MIN_INTENSITY && quality == DataQuality::INVALID)
+  {
+    return candidate;
+  }
+
+  int corrected_cm = applyLidarDoubleCorrectionCm(raw_cm);
+  if (corrected_cm <= 0)
+  {
+    return candidate;
+  }
+
+  int confidence = LIDAR_FALLBACK_BASE_CONFIDENCE + (qualityBaseScore(quality) / 8);
+  if (previous_distance_cm > 0)
+  {
+    confidence -= min(LIDAR_TEMPORAL_PENALTY_MAX,
+                      abs(corrected_cm - previous_distance_cm) / LIDAR_TEMPORAL_PENALTY_DIVISOR);
+  }
+  confidence = constrain(confidence, 0, LIDAR_FALLBACK_MAX_CONFIDENCE);
+  if (confidence <= 0)
+  {
+    return candidate;
+  }
+
+  candidate.valid = true;
+  candidate.distance_cm = corrected_cm;
+  candidate.confidence = confidence;
+  candidate.quality_level = max(1, qualityLevelFromDataQuality(quality));
+  return candidate;
+}
+
 LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
                                    uint16_t intensity,
                                    DataQuality quality,
@@ -159,13 +225,18 @@ LidarCandidate buildLidarCandidate(uint16_t raw_distance_mm,
 {
   LidarCandidate candidate = {false, 0, 0, 0};
 
-  if (raw_distance_mm == DTS_INVALID_DISTANCE || intensity < LIDAR_FUSION_MIN_INTENSITY)
+  if (raw_distance_mm == DTS_INVALID_DISTANCE)
   {
     return candidate;
   }
 
   int raw_cm = static_cast<int>(raw_distance_mm) / LIDAR_DISTANCE_DIVISOR;
   if (raw_cm <= 0)
+  {
+    return candidate;
+  }
+
+  if (intensity < minIntensityThresholdForDistanceCm(raw_cm))
   {
     return candidate;
   }
@@ -261,12 +332,36 @@ LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,
     return fuseLidarCandidates(primary, secondary);
   }
 
-  if (!primary.valid || (secondary.valid && secondary.confidence > primary.confidence))
+  if (primary.valid || secondary.valid)
   {
-    return secondary;
+    if (!primary.valid || (secondary.valid && secondary.confidence > primary.confidence))
+    {
+      return secondary;
+    }
+    return primary;
   }
 
-  return primary;
+  // If quality/intensity gating rejects both candidates at long range, keep a
+  // low-confidence distance fallback to avoid prolonged "..." dropouts.
+  LidarCandidate fallbackPrimary = buildFallbackLidarCandidate(measurement.primaryDistance_mm,
+                                                               measurement.primaryIntensity,
+                                                               measurement.primaryQuality,
+                                                               previous_distance_cm);
+  LidarCandidate fallbackSecondary = buildFallbackLidarCandidate(measurement.secondaryDistance_mm,
+                                                                 measurement.secondaryIntensity,
+                                                                 secondary_quality,
+                                                                 previous_distance_cm);
+
+  if (fallbackPrimary.valid && fallbackSecondary.valid &&
+      abs(fallbackPrimary.distance_cm - fallbackSecondary.distance_cm) <= LIDAR_FUSION_AGREE_DELTA_CM)
+  {
+    return fuseLidarCandidates(fallbackPrimary, fallbackSecondary);
+  }
+  if (!fallbackPrimary.valid || (fallbackSecondary.valid && fallbackSecondary.confidence > fallbackPrimary.confidence))
+  {
+    return fallbackSecondary;
+  }
+  return fallbackPrimary;
 }
 
 int blendLidarDistance(int previous_distance_cm, int next_distance_cm, int confidence)

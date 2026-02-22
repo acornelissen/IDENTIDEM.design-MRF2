@@ -292,6 +292,36 @@ void test_lidar_low_confidence_tracks_beyond_previous_distance()
   TEST_ASSERT_GREATER_THAN_INT(350, filtered_distance_cm);
 }
 
+void test_lidar_dynamic_intensity_threshold_accepts_mid_range()
+{
+  DTSMeasurement measurement = {};
+  measurement.primaryDistance_mm = 3200; // 3.2m
+  measurement.primaryIntensity = LIDAR_FUSION_MIN_INTENSITY_MID;
+  measurement.primaryQuality = DataQuality::GOOD;
+  measurement.secondaryDistance_mm = DTS_INVALID_DISTANCE;
+  measurement.secondaryIntensity = 0;
+  measurement.secondaryQuality = DataQuality::INVALID;
+
+  LidarCandidate candidate = chooseBestLidarCandidate(measurement, 0, false, 0);
+  TEST_ASSERT_TRUE(candidate.valid);
+}
+
+void test_lidar_far_fallback_prevents_dropouts()
+{
+  DTSMeasurement measurement = {};
+  measurement.primaryDistance_mm = 4200; // 4.2m
+  measurement.primaryIntensity = LIDAR_FALLBACK_MIN_INTENSITY + 1;
+  measurement.primaryQuality = DataQuality::INVALID;
+  measurement.secondaryDistance_mm = DTS_INVALID_DISTANCE;
+  measurement.secondaryIntensity = 0;
+  measurement.secondaryQuality = DataQuality::INVALID;
+
+  LidarCandidate candidate = chooseBestLidarCandidate(measurement, 250, false, 0);
+  TEST_ASSERT_TRUE(candidate.valid);
+  TEST_ASSERT_GREATER_THAN_INT(0, candidate.confidence);
+  TEST_ASSERT_EQUAL_INT(1, candidate.quality_level);
+}
+
 void test_lidar_candidate_fusion_when_returns_agree()
 {
   DTSMeasurement measurement = {};
@@ -377,6 +407,8 @@ int main(int, char **)
   RUN_TEST(test_lidar_candidate_selection_and_blend);
   RUN_TEST(test_lidar_invalid_and_display_formatting);
   RUN_TEST(test_lidar_low_confidence_tracks_beyond_previous_distance);
+  RUN_TEST(test_lidar_dynamic_intensity_threshold_accepts_mid_range);
+  RUN_TEST(test_lidar_far_fallback_prevents_dropouts);
   RUN_TEST(test_lidar_candidate_fusion_when_returns_agree);
   RUN_TEST(test_lidar_lens_prior_is_range_weighted);
   RUN_TEST(test_lens_snap_and_distance_estimation);
