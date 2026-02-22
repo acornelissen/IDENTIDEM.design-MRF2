@@ -16,6 +16,7 @@
   const AUTO_RETRY_QUERY_KEY = "retry";
   const SERIAL_FILTER_DISABLE_QUERY_KEY = "allports";
   const SERIAL_FILTER_DISABLE_QUERY_KEY_ALT = "nofilter";
+  const ALLOW_RUNTIME_PORT_QUERY_KEY = "allowruntime";
   const VERSION_INDEX_PATH = "./firmware/versions.json";
   const FALLBACK_MANIFEST_PATH = "./firmware/latest/manifest.json";
   const DEFAULT_SERIAL_FILTERS = [
@@ -28,6 +29,7 @@
     { usbVendorId: 0x1a86 },
     { usbVendorId: 0x0403 },
   ];
+  const BLOCKED_RUNTIME_PORTS = [{ usbVendorId: 0x239a, usbProductId: 0x811b }];
 
   function parseBooleanQueryValue(value) {
     const normalized = (value || "").trim().toLowerCase();
@@ -59,6 +61,12 @@
       queryParams.get(SERIAL_FILTER_DISABLE_QUERY_KEY_ALT)
     );
     return disableAltValue === true;
+  }
+
+  function shouldAllowRuntimePortFlashing() {
+    const queryParams = new URLSearchParams(window.location.search);
+    const allowValue = parseBooleanQueryValue(queryParams.get(ALLOW_RUNTIME_PORT_QUERY_KEY));
+    return allowValue === true;
   }
 
   function createDebugLogger() {
@@ -341,7 +349,32 @@
           });
         }
 
-        return originalRequestPort(requestOptions);
+        const port = await originalRequestPort(requestOptions);
+        try {
+          const info = typeof port.getInfo === "function" ? port.getInfo() : {};
+          const usbVendorId = Number(info.usbVendorId || 0);
+          const usbProductId = Number(info.usbProductId || 0);
+          const isBlockedRuntimePort = BLOCKED_RUNTIME_PORTS.some(
+            (entry) =>
+              entry.usbVendorId === usbVendorId && entry.usbProductId === usbProductId
+          );
+
+          debug.log("serial-port-selected", { usbVendorId, usbProductId });
+
+          if (isBlockedRuntimePort && !shouldAllowRuntimePortFlashing()) {
+            const message =
+              "Selected USB runtime port is unstable for flashing (VID 0x239A PID 0x811B). Hold BOOT, tap RESET, release BOOT, then select the ESP32-S3 download port (VID 0x303A). Add ?allowruntime=1 to bypass.";
+            debug.log("serial-port-blocked-runtime", { usbVendorId, usbProductId, message });
+            throw new Error(message);
+          }
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("Selected USB runtime port")) {
+            throw error;
+          }
+          debug.log("serial-port-info-check-failed", { error });
+        }
+
+        return port;
       };
 
       Object.defineProperty(serial, "__mrf2RequestPortWrapped", {
