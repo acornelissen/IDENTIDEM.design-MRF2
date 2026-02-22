@@ -1,4 +1,4 @@
-// IDENTIDEM.design Medium Format Rangefinder firmware v7.0
+// IDENTIDEM.design Medium Format Rangefinder firmware v10.0.0
 // Hardware: DTS6012M LiDAR, STEMMA I2C QT Rotary Encoder (4991), SH1107 main + SSD1306 external OLEDs
 
 #include <Arduino.h>
@@ -18,6 +18,140 @@
 #include "interface.h"
 #include "inputs.h"
 #include "activity.h"
+
+namespace
+{
+struct LoopScheduler
+{
+  bool initialized = false;
+  unsigned long lastInputMs = 0;
+  unsigned long lastFilmCounterMs = 0;
+  unsigned long lastSleepCheckMs = 0;
+  unsigned long lastLidarMs = 0;
+  unsigned long lastLensMs = 0;
+  unsigned long lastMeterMs = 0;
+  unsigned long lastBatteryMs = 0;
+  unsigned long lastUiMs = 0;
+  unsigned long lastPrefsFlushMs = 0;
+};
+
+LoopScheduler scheduler;
+bool sleepServicesActive = false;
+bool sleepWakeBaselinesInitialized = false;
+bool lightMeterSleeping = false;
+int sleepWakeEncoderBaseline = 0;
+int sleepWakeLensBaseline = 0;
+
+bool sendLightMeterCommand(uint8_t command)
+{
+  Wire.beginTransmission(LIGHTMETER_I2C_ADDR);
+  Wire.write(command);
+  return Wire.endTransmission() == 0;
+}
+
+void powerDownLightMeterForSleep()
+{
+  if (lightMeterSleeping)
+  {
+    return;
+  }
+  sendLightMeterCommand(LIGHTMETER_CMD_POWER_DOWN);
+  lightMeterSleeping = true;
+}
+
+void wakeLightMeterFromSleep()
+{
+  if (!lightMeterSleeping)
+  {
+    return;
+  }
+
+  sendLightMeterCommand(LIGHTMETER_CMD_POWER_ON);
+  if (!lightMeter.configure(BH1750::CONTINUOUS_HIGH_RES_MODE))
+  {
+    lightMeter.begin();
+  }
+  lightMeterSleeping = false;
+}
+
+void initializeSleepWakeBaselines()
+{
+  sleepWakeEncoderBaseline = encoder.getEncoderPosition();
+  sleepWakeLensBaseline = theads.readADC_SingleEnded(LENS_ADC_PIN);
+  sleepWakeBaselinesInitialized = true;
+}
+
+void pollSleepWakeEncoder()
+{
+  if (!sleepWakeBaselinesInitialized)
+  {
+    initializeSleepWakeBaselines();
+  }
+
+  int currentEncoder = encoder.getEncoderPosition();
+  if (abs(currentEncoder - sleepWakeEncoderBaseline) >= SLEEP_WAKE_ENCODER_DELTA)
+  {
+    registerActivity();
+    sleepWakeEncoderBaseline = currentEncoder;
+  }
+}
+
+void pollSleepWakeLens()
+{
+  if (!sleepWakeBaselinesInitialized)
+  {
+    initializeSleepWakeBaselines();
+  }
+
+  int currentLensReading = theads.readADC_SingleEnded(LENS_ADC_PIN);
+  if (abs(currentLensReading - sleepWakeLensBaseline) >= SLEEP_WAKE_LENS_DELTA)
+  {
+    registerActivity();
+    sleepWakeLensBaseline = currentLensReading;
+  }
+}
+
+void enterSleepServices()
+{
+  toggleLidar(false);
+  powerDownLightMeterForSleep();
+  drawSleepUI();
+
+  // Keep external sleep text visible while turning the main display fully off.
+  display.oled_command(0xAE);
+
+  sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
+  sspixel.show();
+
+  initializeSleepWakeBaselines();
+}
+
+void exitSleepServices()
+{
+  display.oled_command(0xAF);
+  wakeLightMeterFromSleep();
+  toggleLidar(true);
+  sleepWakeBaselinesInitialized = false;
+
+  // Force immediate sensor/UI refresh right after wake.
+  scheduler.lastLidarMs = 0;
+  scheduler.lastLensMs = 0;
+  scheduler.lastMeterMs = 0;
+  scheduler.lastBatteryMs = 0;
+  scheduler.lastUiMs = 0;
+}
+
+bool shouldRunTask(unsigned long nowMs, unsigned long &lastRunMs, unsigned long intervalMs)
+{
+  if ((nowMs - lastRunMs) < intervalMs)
+  {
+    return false;
+  }
+
+  lastRunMs = nowMs;
+  return true;
+}
+} // namespace
 
 // Setup and loop functions
 // ---------------------
@@ -65,9 +199,19 @@ void setup()
   display_ext.clearDisplay();
   display_ext.setTextSize(DISPLAY_BOOT_TEXT_SIZE); // Draw 2X-scale text
   display_ext.setTextColor(SSD1306_WHITE);
-  display_ext.setCursor(DISPLAY_BOOT_CURSOR_X, DISPLAY_BOOT_CURSOR_Y);
-  display_ext.print(F("MRF "));
-  display_ext.println(FWVERSION);
+  char bootText[24];
+  snprintf(bootText, sizeof(bootText), "MRF %s", FWVERSION);
+
+  int16_t bootTextX1 = 0;
+  int16_t bootTextY1 = 0;
+  uint16_t bootTextWidth = 0;
+  uint16_t bootTextHeight = 0;
+  display_ext.getTextBounds(bootText, 0, 0, &bootTextX1, &bootTextY1, &bootTextWidth, &bootTextHeight);
+
+  int16_t bootCursorX = ((display_ext.width() - static_cast<int16_t>(bootTextWidth)) / 2) - bootTextX1;
+  int16_t bootCursorY = ((display_ext.height() - static_cast<int16_t>(bootTextHeight)) / 2) - bootTextY1;
+  display_ext.setCursor(bootCursorX, bootCursorY);
+  display_ext.print(bootText);
   display_ext.display();
 
   delay(DISPLAY_BOOT_SCREEN_MS);
@@ -120,47 +264,131 @@ void setup()
     encoder.setEncoderPosition(encoder_value);
     encoder.enableEncoderInterrupt();
   }
+
+  // Treat end-of-setup as the idle timer baseline.
+  lastActivityTime = millis();
+  sleepMode = false;
 }
 
 void loop()
 {
-  checkButtons();
-  setFilmCounter();
+  const unsigned long now = millis();
+  if (!scheduler.initialized)
+  {
+    scheduler.initialized = true;
+    scheduler.lastInputMs = 0;
+    scheduler.lastFilmCounterMs = 0;
+    scheduler.lastSleepCheckMs = 0;
+    scheduler.lastLidarMs = 0;
+    scheduler.lastLensMs = 0;
+    scheduler.lastMeterMs = 0;
+    scheduler.lastBatteryMs = 0;
+    scheduler.lastUiMs = 0;
+    scheduler.lastPrefsFlushMs = 0;
+  }
 
-  updateSleepMode(millis());
+  if (shouldRunTask(now, scheduler.lastSleepCheckMs, LOOP_SLEEP_CHECK_INTERVAL_MS))
+  {
+    updateSleepMode(now);
+  }
 
   if (sleepMode)
   {
-    toggleLidar(false);
-    drawSleepUI();
+    if (!sleepServicesActive)
+    {
+      enterSleepServices();
+      sleepServicesActive = true;
+    }
+
+    if (shouldRunTask(now, scheduler.lastInputMs, LOOP_SLEEP_INPUT_INTERVAL_MS))
+    {
+      checkButtons();
+    }
+    if (shouldRunTask(now, scheduler.lastFilmCounterMs, LOOP_SLEEP_ENCODER_POLL_INTERVAL_MS))
+    {
+      pollSleepWakeEncoder();
+    }
+    if (shouldRunTask(now, scheduler.lastLensMs, LOOP_SLEEP_LENS_POLL_INTERVAL_MS))
+    {
+      pollSleepWakeLens();
+    }
   }
   else
   {
-    toggleLidar(true);
-    setDistance();
-    setVoltage();
-    setLightMeter();
+    if (sleepServicesActive)
+    {
+      exitSleepServices();
+      sleepServicesActive = false;
+    }
 
-    if (ui_mode == "main")
+    if (shouldRunTask(now, scheduler.lastInputMs, LOOP_INPUT_INTERVAL_MS))
     {
-      drawMainUI();
+      checkButtons();
     }
-    else if (ui_mode == "config")
+    if (shouldRunTask(now, scheduler.lastFilmCounterMs, LOOP_FILM_COUNTER_INTERVAL_MS))
     {
-      drawConfigUI();
+      setFilmCounter();
     }
-    else if (ui_mode == "calib")
+
+    if (shouldRunTask(now, scheduler.lastLidarMs, LOOP_LIDAR_INTERVAL_MS))
     {
-      drawCalibUI();
+      setDistance();
     }
-    else if (ui_mode == "reset_confirm")
+    if (shouldRunTask(now, scheduler.lastLensMs, LOOP_LENS_INTERVAL_MS))
     {
-      drawResetConfirmUI();
+      lens_sensor_reading = getLensSensorReading();
+      setLensDistance();
     }
-    drawExternalUI();
+    if (shouldRunTask(now, scheduler.lastMeterMs, LOOP_LIGHTMETER_INTERVAL_MS))
+    {
+      setLightMeter();
+    }
+    if (shouldRunTask(now, scheduler.lastBatteryMs, LOOP_BATTERY_INTERVAL_MS))
+    {
+      setVoltage();
+    }
+
+    if (shouldRunTask(now, scheduler.lastUiMs, LOOP_UI_INTERVAL_MS))
+    {
+      if (ui_mode == UiMode::Main)
+      {
+        drawMainUI();
+      }
+      else if (ui_mode == UiMode::Config)
+      {
+        drawConfigUI();
+      }
+      else if (ui_mode == UiMode::ConfigFilm)
+      {
+        drawFilmConfigUI();
+      }
+      else if (ui_mode == UiMode::ConfigLens)
+      {
+        drawLensConfigUI();
+      }
+      else if (ui_mode == UiMode::ConfigMeter)
+      {
+        drawMeterConfigUI();
+      }
+      else if (ui_mode == UiMode::Calib)
+      {
+        drawCalibUI();
+      }
+      else if (ui_mode == UiMode::ResetConfirm)
+      {
+        drawResetConfirmUI();
+      }
+      else if (ui_mode == UiMode::Health)
+      {
+        drawHealthUI();
+      }
+      drawExternalUI();
+    }
   }
 
-  lens_sensor_reading = getLensSensorReading();
-  setLensDistance();
+  if (shouldRunTask(now, scheduler.lastPrefsFlushMs, LOOP_PREFS_FLUSH_INTERVAL_MS))
+  {
+    flushPrefsIfDirty();
+  }
 }
 // ---------------------

@@ -5,6 +5,18 @@
 #include <Arduino.h>     // For String type and int16_t
 #include "mrfconstants.h" // For SMOOTHING_WINDOW_SIZE
 
+enum class UiMode : uint8_t
+{
+  Main,
+  Config,
+  ConfigFilm,
+  ConfigLens,
+  ConfigMeter,
+  Calib,
+  ResetConfirm,
+  Health
+};
+
 // Preferences
 extern Preferences prefs;
 
@@ -18,9 +30,14 @@ extern float prev_aperture;
 extern float aperture;
 extern float prev_lux;
 extern float lux;
+extern float ev_readout;
 extern String shutter_speed;
 extern int iso_index;
 extern int aperture_index;
+extern int exposure_comp_thirds;
+extern int meter_smoothing_mode;
+extern bool show_ev_readout;
+extern int sleep_timeout_mode;
 
 // Filter algorithm
 extern int samples[SMOOTHING_WINDOW_SIZE];
@@ -46,7 +63,7 @@ extern int prev_bat_per;
 extern int bat_per;
 
 // Camera state
-extern String ui_mode;
+extern UiMode ui_mode;
 extern int config_step;
 extern int calib_step;
 extern int selected_lens;
@@ -56,15 +73,25 @@ extern bool parallaxEnabled;
 
 extern int calib_distance_set[CALIB_DISTANCE_COUNT];
 extern int current_calib_distance;
+extern int calib_capture_status;
 
 extern int film_counter;
 extern int prev_encoder_value;
 extern int encoder_value;
 extern float frame_progress;
 extern float prev_frame_progress;
+extern int frame_one_offset;
+extern int frame_spacing_offset;
 
 extern unsigned long lastActivityTime;
 extern bool sleepMode;
+
+// Health/diagnostics
+extern bool prefsSchemaValid;
+extern bool prefsLoadedLegacy;
+extern uint16_t prefsSchemaVersionLoaded;
+extern int last_lidar_error_code;
+extern int lidar_recovery_count;
 // ---------------------
 
 #endif // GLOBALS_H

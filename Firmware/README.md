@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 9.6.0  
+**Version**: 10.0.0  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -87,7 +87,7 @@ Firmware/
    - Start sensor readings
 
 2. **Main Loop** (`loop()` in `src/main.cpp`)
-   - Check for sleep timeout (60 seconds)
+   - Check configurable sleep timeout (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
    - Process button inputs
    - Update film counter
    - Read sensors (distance, light, battery)
@@ -97,6 +97,11 @@ Firmware/
 
 - **Main Mode**: Normal operation with rangefinder display
 - **Config Mode**: Settings and configuration menu
+- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, reset, system health screen, sleep timeout, and exit
+- **Film Submenu**: format selection, frame-1 offset, and frame-spacing offset
+- **Lens Submenu**: Lens profile, parallax correction toggle, and lens calibration entry
+- **Light Meter Submenu**: ISO, EV compensation, smoothing strength, EV readout toggle
+- **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, and idle timer
 - **Calibration Mode**: Lens calibration interface
 - **Sleep Mode**: Low-power state with minimal display
 
@@ -107,6 +112,7 @@ Firmware/
 - Confidence scoring combines data quality, intensity, temporal consistency, and lens-position prior
 - Two-stage correction: library scale/offset in mm, then curve/residual correction in cm
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
+- Distance display uses `cm` below `1m`, with `< 5cm` and `> 18m` bounds
 - Range: 5cm to 18m
 
 #### Light Metering
@@ -114,6 +120,8 @@ Firmware/
 - Automatic shutter speed calculation
 - ISO range: 50-6400
 - Aperture support for lens profiles
+- EV compensation control (+/- in 1/3-stop steps)
+- Smoothing control (`Off`, `Low`, `Medium`, `High`)
 
 #### Lens System
 - Mamiya Press / Universal Press lenses
@@ -156,7 +164,7 @@ pio test -e native_core_tests
 ### Constants (mrfconstants.h)
 
 - `FWVERSION`: Firmware version string
-- `SLEEPTIMEOUT`: Auto-sleep delay (60000ms)
+- `DEFAULT_SLEEP_TIMEOUT_MODE` / `SLEEP_TIMEOUT_MODE_*`: Auto-sleep options (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`)
 - `SMOOTHING_WINDOW_SIZE`: Filter window (13 samples)
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
 - `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor
@@ -173,10 +181,13 @@ The system saves:
 
 - Selected lens profile
 - Film format selection
+- Frame 1 offset and frame spacing offset
 - ISO setting
 - Aperture setting
 - Film counter and encoder position
-- Parallax toggle state
+- Parallax correction toggle state
+- Sleep timeout mode
+- Light-meter EV/smoothing/readout settings
 - Lens calibration data
 
 ## Troubleshooting

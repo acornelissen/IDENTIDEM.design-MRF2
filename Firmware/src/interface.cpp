@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <Adafruit_Sensor.h> // For sensors_event_t
 #include <math.h>            // For atan2, sqrt, cos, sin, abs
+#include <string.h>          // For strlen, strcmp, memcpy
 
 #include "globals.h"
 #include "hardware.h"
@@ -10,12 +11,33 @@
 #include "lenses.h"
 #include "formats.h"
 #include "helpers.h" // For getFocusRadius
+#include "lightmeter_logic.h"
+#include "cyclefuncs.h"
+#include "activity.h"
 
 struct ParallaxShift
 {
   float x;
   float y;
 };
+
+static String getCompactShutterDisplay(const String &fullShutter)
+{
+  const char *suffix = " sec.";
+  const size_t suffixLen = 5;
+  const char *raw = fullShutter.c_str();
+  size_t rawLen = strlen(raw);
+
+  if (rawLen > suffixLen && strcmp(raw + (rawLen - suffixLen), suffix) == 0)
+  {
+    char compact[16] = {0};
+    size_t copyLen = min(rawLen - suffixLen, sizeof(compact) - 1);
+    memcpy(compact, raw, copyLen);
+    return String(compact);
+  }
+
+  return fullShutter;
+}
 
 static void getFormatWidthHeightMm(const FilmFormat &format, float &widthMm, float &heightMm)
 {
@@ -173,7 +195,24 @@ void drawMainUI()
     u8g2.print(aperture, APERTURE_DECIMAL_PLACES);
   }
   u8g2.setCursor(MAIN_SHUTTER_X, MAIN_SHUTTER_Y);
-  u8g2.print(shutter_speed);
+  if (show_ev_readout)
+  {
+    String compactShutter = getCompactShutterDisplay(shutter_speed);
+    u8g2.print(compactShutter);
+    u8g2.print(F(" EV"));
+    if (ev_readout == ev_readout)
+    {
+      u8g2.print(ev_readout, 1);
+    }
+    else
+    {
+      u8g2.print(F("--.-"));
+    }
+  }
+  else
+  {
+    u8g2.print(shutter_speed);
+  }
   u8g2.setCursor(MAIN_DISTANCE_X, MAIN_DISTANCE_Y);
   u8g2.print(F("Dist:"));
   u8g2.print(distance_cm);
@@ -383,6 +422,7 @@ void drawConfigUI()
   u8g2.print(F("Setup"));
 
   u8g2.setFont(u8g2_font_4x6_mf);
+  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
   
   // Helper lambda to set colors based on selection
   auto setItemColors = [&](bool selected) {
@@ -395,34 +435,34 @@ void drawConfigUI()
     }
   };
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 0));
-  setItemColors(config_step == 0);
-  u8g2.print(F(" ISO:")); u8g2.print(iso); u8g2.print(F(" "));
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_FILM_MENU));
+  setItemColors(config_step == CONFIG_ROOT_STEP_FILM_MENU);
+  u8g2.print(F(" Film > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 1));
-  setItemColors(config_step == 1);
-  u8g2.print(F(" Format:")); u8g2.print(film_formats[selected_format].name); u8g2.print(F(" "));
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_LENS_MENU));
+  setItemColors(config_step == CONFIG_ROOT_STEP_LENS_MENU);
+  u8g2.print(F(" Lens Settings > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 2));
-  setItemColors(config_step == 2);
-  u8g2.print(F(" Lens:")); u8g2.print(lenses[selected_lens].name); u8g2.print(F(" "));
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_METER_MENU));
+  setItemColors(config_step == CONFIG_ROOT_STEP_METER_MENU);
+  u8g2.print(F(" Light Meter > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 3));
-  setItemColors(config_step == 3);
-  u8g2.print(F(" Parallax Correction: "));
-  u8g2.print(parallaxEnabled ? F("On") : F("Off"));
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_RESET));
+  setItemColors(config_step == CONFIG_ROOT_STEP_RESET);
+  u8g2.print(F(" Reset frame counter >> "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_HEALTH));
+  setItemColors(config_step == CONFIG_ROOT_STEP_HEALTH);
+  u8g2.print(F(" System Health > "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_SLEEP_TIMEOUT));
+  setItemColors(config_step == CONFIG_ROOT_STEP_SLEEP_TIMEOUT);
+  u8g2.print(F(" Sleep timeout:"));
+  u8g2.print(getSleepTimeoutModeLabel(sleep_timeout_mode));
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 4));
-  setItemColors(config_step == 4);
-  u8g2.print(F(" Lens Calibration > "));
-
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 5));
-  setItemColors(config_step == 5);
-  u8g2.print(F(" Reset count >> "));
-
-  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_ITEM_Y_START + (CONFIG_ITEM_Y_STEP * 6));
-  setItemColors(config_step == 6);
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_EXIT));
+  setItemColors(config_step == CONFIG_ROOT_STEP_EXIT);
   u8g2.print(F(" Exit >> "));
 
   u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y);
@@ -430,6 +470,174 @@ void drawConfigUI()
   u8g2.setForegroundColor(WHITE);
   u8g2.print(F(" IDENTIDEM.design MRF "));
   u8g2.print(FWVERSION);
+
+  display.display();
+}
+
+void drawFilmConfigUI()
+{
+  display.clearDisplay();
+
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+
+  u8g2.setFont(u8g2_font_9x15_mf);
+  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
+  u8g2.print(F("Film"));
+
+  u8g2.setFont(u8g2_font_4x6_mf);
+  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
+
+  auto setItemColors = [&](bool selected) {
+    if (selected) {
+      u8g2.setBackgroundColor(WHITE);
+      u8g2.setForegroundColor(BLACK);
+    } else {
+      u8g2.setBackgroundColor(BLACK);
+      u8g2.setForegroundColor(WHITE);
+    }
+  };
+
+  auto printSignedValue = [&](int value) {
+    if (value > 0)
+    {
+      u8g2.print(F("+"));
+    }
+    u8g2.print(value);
+  };
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FORMAT));
+  setItemColors(config_step == CONFIG_FILM_STEP_FORMAT);
+  u8g2.print(F(" Format: "));
+  u8g2.print(film_formats[selected_format].name);
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FRAME_ONE_OFFSET));
+  setItemColors(config_step == CONFIG_FILM_STEP_FRAME_ONE_OFFSET);
+  u8g2.print(F(" Frame 1 offset: "));
+  printSignedValue(frame_one_offset);
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FRAME_SPACING));
+  setItemColors(config_step == CONFIG_FILM_STEP_FRAME_SPACING);
+  u8g2.print(F(" Frame spacing: "));
+  printSignedValue(frame_spacing_offset);
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_BACK));
+  setItemColors(config_step == CONFIG_FILM_STEP_BACK);
+  u8g2.print(F(" Back << "));
+
+  display.display();
+}
+
+void drawLensConfigUI()
+{
+  display.clearDisplay();
+
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+
+  u8g2.setFont(u8g2_font_9x15_mf);
+  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
+  u8g2.print(F("Lens"));
+
+  u8g2.setFont(u8g2_font_4x6_mf);
+  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
+
+  auto setItemColors = [&](bool selected) {
+    if (selected) {
+      u8g2.setBackgroundColor(WHITE);
+      u8g2.setForegroundColor(BLACK);
+    } else {
+      u8g2.setBackgroundColor(BLACK);
+      u8g2.setForegroundColor(WHITE);
+    }
+  };
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_LENS));
+  setItemColors(config_step == CONFIG_LENS_STEP_LENS);
+  u8g2.print(F(" Lens:")); u8g2.print(lenses[selected_lens].name); u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_PARALLAX));
+  setItemColors(config_step == CONFIG_LENS_STEP_PARALLAX);
+  u8g2.print(F(" Parallax correction: "));
+  u8g2.print(parallaxEnabled ? F("On") : F("Off"));
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_CALIB));
+  setItemColors(config_step == CONFIG_LENS_STEP_CALIB);
+  u8g2.print(F(" Lens Calibration > "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_BACK));
+  setItemColors(config_step == CONFIG_LENS_STEP_BACK);
+  u8g2.print(F(" Back << "));
+
+  display.display();
+}
+
+void drawMeterConfigUI()
+{
+  display.clearDisplay();
+
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+
+  u8g2.setFont(u8g2_font_9x15_mf);
+  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
+  u8g2.print(F("Meter"));
+
+  u8g2.setFont(u8g2_font_4x6_mf);
+  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
+
+  auto setItemColors = [&](bool selected) {
+    if (selected) {
+      u8g2.setBackgroundColor(WHITE);
+      u8g2.setForegroundColor(BLACK);
+    } else {
+      u8g2.setBackgroundColor(BLACK);
+      u8g2.setForegroundColor(WHITE);
+    }
+  };
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_ISO));
+  setItemColors(config_step == CONFIG_METER_STEP_ISO);
+  u8g2.print(F(" ISO:"));
+  u8g2.print(iso);
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_EV_COMP));
+  setItemColors(config_step == CONFIG_METER_STEP_EV_COMP);
+  u8g2.print(F(" EV Comp:"));
+  float evComp = static_cast<float>(exposure_comp_thirds) / 3.0f;
+  if (evComp >= 0.0f)
+  {
+    u8g2.print(F("+"));
+  }
+  u8g2.print(evComp, 1);
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_SMOOTHING));
+  setItemColors(config_step == CONFIG_METER_STEP_SMOOTHING);
+  u8g2.print(F(" Smoothing:"));
+  u8g2.print(getMeterSmoothingLabel(meter_smoothing_mode));
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_EV_READOUT));
+  setItemColors(config_step == CONFIG_METER_STEP_EV_READOUT);
+  u8g2.print(F(" EV Readout:"));
+  u8g2.print(show_ev_readout ? F("On") : F("Off"));
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_BACK));
+  setItemColors(config_step == CONFIG_METER_STEP_BACK);
+  u8g2.print(F(" Back << "));
 
   display.display();
 }
@@ -480,6 +688,17 @@ void drawCalibUI()
   {
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1); u8g2.print(F(" (L) to Select"));
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2); u8g2.print(F(" (R) to Cancel"));
+
+    if (calib_capture_status == CALIB_CAPTURE_STATUS_UNSTABLE)
+    {
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1); u8g2.print(F(" Unstable reading"));
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2); u8g2.print(F(" Hold still + retry"));
+    }
+    else if (calib_capture_status == CALIB_CAPTURE_STATUS_NON_MONOTONIC)
+    {
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1); u8g2.print(F(" Out of sequence"));
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2); u8g2.print(F(" Recheck distance"));
+    }
   }
 
   display.display();
@@ -503,6 +722,65 @@ void drawResetConfirmUI()
   u8g2.print(F(" (L) Cancel"));
   u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y2);
   u8g2.print(F(" (R) Reset"));
+
+  display.display();
+}
+
+void drawHealthUI()
+{
+  const unsigned long now = millis();
+  const unsigned long idleMs = getIdleDurationMs(now);
+
+  display.clearDisplay();
+
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+
+  u8g2.setFont(u8g2_font_6x10_mf);
+  u8g2.setCursor(HEALTH_TITLE_X, HEALTH_TITLE_Y);
+  u8g2.print(F("System Health"));
+
+  u8g2.setFont(u8g2_font_4x6_mf);
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 0));
+  u8g2.print(F("FW: "));
+  u8g2.print(FWVERSION);
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 1));
+  u8g2.print(F("Prefs: "));
+  if (prefsSchemaValid)
+  {
+    u8g2.print(F("v"));
+    u8g2.print(prefsSchemaVersionLoaded);
+    u8g2.print(F(" OK"));
+  }
+  else if (prefsLoadedLegacy)
+  {
+    u8g2.print(F("Legacy migrated"));
+  }
+  else
+  {
+    u8g2.print(F("Defaults"));
+  }
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 2));
+  u8g2.print(F("LiDAR: "));
+  u8g2.print(lidarEnabled ? F("On") : F("Off"));
+  u8g2.print(F(" err:"));
+  u8g2.print(last_lidar_error_code);
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 3));
+  u8g2.print(F("Recoveries: "));
+  u8g2.print(lidar_recovery_count);
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 4));
+  u8g2.print(F("Idle: "));
+  u8g2.print(idleMs / 1000);
+  u8g2.print(F("s"));
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y);
+  u8g2.print(F(" (L/R) Back"));
 
   display.display();
 }
@@ -597,12 +875,9 @@ void drawSleepUI()
   u8g2_ext.setFont(u8g2_font_10x20_mf);
 
   u8g2_ext.setCursor(EXT_SLEEP_TEXT_X, EXT_SLEEP_TEXT_Y);
-  u8g2_ext.print(F("ZzzZZzZz..."));
+  u8g2_ext.print(F("ZzzZzzZZz..."));
 
   display.display();
   display_ext.display();
-
-  sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B)); // Off
-  sspixel.show();
 }
 // ---------------------

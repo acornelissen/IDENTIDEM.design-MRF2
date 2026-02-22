@@ -15,9 +15,14 @@ float prev_aperture;
 float aperture;
 float prev_lux = 0;
 float lux = 0;
+float ev_readout = 0;
 String shutter_speed = "...";
 int iso_index = DEFAULT_ISO_INDEX;
 int aperture_index;
+int exposure_comp_thirds = DEFAULT_EXPOSURE_COMP_THIRDS;
+int meter_smoothing_mode = DEFAULT_METER_SMOOTHING_MODE;
+bool show_ev_readout = DEFAULT_SHOW_EV_READOUT;
+int sleep_timeout_mode = DEFAULT_SLEEP_TIMEOUT_MODE;
 
 // Filter algorithm
 int samples[SMOOTHING_WINDOW_SIZE];
@@ -43,7 +48,7 @@ int prev_bat_per = 0;
 int bat_per = 0;
 
 // Camera state
-String ui_mode = "main";
+UiMode ui_mode = UiMode::Main;
 int config_step = 0;
 int calib_step = 0;
 int selected_lens = DEFAULT_SELECTED_LENS;
@@ -53,13 +58,23 @@ bool parallaxEnabled = true;
 
 int calib_distance_set[CALIB_DISTANCE_COUNT] = {};
 int current_calib_distance = 0;
+int calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
 
 int film_counter = 0;
 int prev_encoder_value = 0;
 int encoder_value = 0;
 float frame_progress = 0;
 float prev_frame_progress = 0;
+int frame_one_offset = DEFAULT_FRAME_ONE_OFFSET;
+int frame_spacing_offset = DEFAULT_FRAME_SPACING_OFFSET;
 
 unsigned long lastActivityTime; // Definition for the extern declaration
 bool sleepMode = false;
+
+// Health/diagnostics
+bool prefsSchemaValid = false;
+bool prefsLoadedLegacy = false;
+uint16_t prefsSchemaVersionLoaded = 0;
+int last_lidar_error_code = 0;
+int lidar_recovery_count = 0;
 // ---------------------

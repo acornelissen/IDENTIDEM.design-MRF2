@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128">
   <rect x="0" y="0" width="128" height="128" fill="#000000" stroke="#ffffff" stroke-width="1"/>
-  <text x="3" y="20" font-family="monospace" font-size="10" fill="#ffffff">Reset Count?</text>
+  <text x="3" y="15" font-family="monospace" font-size="12" fill="#ffffff">Reset Count?</text>
 
-  <text x="4" y="70" font-family="monospace" font-size="6" fill="#ffffff">(L) Cancel</text>
-  <text x="4" y="81" font-family="monospace" font-size="6" fill="#ffffff">(R) Reset</text>
+  <text x="4" y="70" font-family="monospace" font-size="6" fill="#ffffff"> (L) Cancel</text>
+  <text x="4" y="81" font-family="monospace" font-size="6" fill="#ffffff"> (R) Reset</text>
 </svg>

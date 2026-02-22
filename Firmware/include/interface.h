@@ -5,8 +5,12 @@
 // ---------------------
 void drawMainUI();
 void drawConfigUI();
+void drawFilmConfigUI();
+void drawLensConfigUI();
+void drawMeterConfigUI();
 void drawCalibUI();
 void drawResetConfirmUI();
+void drawHealthUI();
 void drawExternalUI();
 void drawSleepUI();
 // ---------------------
