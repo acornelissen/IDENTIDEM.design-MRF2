@@ -662,17 +662,7 @@
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  function extractChangelogNotes(markdown, version) {
-    if (!markdown || !version) return [];
-    const sectionPattern = new RegExp(`^##\\s+${escapeRegex(version)}\\s+-.*$`, "m");
-    const sectionMatch = markdown.match(sectionPattern);
-    if (!sectionMatch || typeof sectionMatch.index !== "number") return [];
-
-    const sectionStart = sectionMatch.index + sectionMatch[0].length;
-    const remaining = markdown.slice(sectionStart);
-    const nextHeadingIndex = remaining.search(/^##\s+/m);
-    const sectionBody = nextHeadingIndex >= 0 ? remaining.slice(0, nextHeadingIndex) : remaining;
-
+  function extractChangelogNotesFromSection(sectionBody) {
     return sectionBody
       .split(/\r?\n/)
       .map((line) => line.trim())
@@ -684,32 +674,83 @@
       );
   }
 
-  function renderChangelogNotes(notes) {
+  function extractChangelogSections(markdown) {
+    if (!markdown) return [];
+
+    const sectionHeadingRegex = /^##\s+([^\s]+)\s+-.*$/gm;
+    const sections = [];
+    let headingMatch = null;
+
+    while ((headingMatch = sectionHeadingRegex.exec(markdown)) !== null) {
+      sections.push({
+        version: headingMatch[1],
+        sectionStart: headingMatch.index,
+        sectionBodyStart: sectionHeadingRegex.lastIndex,
+      });
+    }
+
+    if (!sections.length) return [];
+
+    return sections.map((section, index) => {
+      const nextSectionStart =
+        index + 1 < sections.length ? sections[index + 1].sectionStart : markdown.length;
+      const sectionBody = markdown.slice(section.sectionBodyStart, nextSectionStart);
+      return {
+        version: section.version,
+        notes: extractChangelogNotesFromSection(sectionBody),
+      };
+    });
+  }
+
+  function selectCurrentAndPreviousSections(changelogSections, version) {
+    if (!Array.isArray(changelogSections) || !changelogSections.length) return [];
+
+    let currentSectionIndex = 0;
+    if (version) {
+      const selectedIndex = changelogSections.findIndex((section) => section.version === version);
+      if (selectedIndex >= 0) {
+        currentSectionIndex = selectedIndex;
+      }
+    }
+
+    const selectedSections = [changelogSections[currentSectionIndex]];
+    if (currentSectionIndex + 1 < changelogSections.length) {
+      selectedSections.push(changelogSections[currentSectionIndex + 1]);
+    }
+
+    return selectedSections;
+  }
+
+  function renderChangelogNotes(sections) {
     if (!latestChangelogEl) return;
     latestChangelogEl.innerHTML = "";
 
-    if (!notes.length) {
-      const li = document.createElement("li");
-      li.textContent = "Release notes not available yet.";
-      latestChangelogEl.appendChild(li);
-      return;
-    }
+    const notesPerSection = 6;
+    let renderedNoteCount = 0;
 
-    notes.slice(0, 8).forEach((note) => {
-      const li = document.createElement("li");
-      li.textContent = note;
-      latestChangelogEl.appendChild(li);
+    sections.forEach((section) => {
+      if (!section || !Array.isArray(section.notes) || !section.notes.length) {
+        return;
+      }
+
+      section.notes.slice(0, notesPerSection).forEach((note) => {
+        const li = document.createElement("li");
+        li.textContent = `${section.version}: ${note}`;
+        latestChangelogEl.appendChild(li);
+        renderedNoteCount += 1;
+      });
     });
+
+    if (renderedNoteCount > 0) return;
+
+    const li = document.createElement("li");
+    li.textContent = "Release notes not available yet.";
+    latestChangelogEl.appendChild(li);
   }
 
   async function loadLatestChangelog(version) {
     if (changelogLinkEl) {
       changelogLinkEl.href = "./changelog.md";
-    }
-    if (!version) {
-      renderChangelogNotes([]);
-      debug.log("changelog-skip", { reason: "missing-version" });
-      return;
     }
 
     try {
@@ -718,9 +759,18 @@
         throw new Error("Changelog not available");
       }
       const changelog = await response.text();
-      const notes = extractChangelogNotes(changelog, version);
-      renderChangelogNotes(notes);
-      debug.log("changelog-load-success", { version, noteCount: notes.length });
+      const changelogSections = extractChangelogSections(changelog);
+      const sectionsToRender = selectCurrentAndPreviousSections(changelogSections, version);
+      renderChangelogNotes(sectionsToRender);
+      const noteCount = sectionsToRender.reduce(
+        (sum, section) => sum + (Array.isArray(section.notes) ? section.notes.length : 0),
+        0
+      );
+      debug.log("changelog-load-success", {
+        version,
+        sectionCount: sectionsToRender.length,
+        noteCount,
+      });
     } catch (error) {
       renderChangelogNotes([]);
       debug.log("changelog-load-failed", { version, error });

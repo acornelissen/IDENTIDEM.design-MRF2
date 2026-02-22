@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.0.0
+**Firmware version:** 10.0.1
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -64,10 +64,11 @@ The main screen displays:
 
 - **LiDAR distance (Dist)**
   - Uses LiDAR v2 primary/secondary returns with confidence scoring and correction for more stable readings.
-  - Range: 5 cm to 18 m.
-  - Displays values below 1 meter in centimeters (for example, `75cm`).
+  - Measurement range: 5 cm to 18 m.
+  - Displays values below 1 meter in centimeters (for example, `75cm`), and 1 meter and above in meters.
   - Displays `...` if the sensor has no recent data.
-  - Displays `> 18m` or `< 5cm` when outside range.
+  - Displays `<15cm` for near readings below display threshold.
+  - Displays `Inf.` for readings above 10.5 meters.
 - **Lens distance (Lens)**
   - Based on calibration and the lens position sensor.
   - Displays `Inf.` when beyond the calibrated infinity threshold.
@@ -125,9 +126,19 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 ![Film settings menu](images/config-film-ui.svg)
 
 1. **Format**: cycles film formats.
-2. **Frame 1 offset**: shifts where frame 1 starts (`-10` to `+10`, default `0`).
-3. **Frame spacing**: adjusts spacing between frames (`-10` to `+10`, default `0`).
-4. **Back <<**: return to setup root menu.
+2. **Current frame**: manually set frame counter for the selected format.
+3. **Frame 1 offset**: shifts where frame 1 starts (`-10` to `+10`, default `0`).
+4. **Frame spacing**: adjusts spacing between frames (`-10` to `+10`, default `0`).
+5. **Back <<**: return to setup root menu.
+
+Current frame ranges are format-bound:
+
+- **PANO**: `0..21`
+- **6x4.5**: `0..16`
+- **6x6**: `0..12`
+- **6x7**: `0..10`
+- **9x3**: `0..8`
+- **6x9**: `0..8`
 
 ### Lens Settings submenu
 
@@ -257,4 +268,15 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 
 ## Firmware updates
 
-For flashing or updating firmware, see `Documentation/flash-firmware/README.md` in the repo root.
+### Browser updater
+
+![Browser updater](images/web-updater-ui.svg)
+
+- Open `https://update.mrf2.com/` in desktop Chrome or Edge.
+- **Version To Install** defaults to the latest published firmware.
+- **Release Notes (Current + Previous)** shows notes for the selected version and the version immediately before it.
+- Use **View full changelog** for complete details.
+
+### VS Code / PlatformIO method
+
+For local flashing or development workflows, see `Documentation/flash-firmware/README.md` in the repo root.
