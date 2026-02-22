@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 // Constants
-#define FWVERSION "9.7.5"
+#define FWVERSION "10.0.0"
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000;
 
 const unsigned long SERIAL_BAUD_RATE = 115200;

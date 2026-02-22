@@ -875,7 +875,7 @@ void drawSleepUI()
   u8g2_ext.setFont(u8g2_font_10x20_mf);
 
   u8g2_ext.setCursor(EXT_SLEEP_TEXT_X, EXT_SLEEP_TEXT_Y);
-  u8g2_ext.print(F("Sleep mode"));
+  u8g2_ext.print(F("ZzzZzzZZz..."));
 
   display.display();
   display_ext.display();

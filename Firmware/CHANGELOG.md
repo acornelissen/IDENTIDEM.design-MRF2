@@ -2,6 +2,15 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.0.0 - 2026-02-22
+- Boot screen:
+- Centered external display boot text (`MRF <version>`) so all version strings render centered.
+- Sleep screen:
+- Replaced external sleep text with fixed `ZzzZzzZZz...`.
+- Release metadata/docs:
+- Bumped `FWVERSION` to `10.0.0`.
+- Updated firmware README, user manual, and UI SVG snapshots for version/text consistency.
+
 ## 9.7.5 - 2026-02-19
 - Settings UI updates:
 - Split setup into focused submenus for Lens and Light Meter settings.

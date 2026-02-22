@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 9.7.5
+**Firmware version:** 10.0.0
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -134,7 +134,7 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 ![Lens settings menu](images/config-lens-ui.svg)
 
 1. **Lens**: cycles calibrated lenses only.
-2. **Parallax**: toggle on/off.
+2. **Parallax correction**: toggle on/off.
 3. **Lens Calibration >**: enter calibration workflow.
 4. **Back <<**: return to setup root menu.
 
@@ -227,9 +227,7 @@ After the configured **Sleep timeout** period of inactivity (default **1 minute*
 
 - LiDAR turns off.
 - Main display is blank.
-- External display shows a sleep message with 5-second animation:
-- alternating capitalization pattern in the `Z` text
-- animated trailing dots (`.`, `..`, `...`)
+- External display shows `ZzzZzzZZz...`.
 - Status LED is off.
 
 ![Sleep screen](images/sleep-ui.svg)
@@ -241,7 +239,7 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 - ISO: **400**
 - Format: **6x7**
 - Lens: **65/6.3** (pre-calibrated)
-- Parallax: **On**
+- Parallax correction: **On**
 - Sleep timeout: **1m**
 
 ## Troubleshooting

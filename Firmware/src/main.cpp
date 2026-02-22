@@ -1,4 +1,4 @@
-// IDENTIDEM.design Medium Format Rangefinder firmware v9.7.5
+// IDENTIDEM.design Medium Format Rangefinder firmware v10.0.0
 // Hardware: DTS6012M LiDAR, STEMMA I2C QT Rotary Encoder (4991), SH1107 main + SSD1306 external OLEDs
 
 #include <Arduino.h>
@@ -199,9 +199,19 @@ void setup()
   display_ext.clearDisplay();
   display_ext.setTextSize(DISPLAY_BOOT_TEXT_SIZE); // Draw 2X-scale text
   display_ext.setTextColor(SSD1306_WHITE);
-  display_ext.setCursor(DISPLAY_BOOT_CURSOR_X, DISPLAY_BOOT_CURSOR_Y);
-  display_ext.print(F("MRF "));
-  display_ext.println(FWVERSION);
+  char bootText[24];
+  snprintf(bootText, sizeof(bootText), "MRF %s", FWVERSION);
+
+  int16_t bootTextX1 = 0;
+  int16_t bootTextY1 = 0;
+  uint16_t bootTextWidth = 0;
+  uint16_t bootTextHeight = 0;
+  display_ext.getTextBounds(bootText, 0, 0, &bootTextX1, &bootTextY1, &bootTextWidth, &bootTextHeight);
+
+  int16_t bootCursorX = ((display_ext.width() - static_cast<int16_t>(bootTextWidth)) / 2) - bootTextX1;
+  int16_t bootCursorY = ((display_ext.height() - static_cast<int16_t>(bootTextHeight)) / 2) - bootTextY1;
+  display_ext.setCursor(bootCursorX, bootCursorY);
+  display_ext.print(bootText);
   display_ext.display();
 
   delay(DISPLAY_BOOT_SCREEN_MS);

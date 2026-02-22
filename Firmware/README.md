@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 9.7.5  
+**Version**: 10.0.0  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -99,7 +99,7 @@ Firmware/
 - **Config Mode**: Settings and configuration menu
 - **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, reset, system health screen, sleep timeout, and exit
 - **Film Submenu**: format selection, frame-1 offset, and frame-spacing offset
-- **Lens Submenu**: Lens profile, parallax toggle, and lens calibration entry
+- **Lens Submenu**: Lens profile, parallax correction toggle, and lens calibration entry
 - **Light Meter Submenu**: ISO, EV compensation, smoothing strength, EV readout toggle
 - **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, and idle timer
 - **Calibration Mode**: Lens calibration interface
@@ -185,7 +185,7 @@ The system saves:
 - ISO setting
 - Aperture setting
 - Film counter and encoder position
-- Parallax toggle state
+- Parallax correction toggle state
 - Sleep timeout mode
 - Light-meter EV/smoothing/readout settings
 - Lens calibration data
