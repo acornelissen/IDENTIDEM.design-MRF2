@@ -134,6 +134,11 @@ void setDistance()
 // https://github.com/makeabilitylab/arduino/blob/master/Filters/MovingAverageFilter/MovingAverageFilter.ino
 int getLensSensorReading()
 {
+  static bool spikeFilterInitialized = false;
+  static int stableReading = 0;
+  static int pendingReading = 0;
+  static uint8_t pendingCount = 0;
+
   if (LENS_ADC_QUIET_DELAY_MS > 0)
   {
     delay(LENS_ADC_QUIET_DELAY_MS);
@@ -155,7 +160,38 @@ int getLensSensorReading()
     sensorVal += LENS_ADC_MAIN_OFFSET;
   }
 
-  return calcMovingAvg(sensorVal);
+  int smoothedReading = calcMovingAvg(sensorVal);
+  if (!spikeFilterInitialized)
+  {
+    spikeFilterInitialized = true;
+    stableReading = smoothedReading;
+    pendingReading = smoothedReading;
+    pendingCount = 0;
+    return stableReading;
+  }
+
+  if (abs(smoothedReading - stableReading) <= LENS_SPIKE_DELTA_THRESHOLD)
+  {
+    stableReading = smoothedReading;
+    pendingCount = 0;
+    return stableReading;
+  }
+
+  if (pendingCount == 0 || abs(smoothedReading - pendingReading) > LENS_SPIKE_DELTA_THRESHOLD)
+  {
+    pendingReading = smoothedReading;
+    pendingCount = 1;
+    return stableReading;
+  }
+
+  pendingCount++;
+  if (pendingCount >= LENS_SPIKE_CONFIRMATION_COUNT)
+  {
+    stableReading = smoothedReading;
+    pendingCount = 0;
+  }
+
+  return stableReading;
 }
 
 void setLensDistance()
