@@ -6,3 +6,9 @@ Published files:
 - firmware/latest/boot_app0.bin
 - firmware/latest/firmware.bin
 - firmware/latest/manifest.json
+- firmware/versions.json
+- firmware/versions/<version>/bootloader.bin
+- firmware/versions/<version>/partitions.bin
+- firmware/versions/<version>/boot_app0.bin
+- firmware/versions/<version>/firmware.bin
+- firmware/versions/<version>/manifest.json

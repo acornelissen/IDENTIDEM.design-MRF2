@@ -15,8 +15,12 @@ This repo includes a static firmware updater site in `docs/` that uses Web Seria
    - `boot_app0.bin` @ `0xE000`
    - `tinyuf2.bin` @ `0x2D0000`
    - `firmware.bin` @ `0x10000`
-3. The workflow generates `firmware/latest/manifest.json` for ESP Web Tools.
-4. The static app in `docs/` points the install button to `./firmware/latest/manifest.json`.
+3. The workflow also builds tagged historical releases and publishes them under `firmware/versions/<version>/`.
+4. The workflow generates:
+   - `firmware/latest/manifest.json`
+   - `firmware/versions/<version>/manifest.json` for each published version
+   - `firmware/versions.json` catalog (used by the UI dropdown)
+5. The static app in `docs/` loads `firmware/versions.json`, defaults the selector to the latest entry, and points ESP Web Tools to the selected manifest.
 
 ## Browser requirements
 

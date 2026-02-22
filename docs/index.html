@@ -26,13 +26,19 @@
         <p class="eyebrow">IDENTIDEM.design</p>
         <h1>MRF2 Firmware Updater</h1>
         <p class="subtitle">
-          Flash the latest MRF2 firmware directly from a Chromium-based browser.
+          Flash the latest or a previous MRF2 firmware version directly from a Chromium-based browser.
         </p>
 
         <div class="panel">
           <div class="status-row">
             <strong>Latest Build</strong>
             <span id="firmware-version">Checking...</span>
+          </div>
+          <div class="status-row version-select-row">
+            <label for="firmware-version-select"><strong>Version To Install</strong></label>
+            <select id="firmware-version-select" aria-label="Firmware version to install">
+              <option>Loading...</option>
+            </select>
           </div>
           <div class="status-row">
             <strong>Current Browser</strong>
@@ -55,9 +61,9 @@
           </p>
 
           <div class="release-notes">
-            <h2>Latest Changelog</h2>
+            <h2>Release Notes</h2>
             <ul id="latest-changelog">
-              <li>Loading latest release notes...</li>
+              <li>Loading release notes...</li>
             </ul>
             <p class="changelog-link-wrap">
               <a id="changelog-link" href="./changelog.md" target="_blank" rel="noopener">
@@ -74,7 +80,8 @@
           <li>Use Chrome or Edge on desktop.</li>
           <li>Connect the MRF2 over USB-C data cable.</li>
           <li>Click <em>Connect Camera and Install</em>.</li>
-          <li>Select the ESP32-S3 serial device from the prompt.</li>
+          <li>Select the MRF2 serial device from the prompt.</li>
+          <li>If flashing fails to start, hold <em>BOOT</em>, tap <em>RESET</em>, then retry install.</li>
           <li>Wait until flashing completes, then <strong>reboot the camera</strong>.</li>
         </ol>
       </section>
@@ -83,6 +90,9 @@
         <h2>Troubleshooting</h2>
         <ul>
           <li>No port appears: try a different USB cable or port.</li>
+          <li>If no port appears, open updater with <code>?allports=1</code> and retry.</li>
+          <li>If the installer reports device lost, re-enter BOOT/RESET download mode and retry.</li>
+          <li>Adafruit runtime USB ports (<code>0x239A:0x8xxx</code>) are auto-switched to bootloader first; bypass with <code>?allowruntime=1</code>.</li>
           <li>If stuck, use the VS Code guide in the project documentation.</li>
         </ul>
       </section>
@@ -97,6 +107,6 @@
       </section>
     </main>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=__BUILD_SHA__"></script>
   </body>
 </html>

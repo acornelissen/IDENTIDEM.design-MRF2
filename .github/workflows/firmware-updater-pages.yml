@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -40,16 +42,19 @@ jobs:
 
           BUILD_DIR="Firmware/.pio/build/$PIO_ENV"
           SITE_DIR="site"
-          FIRMWARE_DIR="$SITE_DIR/firmware/latest"
+          FIRMWARE_ROOT="$SITE_DIR/firmware"
+          LATEST_DIR="$FIRMWARE_ROOT/latest"
+          VERSIONS_DIR="$FIRMWARE_ROOT/versions"
+          VERSION_INDEX_PATH="$FIRMWARE_ROOT/versions.json"
           FRAMEWORK_DIR="$HOME/.platformio/packages/framework-arduinoespressif32"
           VARIANT_DIR="$FRAMEWORK_DIR/variants/adafruit_feather_esp32s3"
 
-          mkdir -p "$FIRMWARE_DIR"
+          mkdir -p "$LATEST_DIR" "$VERSIONS_DIR"
           cp -R docs/. "$SITE_DIR/"
           cp Firmware/CHANGELOG.md "$SITE_DIR/changelog.md"
-
-          cp "$BUILD_DIR/partitions.bin" "$FIRMWARE_DIR/partitions.bin"
-          cp "$BUILD_DIR/firmware.bin" "$FIRMWARE_DIR/firmware.bin"
+          BUILD_SHA_SHORT="${GITHUB_SHA:-local}"
+          BUILD_SHA_SHORT="${BUILD_SHA_SHORT:0:7}"
+          sed -i "s/__BUILD_SHA__/$BUILD_SHA_SHORT/g" "$SITE_DIR/index.html"
 
           BOOTLOADER_BIN="$VARIANT_DIR/bootloader-tinyuf2.bin"
           BOOT_APP0_BIN="$FRAMEWORK_DIR/tools/partitions/boot_app0.bin"
@@ -62,34 +67,97 @@ jobs:
             fi
           done
 
-          cp "$BOOTLOADER_BIN" "$FIRMWARE_DIR/bootloader.bin"
-          cp "$BOOT_APP0_BIN" "$FIRMWARE_DIR/boot_app0.bin"
-          cp "$TINYUF2_BIN" "$FIRMWARE_DIR/tinyuf2.bin"
-
-          FW_VERSION=$(grep -E '^#define FWVERSION ' Firmware/include/mrfconstants.h | sed 's/^#define FWVERSION "\(.*\)"$/\1/')
-          if [ -z "$FW_VERSION" ]; then
-            FW_VERSION="unknown"
-          fi
-
-          cat > "$FIRMWARE_DIR/manifest.json" <<MANIFEST
-          {
-            "name": "IDENTIDEM MRF2",
-            "version": "$FW_VERSION",
-            "new_install_prompt_erase": false,
-            "builds": [
-              {
-                "chipFamily": "ESP32-S3",
-                "parts": [
-                  { "path": "bootloader.bin", "offset": 0 },
-                  { "path": "partitions.bin", "offset": 32768 },
-                  { "path": "boot_app0.bin", "offset": 57344 },
-                  { "path": "tinyuf2.bin", "offset": 2949120 },
-                  { "path": "firmware.bin", "offset": 65536 }
-                ]
-              }
-            ]
+          extract_fw_version() {
+            local firmware_dir="$1"
+            local fw_version
+            fw_version=$(grep -E '^#define FWVERSION ' "$firmware_dir/include/mrfconstants.h" | sed 's/^#define FWVERSION "\(.*\)"$/\1/')
+            if [ -z "$fw_version" ]; then
+              fw_version="unknown"
+            fi
+            printf '%s\n' "$fw_version"
           }
-          MANIFEST
+
+          copy_build_outputs() {
+            local build_dir="$1"
+            local output_dir="$2"
+            mkdir -p "$output_dir"
+
+            for REQUIRED in "$build_dir/partitions.bin" "$build_dir/firmware.bin"; do
+              if [ ! -f "$REQUIRED" ]; then
+                echo "Required build artifact not found: $REQUIRED"
+                return 1
+              fi
+            done
+
+            cp "$BOOTLOADER_BIN" "$output_dir/bootloader.bin"
+            cp "$build_dir/partitions.bin" "$output_dir/partitions.bin"
+            cp "$BOOT_APP0_BIN" "$output_dir/boot_app0.bin"
+            cp "$TINYUF2_BIN" "$output_dir/tinyuf2.bin"
+            cp "$build_dir/firmware.bin" "$output_dir/firmware.bin"
+          }
+
+          write_manifest() {
+            local output_dir="$1"
+            local fw_version="$2"
+            python3 -c 'import json,pathlib,sys; out_path=pathlib.Path(sys.argv[1]); fw_version=sys.argv[2]; payload={"name":"IDENTIDEM MRF2","version":fw_version,"new_install_prompt_erase":False,"new_install_improv_wait_time":0,"builds":[{"chipFamily":"ESP32-S3","parts":[{"path":"bootloader.bin","offset":0},{"path":"partitions.bin","offset":32768},{"path":"boot_app0.bin","offset":57344},{"path":"tinyuf2.bin","offset":2949120},{"path":"firmware.bin","offset":65536}]}]}; out_path.write_text(json.dumps(payload, indent=2)+"\n", encoding="utf-8")' "$output_dir/manifest.json" "$fw_version"
+          }
+
+          declare -A VERSION_SEEN=()
+          VERSION_ROWS_FILE="$(mktemp)"
+          WORKTREE_ROOT="$(mktemp -d)"
+
+          cleanup() {
+            set +e
+            git worktree prune
+            rm -rf "$WORKTREE_ROOT"
+            rm -f "$VERSION_ROWS_FILE"
+          }
+          trap cleanup EXIT
+
+          add_version_artifacts() {
+            local fw_version="$1"
+            local build_dir="$2"
+            local source_tag="$3"
+
+            if [ -z "$fw_version" ] || [ "$fw_version" = "unknown" ]; then
+              echo "Skipping artifacts with unknown version from '$source_tag'"
+              return 0
+            fi
+
+            if [ -n "${VERSION_SEEN[$fw_version]:-}" ]; then
+              echo "Skipping duplicate firmware version '$fw_version' from '$source_tag'"
+              return 0
+            fi
+
+            local version_dir="$VERSIONS_DIR/$fw_version"
+            copy_build_outputs "$build_dir" "$version_dir"
+            write_manifest "$version_dir" "$fw_version"
+            VERSION_SEEN["$fw_version"]=1
+            printf '%s|%s|%s\n' "$fw_version" "./firmware/versions/$fw_version/manifest.json" "$source_tag" >> "$VERSION_ROWS_FILE"
+          }
+
+          CURRENT_FW_VERSION="$(extract_fw_version Firmware)"
+          copy_build_outputs "$BUILD_DIR" "$LATEST_DIR"
+          write_manifest "$LATEST_DIR" "$CURRENT_FW_VERSION"
+          add_version_artifacts "$CURRENT_FW_VERSION" "$BUILD_DIR" "main"
+
+          mapfile -t RELEASE_TAGS < <(git tag -l --sort=-v:refname | grep -E '^v?[0-9]+(\.[0-9]+)*$' || true)
+
+          for tag in "${RELEASE_TAGS[@]}"; do
+            TAG_WORKTREE="$WORKTREE_ROOT/$tag"
+            git worktree add --detach "$TAG_WORKTREE" "$tag"
+
+            if pio run -d "$TAG_WORKTREE/Firmware" -e "$PIO_ENV"; then
+              TAG_FW_VERSION="$(extract_fw_version "$TAG_WORKTREE/Firmware")"
+              add_version_artifacts "$TAG_FW_VERSION" "$TAG_WORKTREE/Firmware/.pio/build/$PIO_ENV" "$tag"
+            else
+              echo "Skipping tag '$tag' because the build failed."
+            fi
+
+            git worktree remove --force "$TAG_WORKTREE"
+          done
+
+          VERSION_ROWS_FILE="$VERSION_ROWS_FILE" VERSION_INDEX_PATH="$VERSION_INDEX_PATH" python3 -c 'import json,os; rows_path=os.environ["VERSION_ROWS_FILE"]; index_path=os.environ["VERSION_INDEX_PATH"]; rows=[]; handle=open(rows_path,"r",encoding="utf-8"); [rows.append({"version":v,"manifest":m,"tag":t}) for raw in handle if (line:=raw.strip()) and (v:=line.split("|",2)[0]) is not None and (m:=line.split("|",2)[1]) is not None and (t:=line.split("|",2)[2]) is not None]; handle.close(); rows.sort(key=lambda item:[(0,int(part)) if part.isdigit() else (1,part) for part in item["version"].split(".")], reverse=True); latest_version=rows[0]["version"] if rows else ""; payload={"latest":latest_version,"versions":rows}; open(index_path,"w",encoding="utf-8").write(json.dumps(payload, indent=2)+"\n")'
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
