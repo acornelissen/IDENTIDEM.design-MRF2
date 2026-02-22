@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 // Constants
-#define FWVERSION "10.0.0"
+#define FWVERSION "10.0.1"
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000;
 
 const unsigned long SERIAL_BAUD_RATE = 115200;
@@ -228,9 +228,10 @@ const int CONFIG_ROOT_STEP_EXIT = 6;
 const int CONFIG_ROOT_STEP_MAX = CONFIG_ROOT_STEP_EXIT;
 
 const int CONFIG_FILM_STEP_FORMAT = 0;
-const int CONFIG_FILM_STEP_FRAME_ONE_OFFSET = 1;
-const int CONFIG_FILM_STEP_FRAME_SPACING = 2;
-const int CONFIG_FILM_STEP_BACK = 3;
+const int CONFIG_FILM_STEP_CURRENT_FRAME = 1;
+const int CONFIG_FILM_STEP_FRAME_ONE_OFFSET = 2;
+const int CONFIG_FILM_STEP_FRAME_SPACING = 3;
+const int CONFIG_FILM_STEP_BACK = 4;
 const int CONFIG_FILM_STEP_MAX = CONFIG_FILM_STEP_BACK;
 
 const int CONFIG_LENS_STEP_LENS = 0;
