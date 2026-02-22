@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "globals.h"
+#include "hardware.h"
 #include "mrfconstants.h"
 #include "lenses.h" // Provides Lens struct, lenses array, and NUM_LENSES
 #include "formats.h"  // Provides FilmFormat struct, film_formats array, and NUM_FILM_FORMATS
@@ -39,6 +40,36 @@ int cycleFrameTuningValue(int current)
     current = FRAME_TUNING_MIN;
   }
   return current;
+}
+
+int getAdjustedSensorPoint(const FilmFormat &film_format, int point_index)
+{
+  if (point_index <= 0)
+  {
+    return film_format.sensor[0];
+  }
+
+  long adjusted = static_cast<long>(film_format.sensor[point_index]) +
+                  static_cast<long>(frame_one_offset) +
+                  static_cast<long>(frame_spacing_offset) * static_cast<long>(point_index - 1);
+  return static_cast<int>(adjusted);
+}
+
+int getAdjustedSensorPointForFrame(const FilmFormat &film_format, int frame_value, int fallback_encoder_position)
+{
+  int frame_count = getFilmFormatPointCount(film_format);
+  for (int i = 0; i < frame_count; i++)
+  {
+    if (film_format.frame[i] == FILM_COUNTER_END)
+    {
+      break;
+    }
+    if (film_format.frame[i] == frame_value)
+    {
+      return getAdjustedSensorPoint(film_format, i);
+    }
+  }
+  return fallback_encoder_position;
 }
 } // namespace
 
@@ -124,6 +155,30 @@ void cycleFormats()
   {
     selected_format = 0;
   }
+  savePrefs();
+}
+
+void cycleCurrentFrame()
+{
+  const FilmFormat &selectedFilmFormat = film_formats[selected_format];
+  int maxFrame = getFilmFormatMaxFrame(selectedFilmFormat);
+  int currentFrame = constrain(film_counter, 0, maxFrame);
+
+  int nextFrame = currentFrame + 1;
+  if (nextFrame > maxFrame)
+  {
+    nextFrame = 0;
+  }
+
+  int nextEncoderPosition =
+      getAdjustedSensorPointForFrame(selectedFilmFormat, nextFrame, encoder_value);
+  encoder.setEncoderPosition(nextEncoderPosition);
+
+  encoder_value = nextEncoderPosition;
+  prev_encoder_value = nextEncoderPosition;
+  film_counter = nextFrame;
+  frame_progress = 0.0f;
+  prev_frame_progress = 0.0f;
   savePrefs();
 }
 

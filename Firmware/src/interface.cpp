@@ -514,6 +514,17 @@ void drawFilmConfigUI()
   u8g2.print(film_formats[selected_format].name);
   u8g2.print(F(" "));
 
+  int maxFrameForFormat = getFilmFormatMaxFrame(film_formats[selected_format]);
+  int displayedFrame = constrain(film_counter, 0, maxFrameForFormat);
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_CURRENT_FRAME));
+  setItemColors(config_step == CONFIG_FILM_STEP_CURRENT_FRAME);
+  u8g2.print(F(" Current frame: "));
+  u8g2.print(displayedFrame);
+  u8g2.print(F(" (0.."));
+  u8g2.print(maxFrameForFormat);
+  u8g2.print(F(") "));
+
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FRAME_ONE_OFFSET));
   setItemColors(config_step == CONFIG_FILM_STEP_FRAME_ONE_OFFSET);
   u8g2.print(F(" Frame 1 offset: "));

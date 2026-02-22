@@ -209,6 +209,10 @@ void checkButtons()
           {
             cycleFormats();
           }
+          else if (config_step == CONFIG_FILM_STEP_CURRENT_FRAME)
+          {
+            cycleCurrentFrame();
+          }
           else if (config_step == CONFIG_FILM_STEP_FRAME_ONE_OFFSET)
           {
             cycleFrameOneOffset();

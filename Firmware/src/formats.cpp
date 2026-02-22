@@ -1,6 +1,7 @@
 #include "formats.h"
 #include <stddef.h>  // For size_t
 #include <Arduino.h> // For String type
+#include "mrfconstants.h"
 FilmFormat film_formats[] = {
     {35, "PANO", {0, 37, 73, 108, 142, 175, 207, 238, 268, 297, 325, 352, 378, 403, 427, 450, 472, 493, 513, 532, 550, 800}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 99}, 65.0f, 24.0f},
     {645, "6x4.5", {0, 134, 157, 179, 200, 220, 240, 259, 278, 296, 314, 331, 348, 365, 381, 397, 413, 550}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 99}, 42.0f, 56.0f},
@@ -10,3 +11,36 @@ FilmFormat film_formats[] = {
     {69, "6x9", {0, 142, 185, 225, 263, 299, 334, 367, 399, 550}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 99}, 84.0f, 56.0f}};
 
 const size_t NUM_FILM_FORMATS = sizeof(film_formats) / sizeof(film_formats[0]);
+
+int getFilmFormatPointCount(const FilmFormat &film_format)
+{
+  int frame_count = static_cast<int>(sizeof(film_format.sensor) / sizeof(film_format.sensor[0]));
+  while (frame_count > 1 &&
+         film_format.sensor[frame_count - 1] == 0 &&
+         film_format.frame[frame_count - 1] == 0)
+  {
+    frame_count--;
+  }
+  return frame_count;
+}
+
+int getFilmFormatMaxFrame(const FilmFormat &film_format)
+{
+  int frame_count = getFilmFormatPointCount(film_format);
+  int max_frame = 0;
+
+  for (int i = 0; i < frame_count; i++)
+  {
+    int frame_value = film_format.frame[i];
+    if (frame_value == FILM_COUNTER_END)
+    {
+      break;
+    }
+    if (frame_value > max_frame)
+    {
+      max_frame = frame_value;
+    }
+  }
+
+  return max_frame;
+}
