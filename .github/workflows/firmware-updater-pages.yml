@@ -96,28 +96,7 @@ jobs:
           write_manifest() {
             local output_dir="$1"
             local fw_version="$2"
-            python3 -c 'import json, pathlib, sys
-out_path = pathlib.Path(sys.argv[1])
-fw_version = sys.argv[2]
-payload = {
-    "name": "IDENTIDEM MRF2",
-    "version": fw_version,
-    "new_install_prompt_erase": False,
-    "builds": [
-        {
-            "chipFamily": "ESP32-S3",
-            "parts": [
-                {"path": "bootloader.bin", "offset": 0},
-                {"path": "partitions.bin", "offset": 32768},
-                {"path": "boot_app0.bin", "offset": 57344},
-                {"path": "tinyuf2.bin", "offset": 2949120},
-                {"path": "firmware.bin", "offset": 65536},
-            ],
-        }
-    ],
-}
-out_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-' "$output_dir/manifest.json" "$fw_version"
+            python3 -c 'import json,pathlib,sys; out_path=pathlib.Path(sys.argv[1]); fw_version=sys.argv[2]; payload={"name":"IDENTIDEM MRF2","version":fw_version,"new_install_prompt_erase":False,"builds":[{"chipFamily":"ESP32-S3","parts":[{"path":"bootloader.bin","offset":0},{"path":"partitions.bin","offset":32768},{"path":"boot_app0.bin","offset":57344},{"path":"tinyuf2.bin","offset":2949120},{"path":"firmware.bin","offset":65536}]}]}; out_path.write_text(json.dumps(payload, indent=2)+"\n", encoding="utf-8")' "$output_dir/manifest.json" "$fw_version"
           }
 
           declare -A VERSION_SEEN=()
@@ -175,42 +154,7 @@ out_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
             git worktree remove --force "$TAG_WORKTREE"
           done
 
-          VERSION_ROWS_FILE="$VERSION_ROWS_FILE" VERSION_INDEX_PATH="$VERSION_INDEX_PATH" python3 -c 'import json, os
-rows_path = os.environ["VERSION_ROWS_FILE"]
-index_path = os.environ["VERSION_INDEX_PATH"]
-
-rows = []
-with open(rows_path, "r", encoding="utf-8") as handle:
-    for raw_line in handle:
-        line = raw_line.strip()
-        if not line:
-            continue
-        version, manifest, tag = line.split("|", 2)
-        rows.append(
-            {
-                "version": version,
-                "manifest": manifest,
-                "tag": tag,
-            }
-        )
-
-def version_key(value):
-    key = []
-    for part in value.split("."):
-        try:
-            key.append((0, int(part)))
-        except ValueError:
-            key.append((1, part))
-    return key
-
-rows.sort(key=lambda item: version_key(item["version"]), reverse=True)
-latest_version = rows[0]["version"] if rows else ""
-payload = {"latest": latest_version, "versions": rows}
-
-with open(index_path, "w", encoding="utf-8") as handle:
-    json.dump(payload, handle, indent=2)
-    handle.write("\n")
-'
+          VERSION_ROWS_FILE="$VERSION_ROWS_FILE" VERSION_INDEX_PATH="$VERSION_INDEX_PATH" python3 -c 'import json,os; rows_path=os.environ["VERSION_ROWS_FILE"]; index_path=os.environ["VERSION_INDEX_PATH"]; rows=[]; handle=open(rows_path,"r",encoding="utf-8"); [rows.append({"version":v,"manifest":m,"tag":t}) for raw in handle if (line:=raw.strip()) and (v:=line.split("|",2)[0]) is not None and (m:=line.split("|",2)[1]) is not None and (t:=line.split("|",2)[2]) is not None]; handle.close(); rows.sort(key=lambda item:[(0,int(part)) if part.isdigit() else (1,part) for part in item["version"].split(".")], reverse=True); latest_version=rows[0]["version"] if rows else ""; payload={"latest":latest_version,"versions":rows}; open(index_path,"w",encoding="utf-8").write(json.dumps(payload, indent=2)+"\n")'
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
