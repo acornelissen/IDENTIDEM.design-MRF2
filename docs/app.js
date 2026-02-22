@@ -16,6 +16,10 @@
   const AUTO_RETRY_QUERY_KEY = "retry";
   const VERSION_INDEX_PATH = "./firmware/versions.json";
   const FALLBACK_MANIFEST_PATH = "./firmware/latest/manifest.json";
+  const DEFAULT_SERIAL_FILTERS = [
+    { usbVendorId: 0x303a, usbProductId: 0x1001 },
+    { usbVendorId: 0x303a },
+  ];
 
   function parseBooleanQueryValue(value) {
     const normalized = (value || "").trim().toLowerCase();
@@ -285,6 +289,46 @@
   function detectSecureContext() {
     secureEl.textContent = window.isSecureContext ? "Secure context OK" : "Must be served over HTTPS";
     debug.log("secure-context", { secure: window.isSecureContext });
+  }
+
+  function installSerialPortFilterGuard() {
+    if (!("serial" in navigator) || !navigator.serial) return;
+    if (typeof navigator.serial.requestPort !== "function") return;
+
+    const serial = navigator.serial;
+    if (serial.__mrf2RequestPortWrapped) return;
+
+    const originalRequestPort = serial.requestPort.bind(serial);
+
+    try {
+      serial.requestPort = async (options) => {
+        const requestOptions = options && typeof options === "object" ? { ...options } : {};
+        const hasFilters =
+          Array.isArray(requestOptions.filters) && requestOptions.filters.length > 0;
+
+        if (!hasFilters) {
+          requestOptions.filters = DEFAULT_SERIAL_FILTERS;
+          debug.log("serial-request-port-filter-applied", {
+            filters: DEFAULT_SERIAL_FILTERS,
+          });
+        }
+
+        return originalRequestPort(requestOptions);
+      };
+
+      Object.defineProperty(serial, "__mrf2RequestPortWrapped", {
+        configurable: false,
+        enumerable: false,
+        writable: false,
+        value: true,
+      });
+
+      debug.log("serial-request-port-guard-installed", {
+        filters: DEFAULT_SERIAL_FILTERS,
+      });
+    } catch (error) {
+      debug.log("serial-request-port-guard-failed", { error });
+    }
   }
 
   function normalizeManifestPath(manifestPath) {
@@ -580,6 +624,50 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  function patchInstallErrorHints() {
+    const observedDialogs = new WeakSet();
+    const knownMessages = [
+      "The device has been lost.",
+      "Failed to initialize. Try resetting your device or holding the BOOT button while clicking INSTALL.",
+    ];
+    const guidance =
+      "Connection lost. Put the camera in ESP download mode (hold BOOT, tap RESET, release BOOT), select the ESP32-S3 port, and retry.";
+
+    const patchDialogErrors = (dialogEl) => {
+      if (!dialogEl || !dialogEl.shadowRoot) return;
+      const messageEls = dialogEl.shadowRoot.querySelectorAll("ewt-page-message");
+      if (!messageEls.length) return;
+
+      messageEls.forEach((messageEl) => {
+        const label = messageEl.getAttribute("label") || "";
+        if (!knownMessages.includes(label)) return;
+        messageEl.setAttribute("label", guidance);
+      });
+    };
+
+    const observer = new MutationObserver(() => {
+      const dialogEl = document.querySelector("ewt-install-dialog");
+      if (!dialogEl || !dialogEl.shadowRoot) return;
+
+      patchDialogErrors(dialogEl);
+      if (observedDialogs.has(dialogEl)) return;
+      observedDialogs.add(dialogEl);
+
+      const dialogObserver = new MutationObserver(() => {
+        patchDialogErrors(dialogEl);
+      });
+
+      dialogObserver.observe(dialogEl.shadowRoot, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["label"],
+      });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
   function autoRetryTransientInstallFailure() {
     const RETRY_DELAY_MS = 420;
     const DIALOG_RESHOW_DELAY_MS = 220;
@@ -783,8 +871,10 @@
   installFirmwareFetchTimeoutGuard(debug);
   detectBrowserSupport();
   detectSecureContext();
+  installSerialPortFilterGuard();
   initializeFirmwareCatalog();
   patchInstallSuccessMessage();
+  patchInstallErrorHints();
   if (autoRetryDisabled) {
     debug.log("install-auto-retry-disabled", {
       hint: "Auto-retry is disabled by default. Pass ?retry=1 to enable it.",
