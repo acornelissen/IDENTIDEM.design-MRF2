@@ -567,7 +567,7 @@ void drawLensConfigUI()
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_PARALLAX));
   setItemColors(config_step == CONFIG_LENS_STEP_PARALLAX);
-  u8g2.print(F(" Parallax: "));
+  u8g2.print(F(" Parallax correction: "));
   u8g2.print(parallaxEnabled ? F("On") : F("Off"));
   u8g2.print(F(" "));
 

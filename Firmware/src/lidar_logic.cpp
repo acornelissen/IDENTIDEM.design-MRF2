@@ -398,13 +398,17 @@ int blendLidarDistance(int previous_distance_cm, int next_distance_cm, int confi
 
 String formatDistanceDisplay(int corrected_cm)
 {
-  if (corrected_cm <= 0 || corrected_cm > (DISTANCE_MAX * CM_PER_METER))
+  if (corrected_cm <= 0)
   {
-    return "> " + String(DISTANCE_MAX) + "m";
+    return "<" + String(LIDAR_DISPLAY_MIN_CM) + "cm";
   }
-  if (corrected_cm < DISTANCE_MIN)
+  if (corrected_cm > LIDAR_DISPLAY_INF_THRESHOLD_CM)
   {
-    return "< " + String(DISTANCE_MIN) + "cm";
+    return "Inf.";
+  }
+  if (corrected_cm < LIDAR_DISPLAY_MIN_CM)
+  {
+    return "<" + String(LIDAR_DISPLAY_MIN_CM) + "cm";
   }
   if (corrected_cm < CM_PER_METER)
   {

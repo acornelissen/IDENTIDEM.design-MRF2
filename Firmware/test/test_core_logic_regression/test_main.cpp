@@ -262,9 +262,11 @@ void test_lidar_invalid_and_display_formatting()
   LidarCandidate candidate = chooseBestLidarCandidate(measurement, 0, false, 0);
   TEST_ASSERT_FALSE(candidate.valid);
 
-  TEST_ASSERT_EQUAL_STRING("< 5cm", formatDistanceDisplay(4).c_str());
+  TEST_ASSERT_EQUAL_STRING("<15cm", formatDistanceDisplay(4).c_str());
   TEST_ASSERT_EQUAL_STRING("75cm", formatDistanceDisplay(75).c_str());
-  TEST_ASSERT_EQUAL_STRING("> 18m", formatDistanceDisplay(1900).c_str());
+  TEST_ASSERT_EQUAL_STRING("10.5m", formatDistanceDisplay(1050).c_str());
+  TEST_ASSERT_EQUAL_STRING("Inf.", formatDistanceDisplay(1051).c_str());
+  TEST_ASSERT_EQUAL_STRING("Inf.", formatDistanceDisplay(1900).c_str());
   TEST_ASSERT_EQUAL_STRING("1.5m", formatDistanceDisplay(150).c_str());
 }
 
