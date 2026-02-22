@@ -14,11 +14,19 @@
   const DEBUG_LOG_MAX_ENTRIES = 400;
   const AUTO_RETRY_DISABLE_QUERY_KEY = "noretry";
   const AUTO_RETRY_QUERY_KEY = "retry";
+  const SERIAL_FILTER_DISABLE_QUERY_KEY = "allports";
+  const SERIAL_FILTER_DISABLE_QUERY_KEY_ALT = "nofilter";
   const VERSION_INDEX_PATH = "./firmware/versions.json";
   const FALLBACK_MANIFEST_PATH = "./firmware/latest/manifest.json";
   const DEFAULT_SERIAL_FILTERS = [
+    // ESP32-S3 ROM download mode over native USB.
     { usbVendorId: 0x303a, usbProductId: 0x1001 },
     { usbVendorId: 0x303a },
+    // Boards that expose UF2/CDC or USB-UART bridges.
+    { usbVendorId: 0x239a },
+    { usbVendorId: 0x10c4 },
+    { usbVendorId: 0x1a86 },
+    { usbVendorId: 0x0403 },
   ];
 
   function parseBooleanQueryValue(value) {
@@ -38,6 +46,19 @@
 
     // Default: keep auto-retry off unless explicitly enabled with ?retry=1.
     return true;
+  }
+
+  function shouldDisableSerialFiltering() {
+    const queryParams = new URLSearchParams(window.location.search);
+    const disableValue = parseBooleanQueryValue(
+      queryParams.get(SERIAL_FILTER_DISABLE_QUERY_KEY)
+    );
+    if (disableValue === true) return true;
+
+    const disableAltValue = parseBooleanQueryValue(
+      queryParams.get(SERIAL_FILTER_DISABLE_QUERY_KEY_ALT)
+    );
+    return disableAltValue === true;
   }
 
   function createDebugLogger() {
@@ -294,6 +315,13 @@
   function installSerialPortFilterGuard() {
     if (!("serial" in navigator) || !navigator.serial) return;
     if (typeof navigator.serial.requestPort !== "function") return;
+    if (shouldDisableSerialFiltering()) {
+      debug.log("serial-request-port-filter-disabled", {
+        query: window.location.search,
+        hint: "Serial port filtering disabled via query parameter.",
+      });
+      return;
+    }
 
     const serial = navigator.serial;
     if (serial.__mrf2RequestPortWrapped) return;
