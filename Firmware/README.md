@@ -131,7 +131,7 @@ Firmware/
 - Automatic distance correlation
 
 #### Film Management
-- Multiple format support (6x4.5, 6x6, 6x7, 6x9, etc.)
+- Multiple format support (PANO, 3x6, 6x4.5, 6x6, 6x7, 9x3, 6x9)
 - Frame counter with progress tracking
 - Format-specific frame lines on display
 

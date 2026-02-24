@@ -39,6 +39,18 @@ Lens makeTestLens()
       true};
   return lens;
 }
+
+const FilmFormat *findFormatByName(const char *formatName)
+{
+  for (size_t i = 0; i < NUM_FILM_FORMATS; i++)
+  {
+    if (film_formats[i].name == String(formatName))
+    {
+      return &film_formats[i];
+    }
+  }
+  return nullptr;
+}
 } // namespace
 
 void setUp() {}
@@ -46,14 +58,15 @@ void tearDown() {}
 
 void test_frame_counter_exact_and_interpolation()
 {
-  const FilmFormat &format = film_formats[3]; // 6x7
+  const FilmFormat *format = findFormatByName("6x7");
+  TEST_ASSERT_NOT_NULL(format);
 
-  FilmCounterEstimate exact = estimateFilmCounter(format, 140);
+  FilmCounterEstimate exact = estimateFilmCounter(*format, 140);
   TEST_ASSERT_TRUE(exact.valid);
   TEST_ASSERT_EQUAL_INT(1, exact.frame);
   TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.0f, exact.progress);
 
-  FilmCounterEstimate interpolated = estimateFilmCounter(format, 150);
+  FilmCounterEstimate interpolated = estimateFilmCounter(*format, 150);
   TEST_ASSERT_TRUE(interpolated.valid);
   TEST_ASSERT_EQUAL_INT(1, interpolated.frame);
   TEST_ASSERT_FLOAT_WITHIN(0.0001f, 10.0f / 34.0f, interpolated.progress);
@@ -61,38 +74,49 @@ void test_frame_counter_exact_and_interpolation()
 
 void test_frame_counter_snap_and_roll_end()
 {
-  const FilmFormat &format = film_formats[3]; // 6x7
+  const FilmFormat *format = findFormatByName("6x7");
+  TEST_ASSERT_NOT_NULL(format);
 
-  FilmCounterEstimate snapped = estimateFilmCounter(format, 173);
+  FilmCounterEstimate snapped = estimateFilmCounter(*format, 173);
   TEST_ASSERT_TRUE(snapped.valid);
   TEST_ASSERT_EQUAL_INT(2, snapped.frame);
   TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.0f, snapped.progress);
 
-  FilmCounterEstimate end = estimateFilmCounter(format, 600);
+  FilmCounterEstimate end = estimateFilmCounter(*format, 600);
   TEST_ASSERT_TRUE(end.valid);
   TEST_ASSERT_EQUAL_INT(FILM_COUNTER_END, end.frame);
 }
 
 void test_frame_counter_frame_offset_and_spacing()
 {
-  const FilmFormat &format = film_formats[3]; // 6x7
+  const FilmFormat *format = findFormatByName("6x7");
+  TEST_ASSERT_NOT_NULL(format);
 
-  FilmCounterEstimate shiftedStart = estimateFilmCounter(format, 145, 5, 0);
+  FilmCounterEstimate shiftedStart = estimateFilmCounter(*format, 145, 5, 0);
   TEST_ASSERT_TRUE(shiftedStart.valid);
   TEST_ASSERT_EQUAL_INT(1, shiftedStart.frame);
   TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.0f, shiftedStart.progress);
 
-  FilmCounterEstimate beforeShiftedStart = estimateFilmCounter(format, 140, 5, 0);
+  FilmCounterEstimate beforeShiftedStart = estimateFilmCounter(*format, 140, 5, 0);
   TEST_ASSERT_TRUE(beforeShiftedStart.valid);
   TEST_ASSERT_EQUAL_INT(0, beforeShiftedStart.frame);
 
-  FilmCounterEstimate widerSpacingFrame2 = estimateFilmCounter(format, 176, 0, 2);
+  FilmCounterEstimate widerSpacingFrame2 = estimateFilmCounter(*format, 176, 0, 2);
   TEST_ASSERT_TRUE(widerSpacingFrame2.valid);
   TEST_ASSERT_EQUAL_INT(2, widerSpacingFrame2.frame);
 
-  FilmCounterEstimate beforeWiderSpacingFrame2 = estimateFilmCounter(format, 174, 0, 2);
+  FilmCounterEstimate beforeWiderSpacingFrame2 = estimateFilmCounter(*format, 174, 0, 2);
   TEST_ASSERT_TRUE(beforeWiderSpacingFrame2.valid);
   TEST_ASSERT_EQUAL_INT(1, beforeWiderSpacingFrame2.frame);
+}
+
+void test_format_3x6_supports_21_frames()
+{
+  const FilmFormat *format = findFormatByName("3x6");
+  TEST_ASSERT_NOT_NULL(format);
+  TEST_ASSERT_EQUAL_INT(21, getFilmFormatMaxFrame(*format));
+  TEST_ASSERT_EQUAL_INT(23, getFilmFormatPointCount(*format));
+  TEST_ASSERT_EQUAL_INT(99, format->frame[getFilmFormatPointCount(*format) - 1]);
 }
 
 void test_encoder_filter_forward_hysteresis_and_debounce()
@@ -438,6 +462,7 @@ int main(int, char **)
   RUN_TEST(test_frame_counter_exact_and_interpolation);
   RUN_TEST(test_frame_counter_snap_and_roll_end);
   RUN_TEST(test_frame_counter_frame_offset_and_spacing);
+  RUN_TEST(test_format_3x6_supports_21_frames);
   RUN_TEST(test_encoder_filter_forward_hysteresis_and_debounce);
   RUN_TEST(test_encoder_filter_reverse_requires_rewind_mode);
   RUN_TEST(test_lidar_timeout_recovery_and_backoff);

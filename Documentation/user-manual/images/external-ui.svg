@@ -4,7 +4,7 @@
   <line x1="33" y1="0" x2="33" y2="10" stroke="#000000" stroke-width="1"/>
   <line x1="103" y1="0" x2="103" y2="10" stroke="#000000" stroke-width="1"/>
 
-  <text x="2" y="8" font-family="monospace" font-size="6" fill="#000000">6x7</text>
+  <text x="2" y="8" font-family="monospace" font-size="6" fill="#000000">3x6</text>
   <text x="37" y="8" font-family="monospace" font-size="6" fill="#000000">65/6.3</text>
   <text x="107" y="8" font-family="monospace" font-size="6" fill="#000000">78%</text>
 

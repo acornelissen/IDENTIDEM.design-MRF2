@@ -135,6 +135,7 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 Current frame ranges are format-bound:
 
 - **PANO**: `0..21`
+- **3x6**: `0..21`
 - **6x4.5**: `0..16`
 - **6x6**: `0..12`
 - **6x7**: `0..10`
@@ -181,6 +182,7 @@ Available ISO values:
 ### Film formats
 
 - PANO (65 x 24)
+- 3x6 (30 x 56)
 - 6x4.5 (42 x 56)
 - 6x6 (56 x 56)
 - 6x7 (70 x 56)
