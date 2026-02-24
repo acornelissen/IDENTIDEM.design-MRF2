@@ -3,9 +3,9 @@
   <text x="3" y="15" font-family="monospace" font-size="12" fill="#ffffff">Film</text>
 
   <rect x="2" y="19" width="124" height="10" fill="#ffffff"/>
-  <text x="4" y="26" font-family="monospace" font-size="6" fill="#000000"> Format:6x7 </text>
+  <text x="4" y="26" font-family="monospace" font-size="6" fill="#000000"> Format:3x6 </text>
 
-  <text x="4" y="35" font-family="monospace" font-size="6" fill="#ffffff"> Current frame: 0 (0..10) </text>
+  <text x="4" y="35" font-family="monospace" font-size="6" fill="#ffffff"> Current frame: 0 (0..21) </text>
   <text x="4" y="44" font-family="monospace" font-size="6" fill="#ffffff"> Frame 1 offset: 0 </text>
   <text x="4" y="53" font-family="monospace" font-size="6" fill="#ffffff"> Frame spacing: 0 </text>
   <text x="4" y="62" font-family="monospace" font-size="6" fill="#ffffff"> Back &lt;&lt; </text>

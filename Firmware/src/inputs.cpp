@@ -30,15 +30,15 @@ namespace
 {
 bool captureStableCalibReading(int &averagedReading)
 {
-  int samples[CALIB_SAMPLE_COUNT];
+  int calibSamples[CALIB_SAMPLE_COUNT];
   for (int i = 0; i < CALIB_SAMPLE_COUNT; i++)
   {
-    samples[i] = getLensSensorReading();
+    calibSamples[i] = getLensSensorReading();
     delay(CALIB_SAMPLE_DELAY_MS);
   }
 
   return computeStableCalibrationReading(
-      samples,
+      calibSamples,
       CALIB_SAMPLE_COUNT,
       CALIB_OUTLIER_MAX_DELTA,
       CALIB_MIN_INLIER_COUNT,
@@ -101,6 +101,14 @@ void checkButtons()
       {
         config_step++;
         if (config_step > CONFIG_METER_STEP_MAX)
+        {
+          config_step = 0;
+        }
+      }
+      else if (ui_mode == UiMode::ConfigUi)
+      {
+        config_step++;
+        if (config_step > CONFIG_UI_STEP_MAX)
         {
           config_step = 0;
         }
@@ -181,9 +189,6 @@ void checkButtons()
             config_step = CONFIG_FILM_STEP_FORMAT;
             ui_mode = UiMode::ConfigFilm;
           }
-          else if (config_step == CONFIG_ROOT_STEP_SLEEP_TIMEOUT) {
-            cycleSleepTimeoutMode();
-          }
           else if (config_step == CONFIG_ROOT_STEP_LENS_MENU) {
             config_step = CONFIG_LENS_STEP_LENS;
             ui_mode = UiMode::ConfigLens;
@@ -191,6 +196,10 @@ void checkButtons()
           else if (config_step == CONFIG_ROOT_STEP_METER_MENU) {
             config_step = CONFIG_METER_STEP_ISO;
             ui_mode = UiMode::ConfigMeter;
+          }
+          else if (config_step == CONFIG_ROOT_STEP_UI_MENU) {
+            config_step = CONFIG_UI_STEP_HORIZON_LANDSCAPE;
+            ui_mode = UiMode::ConfigUi;
           }
           else if (config_step == CONFIG_ROOT_STEP_RESET) {
             ui_mode = UiMode::ResetConfirm;
@@ -269,6 +278,25 @@ void checkButtons()
           }
           else if (config_step == CONFIG_METER_STEP_BACK) {
             config_step = CONFIG_ROOT_STEP_METER_MENU;
+            ui_mode = UiMode::Config;
+          }
+        }
+        else if (ui_mode == UiMode::ConfigUi)
+        {
+          if (config_step == CONFIG_UI_STEP_HORIZON_LANDSCAPE) {
+            cycleLevelTrimLandscape();
+          }
+          else if (config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_POS) {
+            cycleLevelTrimPortraitPos();
+          }
+          else if (config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG) {
+            cycleLevelTrimPortraitNeg();
+          }
+          else if (config_step == CONFIG_UI_STEP_SLEEP_TIMEOUT) {
+            cycleSleepTimeoutMode();
+          }
+          else if (config_step == CONFIG_UI_STEP_BACK) {
+            config_step = CONFIG_ROOT_STEP_UI_MENU;
             ui_mode = UiMode::Config;
           }
         }

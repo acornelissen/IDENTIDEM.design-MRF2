@@ -1,4 +1,4 @@
-// IDENTIDEM.design Medium Format Rangefinder firmware v10.0.3
+// IDENTIDEM.design Medium Format Rangefinder firmware v10.1.0
 // Hardware: DTS6012M LiDAR, STEMMA I2C QT Rotary Encoder (4991), SH1107 main + SSD1306 external OLEDs
 
 #include <Arduino.h>
@@ -369,6 +369,10 @@ void loop()
       else if (ui_mode == UiMode::ConfigMeter)
       {
         drawMeterConfigUI();
+      }
+      else if (ui_mode == UiMode::ConfigUi)
+      {
+        drawUiConfigUI();
       }
       else if (ui_mode == UiMode::Calib)
       {

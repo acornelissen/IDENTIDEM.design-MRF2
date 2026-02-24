@@ -8,6 +8,7 @@ void drawConfigUI();
 void drawFilmConfigUI();
 void drawLensConfigUI();
 void drawMeterConfigUI();
+void drawUiConfigUI();
 void drawCalibUI();
 void drawResetConfirmUI();
 void drawHealthUI();

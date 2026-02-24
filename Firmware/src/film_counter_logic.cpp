@@ -22,7 +22,7 @@ FilmCounterEstimate estimateFilmCounter(
     return result;
   }
   const int last_frame_index = frame_count - 1;
-  int adjusted_sensor_points[22] = {};
+  int adjusted_sensor_points[FILM_FORMAT_POINT_CAPACITY] = {};
   adjusted_sensor_points[0] = film_format.sensor[0];
   for (int i = 1; i <= last_frame_index; i++)
   {

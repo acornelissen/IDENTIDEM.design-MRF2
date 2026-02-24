@@ -168,6 +168,96 @@ static void drawLidarQualityIndicator()
   }
 }
 
+static void drawPortraitIndicator(int rotationQuarterTurns)
+{
+  const int boxX = LEVEL_PORTRAIT_INDICATOR_X;
+  const int boxY = LEVEL_PORTRAIT_INDICATOR_Y;
+  const int boxSize = LEVEL_PORTRAIT_INDICATOR_SIZE;
+  int rotation = rotationQuarterTurns % 4;
+  if (rotation < 0)
+  {
+    rotation += 4;
+  }
+
+  display.fillRect(boxX, boxY, boxSize, boxSize, WHITE);
+  display.drawRect(boxX, boxY, boxSize, boxSize, BLACK);
+
+  // 3x5 "P" glyph (black pixels on white box).
+  const int glyphWidth = 3;
+  const int glyphHeight = 5;
+  static const uint8_t glyphRows[5] = {
+      0b111,
+      0b101,
+      0b111,
+      0b100,
+      0b100};
+
+  int rotatedWidth = (rotation % 2 == 0) ? glyphWidth : glyphHeight;
+  int rotatedHeight = (rotation % 2 == 0) ? glyphHeight : glyphWidth;
+  int glyphX = boxX + ((boxSize - rotatedWidth) / 2);
+  int glyphY = boxY + LEVEL_PORTRAIT_INDICATOR_TOP_PADDING;
+  int maxGlyphY = boxY + boxSize - rotatedHeight - 1;
+  if (glyphY > maxGlyphY)
+  {
+    glyphY = maxGlyphY;
+  }
+
+  for (int row = 0; row < glyphHeight; row++)
+  {
+    for (int col = 0; col < glyphWidth; col++)
+    {
+      bool pixelOn = (glyphRows[row] & (1 << (2 - col))) != 0;
+      if (!pixelOn)
+      {
+        continue;
+      }
+
+      int drawCol = col;
+      int drawRow = row;
+      if (rotation == 1)
+      {
+        drawCol = glyphHeight - 1 - row;
+        drawRow = col;
+      }
+      else if (rotation == 2)
+      {
+        drawCol = glyphWidth - 1 - col;
+        drawRow = glyphHeight - 1 - row;
+      }
+      else if (rotation == 3)
+      {
+        drawCol = row;
+        drawRow = glyphWidth - 1 - col;
+      }
+
+      display.drawPixel(glyphX + drawCol, glyphY + drawRow, BLACK);
+    }
+  }
+}
+
+static void setMenuItemColors(bool selected)
+{
+  if (selected)
+  {
+    u8g2.setBackgroundColor(WHITE);
+    u8g2.setForegroundColor(BLACK);
+  }
+  else
+  {
+    u8g2.setBackgroundColor(BLACK);
+    u8g2.setForegroundColor(WHITE);
+  }
+}
+
+static void printSignedInt(int value)
+{
+  if (value > 0)
+  {
+    u8g2.print(F("+"));
+  }
+  u8g2.print(value);
+}
+
 // Functions to draw UI
 // ---------------------
 void drawMainUI()
@@ -232,11 +322,10 @@ void drawMainUI()
   float formatHeightMm = 0.0f;
   getFormatWidthHeightMm(film_formats[selected_format], formatWidthMm, formatHeightMm);
 
-  int baseFormatIndex = DEFAULT_SELECTED_FORMAT;
-  if (baseFormatIndex < 0 || baseFormatIndex >= static_cast<int>(NUM_FILM_FORMATS))
-  {
-    baseFormatIndex = selected_format;
-  }
+  int baseFormatIndex = constrain(
+      DEFAULT_SELECTED_FORMAT,
+      0,
+      static_cast<int>(NUM_FILM_FORMATS) - 1);
 
   float baseFormatWidthMm = 0.0f;
   float baseFormatHeightMm = 0.0f;
@@ -363,34 +452,92 @@ void drawMainUI()
   float y = a.acceleration.y;
   float z = a.acceleration.z;
 
-  // Convert accelerometer readings into angles
-  float pitch_scale = LEVEL_PITCH_SCALE;
-  float roll_scale = LEVEL_ROLL_SCALE;
-  float pitch_angle = atan2(x, sqrt(x*x + z*z)); // Renamed to avoid conflict
-  float roll_angle = atan2(y, sqrt(x*x + z*z));  // Renamed to avoid conflict
+  // Convert accelerometer readings into angles.
+  // Keep the existing calibration basis but auto-rebase roll when in portrait.
+  float pitch_raw = atan2(x, sqrt(x * x + z * z));
+  float roll_raw = atan2(y, sqrt(x * x + z * z));
+  float roll_portrait_raw = atan2(y, z);
+
+  static bool portraitMode = false;
+  float absRollRaw = fabsf(roll_raw);
+  if (!portraitMode)
+  {
+    if (absRollRaw >= LEVEL_PORTRAIT_ENTER_RAD)
+    {
+      portraitMode = true;
+    }
+  }
+  else if (absRollRaw <= LEVEL_PORTRAIT_EXIT_RAD)
+  {
+    portraitMode = false;
+  }
+
+  float pitch_scale = portraitMode ? LEVEL_PITCH_SCALE_PORTRAIT : LEVEL_PITCH_SCALE;
+  float roll_scale = portraitMode ? LEVEL_ROLL_SCALE_PORTRAIT : LEVEL_ROLL_SCALE;
+
+  float pitch_angle = pitch_raw;
 
   // Define the deadzone
   float deadzone = LEVEL_DEADZONE;
 
-  // Apply the deadzone to the pitch and roll
-  if (abs(pitch_angle) < deadzone) {
+  // Apply the deadzone to pitch before scaling.
+  if (fabsf(pitch_angle) < deadzone) {
     pitch_angle = 0;
   }
-  if (abs(roll_angle) < deadzone) {
-    roll_angle = 0;
-  }
-
   pitch_angle = pitch_angle * pitch_scale;
-  roll_angle = roll_angle * roll_scale;
+
+  float roll_angle = 0.0f;
+  const float degToRad = PI / 180.0f;
+  int portraitIndicatorRotation = 0;
+  if (portraitMode)
+  {
+    float portraitSign = (roll_portrait_raw >= 0.0f) ? 1.0f : -1.0f;
+    float portraitCenter = portraitSign * HALF_PI;
+    float rollDeviation = roll_portrait_raw - portraitCenter;
+    // Normalize deviation so both sides around portrait center are represented.
+    rollDeviation = atan2f(sinf(rollDeviation), cosf(rollDeviation));
+    if (fabsf(rollDeviation) < deadzone)
+    {
+      rollDeviation = 0.0f;
+    }
+    // In portrait, keep the indicator centered at +/-90deg and mirror deviation by side.
+    // Use per-side trim so left/right portrait can be calibrated independently.
+    float portraitDeviationScale = LEVEL_PORTRAIT_ROLL_DEVIATION_SIGN * portraitSign;
+    int portraitTrimDegrees = (portraitSign > 0.0f) ? level_trim_portrait_pos_deg
+                                                     : level_trim_portrait_neg_deg;
+    float portraitTrim = static_cast<float>(portraitTrimDegrees) * degToRad;
+    roll_angle = portraitCenter +
+                 (portraitDeviationScale * rollDeviation * roll_scale) +
+                 portraitTrim;
+    portraitIndicatorRotation = (portraitSign > 0.0f) ? 1 : 3;
+  }
+  else
+  {
+    float rollLandscape = roll_raw;
+    if (fabsf(rollLandscape) < deadzone)
+    {
+      rollLandscape = 0.0f;
+    }
+    float landscapeTrim = static_cast<float>(level_trim_landscape_deg) * degToRad;
+    roll_angle = (rollLandscape * roll_scale) + landscapeTrim;
+  }
 
   // Define the length of the line
   float length = SCREEN_WIDTH - LEVEL_LINE_MARGIN_PX;
 
-  // Calculate the start and end points of the line
-  float startX = rectCenterX - length/2 * cos(roll_angle);
-  float startY =  rectCenterY - length/2 * sin(roll_angle) + pitch_angle;
-  float endX = rectCenterX + length/2 * cos(roll_angle);
-  float endY =  rectCenterY + length/2 * sin(roll_angle) + pitch_angle;
+  // Calculate the horizon line direction and shift pitch along the line normal.
+  float halfLength = length * 0.5f;
+  float dirX = cosf(roll_angle);
+  float dirY = sinf(roll_angle);
+  float normalX = -dirY;
+  float normalY = dirX;
+  float offsetX = normalX * pitch_angle;
+  float offsetY = normalY * pitch_angle;
+
+  float startX = rectCenterX + offsetX - (halfLength * dirX);
+  float startY = rectCenterY + offsetY - (halfLength * dirY);
+  float endX = rectCenterX + offsetX + (halfLength * dirX);
+  float endY = rectCenterY + offsetY + (halfLength * dirY);
 
   // Draw the line on the display
   display.drawLine(startX, startY, endX, endY, INVERSE);   
@@ -404,6 +551,11 @@ void drawMainUI()
 
   // Draw the vertical line on the display
   display.drawLine(rectCenterX, vertLineStartY, rectCenterX, vertLineEndY, INVERSE);
+
+  if (portraitMode)
+  {
+    drawPortraitIndicator(portraitIndicatorRotation);
+  }
 
   display.display();
 }
@@ -423,46 +575,33 @@ void drawConfigUI()
 
   u8g2.setFont(u8g2_font_4x6_mf);
   const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
-  
-  // Helper lambda to set colors based on selection
-  auto setItemColors = [&](bool selected) {
-    if (selected) {
-      u8g2.setBackgroundColor(WHITE);
-      u8g2.setForegroundColor(BLACK);
-    } else {
-      u8g2.setBackgroundColor(BLACK);
-      u8g2.setForegroundColor(WHITE);
-    }
-  };
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_FILM_MENU));
-  setItemColors(config_step == CONFIG_ROOT_STEP_FILM_MENU);
+  setMenuItemColors(config_step == CONFIG_ROOT_STEP_FILM_MENU);
   u8g2.print(F(" Film > "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_LENS_MENU));
-  setItemColors(config_step == CONFIG_ROOT_STEP_LENS_MENU);
+  setMenuItemColors(config_step == CONFIG_ROOT_STEP_LENS_MENU);
   u8g2.print(F(" Lens Settings > "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_METER_MENU));
-  setItemColors(config_step == CONFIG_ROOT_STEP_METER_MENU);
+  setMenuItemColors(config_step == CONFIG_ROOT_STEP_METER_MENU);
   u8g2.print(F(" Light Meter > "));
 
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_UI_MENU));
+  setMenuItemColors(config_step == CONFIG_ROOT_STEP_UI_MENU);
+  u8g2.print(F(" UI Settings > "));
+
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_RESET));
-  setItemColors(config_step == CONFIG_ROOT_STEP_RESET);
+  setMenuItemColors(config_step == CONFIG_ROOT_STEP_RESET);
   u8g2.print(F(" Reset frame counter >> "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_HEALTH));
-  setItemColors(config_step == CONFIG_ROOT_STEP_HEALTH);
+  setMenuItemColors(config_step == CONFIG_ROOT_STEP_HEALTH);
   u8g2.print(F(" System Health > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_SLEEP_TIMEOUT));
-  setItemColors(config_step == CONFIG_ROOT_STEP_SLEEP_TIMEOUT);
-  u8g2.print(F(" Sleep timeout:"));
-  u8g2.print(getSleepTimeoutModeLabel(sleep_timeout_mode));
-  u8g2.print(F(" "));
-
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_EXIT));
-  setItemColors(config_step == CONFIG_ROOT_STEP_EXIT);
+  setMenuItemColors(config_step == CONFIG_ROOT_STEP_EXIT);
   u8g2.print(F(" Exit >> "));
 
   u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y);
@@ -490,26 +629,8 @@ void drawFilmConfigUI()
   u8g2.setFont(u8g2_font_4x6_mf);
   const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
 
-  auto setItemColors = [&](bool selected) {
-    if (selected) {
-      u8g2.setBackgroundColor(WHITE);
-      u8g2.setForegroundColor(BLACK);
-    } else {
-      u8g2.setBackgroundColor(BLACK);
-      u8g2.setForegroundColor(WHITE);
-    }
-  };
-
-  auto printSignedValue = [&](int value) {
-    if (value > 0)
-    {
-      u8g2.print(F("+"));
-    }
-    u8g2.print(value);
-  };
-
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FORMAT));
-  setItemColors(config_step == CONFIG_FILM_STEP_FORMAT);
+  setMenuItemColors(config_step == CONFIG_FILM_STEP_FORMAT);
   u8g2.print(F(" Format: "));
   u8g2.print(film_formats[selected_format].name);
   u8g2.print(F(" "));
@@ -518,7 +639,7 @@ void drawFilmConfigUI()
   int displayedFrame = constrain(film_counter, 0, maxFrameForFormat);
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_CURRENT_FRAME));
-  setItemColors(config_step == CONFIG_FILM_STEP_CURRENT_FRAME);
+  setMenuItemColors(config_step == CONFIG_FILM_STEP_CURRENT_FRAME);
   u8g2.print(F(" Current frame: "));
   u8g2.print(displayedFrame);
   u8g2.print(F(" (0.."));
@@ -526,19 +647,19 @@ void drawFilmConfigUI()
   u8g2.print(F(") "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FRAME_ONE_OFFSET));
-  setItemColors(config_step == CONFIG_FILM_STEP_FRAME_ONE_OFFSET);
+  setMenuItemColors(config_step == CONFIG_FILM_STEP_FRAME_ONE_OFFSET);
   u8g2.print(F(" Frame 1 offset: "));
-  printSignedValue(frame_one_offset);
+  printSignedInt(frame_one_offset);
   u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FRAME_SPACING));
-  setItemColors(config_step == CONFIG_FILM_STEP_FRAME_SPACING);
+  setMenuItemColors(config_step == CONFIG_FILM_STEP_FRAME_SPACING);
   u8g2.print(F(" Frame spacing: "));
-  printSignedValue(frame_spacing_offset);
+  printSignedInt(frame_spacing_offset);
   u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_BACK));
-  setItemColors(config_step == CONFIG_FILM_STEP_BACK);
+  setMenuItemColors(config_step == CONFIG_FILM_STEP_BACK);
   u8g2.print(F(" Back << "));
 
   display.display();
@@ -560,32 +681,22 @@ void drawLensConfigUI()
   u8g2.setFont(u8g2_font_4x6_mf);
   const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
 
-  auto setItemColors = [&](bool selected) {
-    if (selected) {
-      u8g2.setBackgroundColor(WHITE);
-      u8g2.setForegroundColor(BLACK);
-    } else {
-      u8g2.setBackgroundColor(BLACK);
-      u8g2.setForegroundColor(WHITE);
-    }
-  };
-
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_LENS));
-  setItemColors(config_step == CONFIG_LENS_STEP_LENS);
+  setMenuItemColors(config_step == CONFIG_LENS_STEP_LENS);
   u8g2.print(F(" Lens:")); u8g2.print(lenses[selected_lens].name); u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_PARALLAX));
-  setItemColors(config_step == CONFIG_LENS_STEP_PARALLAX);
+  setMenuItemColors(config_step == CONFIG_LENS_STEP_PARALLAX);
   u8g2.print(F(" Parallax correction: "));
   u8g2.print(parallaxEnabled ? F("On") : F("Off"));
   u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_CALIB));
-  setItemColors(config_step == CONFIG_LENS_STEP_CALIB);
+  setMenuItemColors(config_step == CONFIG_LENS_STEP_CALIB);
   u8g2.print(F(" Lens Calibration > "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_BACK));
-  setItemColors(config_step == CONFIG_LENS_STEP_BACK);
+  setMenuItemColors(config_step == CONFIG_LENS_STEP_BACK);
   u8g2.print(F(" Back << "));
 
   display.display();
@@ -607,24 +718,14 @@ void drawMeterConfigUI()
   u8g2.setFont(u8g2_font_4x6_mf);
   const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
 
-  auto setItemColors = [&](bool selected) {
-    if (selected) {
-      u8g2.setBackgroundColor(WHITE);
-      u8g2.setForegroundColor(BLACK);
-    } else {
-      u8g2.setBackgroundColor(BLACK);
-      u8g2.setForegroundColor(WHITE);
-    }
-  };
-
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_ISO));
-  setItemColors(config_step == CONFIG_METER_STEP_ISO);
+  setMenuItemColors(config_step == CONFIG_METER_STEP_ISO);
   u8g2.print(F(" ISO:"));
   u8g2.print(iso);
   u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_EV_COMP));
-  setItemColors(config_step == CONFIG_METER_STEP_EV_COMP);
+  setMenuItemColors(config_step == CONFIG_METER_STEP_EV_COMP);
   u8g2.print(F(" EV Comp:"));
   float evComp = static_cast<float>(exposure_comp_thirds) / 3.0f;
   if (evComp >= 0.0f)
@@ -635,19 +736,69 @@ void drawMeterConfigUI()
   u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_SMOOTHING));
-  setItemColors(config_step == CONFIG_METER_STEP_SMOOTHING);
+  setMenuItemColors(config_step == CONFIG_METER_STEP_SMOOTHING);
   u8g2.print(F(" Smoothing:"));
   u8g2.print(getMeterSmoothingLabel(meter_smoothing_mode));
   u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_EV_READOUT));
-  setItemColors(config_step == CONFIG_METER_STEP_EV_READOUT);
+  setMenuItemColors(config_step == CONFIG_METER_STEP_EV_READOUT);
   u8g2.print(F(" EV Readout:"));
   u8g2.print(show_ev_readout ? F("On") : F("Off"));
   u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_BACK));
-  setItemColors(config_step == CONFIG_METER_STEP_BACK);
+  setMenuItemColors(config_step == CONFIG_METER_STEP_BACK);
+  u8g2.print(F(" Back << "));
+
+  display.display();
+}
+
+void drawUiConfigUI()
+{
+  display.clearDisplay();
+
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+
+  u8g2.setFont(u8g2_font_9x15_mf);
+  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
+  u8g2.print(F("UI Settings"));
+
+  u8g2.setFont(u8g2_font_4x6_mf);
+  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_HORIZON_LANDSCAPE));
+  setMenuItemColors(config_step == CONFIG_UI_STEP_HORIZON_LANDSCAPE);
+  u8g2.print(F(" Horizon L: "));
+  printSignedInt(level_trim_landscape_deg);
+  u8g2.print(F("deg"));
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_HORIZON_PORTRAIT_POS));
+  setMenuItemColors(config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_POS);
+  u8g2.print(F(" Horizon P+: "));
+  printSignedInt(level_trim_portrait_pos_deg);
+  u8g2.print(F("deg"));
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG));
+  setMenuItemColors(config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG);
+  u8g2.print(F(" Horizon P-: "));
+  printSignedInt(level_trim_portrait_neg_deg);
+  u8g2.print(F("deg"));
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_SLEEP_TIMEOUT));
+  setMenuItemColors(config_step == CONFIG_UI_STEP_SLEEP_TIMEOUT);
+  u8g2.print(F(" Sleep timeout: "));
+  u8g2.print(getSleepTimeoutModeLabel(sleep_timeout_mode));
+  u8g2.print(F(" "));
+
+  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_BACK));
+  setMenuItemColors(config_step == CONFIG_UI_STEP_BACK);
   u8g2.print(F(" Back << "));
 
   display.display();
@@ -668,22 +819,12 @@ void drawCalibUI()
 
   u8g2.setFont(u8g2_font_4x6_mf);
 
-  auto setItemColors = [&](bool selected) {
-    if (selected) {
-      u8g2.setBackgroundColor(WHITE);
-      u8g2.setForegroundColor(BLACK);
-    } else {
-      u8g2.setBackgroundColor(BLACK);
-      u8g2.setForegroundColor(WHITE);
-    }
-  };
-
   u8g2.setCursor(CALIB_ITEM_X, CALIB_LENS_Y);
-  setItemColors(calib_step == 0);
+  setMenuItemColors(calib_step == 0);
   u8g2.print(F(" Lens:")); u8g2.print(lenses[calib_lens].name); u8g2.print(F(" "));
 
   u8g2.setCursor(CALIB_ITEM_X, CALIB_DISTANCE_Y);
-  setItemColors(calib_step == 1);
+  setMenuItemColors(calib_step == 1);
   u8g2.print(F(" ")); u8g2.print(CALIB_DISTANCES[current_calib_distance], DISTANCE_DECIMAL_PLACES);
   u8g2.print(F("m: ")); u8g2.print(lens_sensor_reading); u8g2.print(F(" "));
 

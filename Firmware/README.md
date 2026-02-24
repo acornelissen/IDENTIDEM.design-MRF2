@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.0.3  
+**Version**: 10.1.0  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -97,10 +97,11 @@ Firmware/
 
 - **Main Mode**: Normal operation with rangefinder display
 - **Config Mode**: Settings and configuration menu
-- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, system health screen, reset, sleep timeout, and exit
+- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, UI settings submenu, system health screen, reset, and exit
 - **Film Submenu**: format selection, frame-1 offset, and frame-spacing offset
 - **Lens Submenu**: Lens profile, parallax correction toggle, and lens calibration entry
 - **Light Meter Submenu**: ISO, EV compensation, smoothing strength, EV readout toggle
+- **UI Settings Submenu**: landscape/portrait horizon trims and sleep timeout
 - **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, and idle timer
 - **Calibration Mode**: Lens calibration interface
 - **Sleep Mode**: Low-power state with minimal display
@@ -131,9 +132,15 @@ Firmware/
 - Automatic distance correlation
 
 #### Film Management
-- Multiple format support (6x4.5, 6x6, 6x7, 6x9, etc.)
+- Multiple format support (PANO, 3x6, 6x4.5, 6x6, 6x7, 9x3, 6x9)
 - Frame counter with progress tracking
 - Format-specific frame lines on display
+
+#### Level Aid
+- Horizon line with accelerometer-based tilt compensation
+- Automatic landscape/portrait orientation handling
+- Portrait mode indicator (`P`) in high-contrast boxed style
+- Per-orientation horizon trim controls (`Horizon L`, `Horizon P+`, `Horizon P-`) in `5deg` steps (`-30deg..+30deg`)
 
 ## Building and Flashing
 
@@ -187,6 +194,7 @@ The system saves:
 - Film counter and encoder position
 - Parallax correction toggle state
 - Sleep timeout mode
+- UI horizon trim offsets (landscape, portrait `P+`, portrait `P-`)
 - Light-meter EV/smoothing/readout settings
 - Lens calibration data
 

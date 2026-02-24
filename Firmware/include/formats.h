@@ -3,12 +3,15 @@
 
 #include <Arduino.h> // For String type
 #include <stddef.h> // For size_t
+
+constexpr size_t FILM_FORMAT_POINT_CAPACITY = 24;
+
 struct FilmFormat
 {
   int id;
   String name;
-  int sensor[22];
-  int frame[22];
+  int sensor[FILM_FORMAT_POINT_CAPACITY];
+  int frame[FILM_FORMAT_POINT_CAPACITY];
   float frame_mm_width;
   float frame_mm_height;
 };
