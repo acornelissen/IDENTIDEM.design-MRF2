@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128">
+  <rect x="0" y="0" width="128" height="128" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+  <rect x="0" y="0" width="128" height="15" fill="#ffffff"/>
+  <line x1="64" y1="0" x2="64" y2="128" stroke="#000000" stroke-width="1"/>
+
+  <text x="2" y="8" font-family="monospace" font-size="6" fill="#000000">ISO400</text>
+  <text x="46" y="8" font-family="monospace" font-size="6" fill="#000000">f8</text>
+  <text x="2" y="14" font-family="monospace" font-size="6" fill="#000000">1/125</text>
+  <text x="68" y="8" font-family="monospace" font-size="6" fill="#000000">Dist:2.5m</text>
+
+  <rect x="123" y="2" width="2" height="2" fill="#000000"/>
+  <rect x="123" y="5" width="2" height="2" fill="#000000"/>
+  <rect x="123" y="8" width="2" height="2" fill="#000000"/>
+  <rect x="123" y="11" width="2" height="2" fill="#ffffff" stroke="#000000" stroke-width="0.3"/>
+
+  <text x="68" y="14" font-family="monospace" font-size="6" fill="#000000">Lens:2.5m</text>
+
+  <rect x="0" y="17" width="128" height="109" fill="#000000"/>
+  <rect x="10" y="30" width="108" height="85" fill="none" stroke="#ffffff" stroke-width="1"/>
+
+  <circle cx="59" cy="67" r="18" fill="none" stroke="#ffffff" stroke-width="1"/>
+  <circle cx="59" cy="67" r="3" fill="#ffffff"/>
+
+  <line x1="78" y1="30" x2="78" y2="115" stroke="#ffffff" stroke-width="1"/>
+  <line x1="59" y1="52" x2="59" y2="82" stroke="#ffffff" stroke-width="1"/>
+
+  <rect x="116" y="116" width="10" height="10" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+  <text x="121" y="124" font-family="monospace" font-size="6" fill="#000000" text-anchor="middle" transform="rotate(90 121 123)">P</text>
+</svg>

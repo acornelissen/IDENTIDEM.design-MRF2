@@ -21,6 +21,9 @@ void cycleExposureCompensation(CycleDirection direction);
 void cycleMeterSmoothing();
 void toggleEvReadout();
 void cycleSleepTimeoutMode();
+void cycleLevelTrimLandscape();
+void cycleLevelTrimPortraitPos();
+void cycleLevelTrimPortraitNeg();
 const char *getSleepTimeoutModeLabel(int timeout_mode);
 unsigned long getSleepTimeoutModeMs(int timeout_mode);
 // ---------------------

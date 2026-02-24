@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.0.3
+**Firmware version:** 10.1.0
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -13,7 +13,7 @@ If this is your first time using the camera, this sequence keeps things simple a
 3. Load your film, aligning the arrow on the backing paper to the arrow on the top-left edge of the film chamber.
 4. Close and secure the film door, then switch on the camera.
 5. Long-press **Right (R)** to enter **Setup**, open **Lens Settings >**, then run **Lens Calibration** for the mounted lens.
-6. Still in **Setup**, open **Film >** to set frame size and frame tuning, open **Light Meter >** to set ISO, then set your preferred **sleep timeout**.
+6. Still in **Setup**, open **Film >** to set frame size and frame tuning, open **Light Meter >** to set ISO, then open **UI Settings >** to set your preferred **sleep timeout** and horizon trim values.
 7. In **Setup**, select **Reset frame counter >>** so the frame counter starts at zero.
 8. Use the **advance lever** to wind to frame 1. This takes a little while. Power through!
 
@@ -59,6 +59,15 @@ The main screen displays:
 - **Framelines** scaled to the selected film format
 - **Reticle and focus ring**
 - **Level line** (horizon aid)
+- **Adaptive orientation leveling** (landscape and portrait)
+
+### Portrait leveling
+
+When the camera is rotated to portrait orientation, the level aid automatically rebases to portrait behavior.
+A boxed **`P`** indicator appears at bottom-right in the main display while portrait mode is active.
+You can tune horizon trim offsets independently for landscape, portrait `P+`, and portrait `P-` in **Setup > UI Settings >**.
+
+![Main screen portrait leveling](images/main-ui-portrait.svg)
 
 ### Distance readouts
 
@@ -117,9 +126,9 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 1. **Film >**: opens film submenu.
 2. **Lens Settings >**: opens lens submenu.
 3. **Light Meter >**: opens light meter submenu.
-4. **System Health >**: opens diagnostics screen.
+4. **UI Settings >**: opens UI settings submenu.
 5. **Reset frame counter >>**: confirm film counter reset.
-6. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
+6. **System Health >**: opens diagnostics screen.
 7. **Exit >>**: return to the main screen.
 
 ### Film submenu
@@ -159,6 +168,16 @@ Current frame ranges are format-bound:
 2. **EV Comp**: adjust exposure compensation in 1/3-stop steps.
 3. **Smoothing**: cycles `Off`, `Low`, `Medium`, `High`.
 4. **EV Readout**: toggle EV display on/off on main screen.
+5. **Back <<**: return to setup root menu.
+
+### UI Settings submenu
+
+![UI settings menu](images/config-ui-settings.svg)
+
+1. **Horizon L**: landscape trim offset (`-30deg` to `+30deg`, `5deg` steps, default `0deg`).
+2. **Horizon P+**: portrait trim offset for one portrait side (`-30deg` to `+30deg`, `5deg` steps, default `0deg`).
+3. **Horizon P-**: portrait trim offset for the opposite portrait side (`-30deg` to `+30deg`, `5deg` steps, default `0deg`).
+4. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
 5. **Back <<**: return to setup root menu.
 
 ### System Health screen
@@ -237,7 +256,7 @@ The external display shows:
 
 ## Sleep mode
 
-After the configured **Sleep timeout** period of inactivity (default **1 minute**), the firmware enters sleep mode:
+After the configured **Sleep timeout** period of inactivity (default **1 minute**, set in **Setup > UI Settings >**), the firmware enters sleep mode:
 
 - LiDAR turns off.
 - Main display is blank.

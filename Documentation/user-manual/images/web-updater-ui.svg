@@ -11,10 +11,10 @@
 
   <rect x="200" y="245" width="1040" height="110" rx="16" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
   <text x="230" y="286" font-family="IBM Plex Mono, monospace" font-size="24" fill="#111827">
-    Latest Build: 10.0.1
+    Latest Build: 10.1.0
   </text>
   <text x="230" y="325" font-family="IBM Plex Mono, monospace" font-size="24" fill="#111827">
-    Version To Install: 10.0.1 (Latest)
+    Version To Install: 10.1.0 (Latest)
   </text>
 
   <rect x="200" y="375" width="420" height="64" rx="10" fill="#111827"/>
@@ -27,16 +27,16 @@
   </text>
   <rect x="200" y="515" width="1040" height="250" rx="16" fill="#0b1220"/>
   <text x="230" y="565" font-family="IBM Plex Mono, monospace" font-size="24" fill="#e5e7eb">
-    - 10.0.1: Added Film submenu current frame control
+    - 10.1.0: Added 3x6 format + adaptive level aid
   </text>
   <text x="230" y="602" font-family="IBM Plex Mono, monospace" font-size="24" fill="#e5e7eb">
-    - 10.0.1: Updated UI and docs for frame control workflow
+    - 10.1.0: Portrait indicator + docs/UI refresh
   </text>
   <text x="230" y="639" font-family="IBM Plex Mono, monospace" font-size="24" fill="#9ca3af">
-    - 10.0.0: Added version selector in web updater
+    - 10.0.3: Improved LiDAR sunlight confidence model
   </text>
   <text x="230" y="676" font-family="IBM Plex Mono, monospace" font-size="24" fill="#9ca3af">
-    - 10.0.0: Improved flashing guidance and diagnostics
+    - 10.0.3: Reordered Setup menu + docs refresh
   </text>
   <text x="230" y="731" font-family="IBM Plex Mono, monospace" font-size="22" fill="#93c5fd">
     View full changelog

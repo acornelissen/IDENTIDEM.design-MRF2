@@ -7,10 +7,10 @@
 
   <text x="4" y="35" font-family="monospace" font-size="6" fill="#ffffff"> Lens Settings &gt; </text>
   <text x="4" y="44" font-family="monospace" font-size="6" fill="#ffffff"> Light Meter &gt; </text>
-  <text x="4" y="53" font-family="monospace" font-size="6" fill="#ffffff"> System Health &gt; </text>
+  <text x="4" y="53" font-family="monospace" font-size="6" fill="#ffffff"> UI Settings &gt; </text>
   <text x="4" y="62" font-family="monospace" font-size="6" fill="#ffffff"> Reset frame counter &gt;&gt; </text>
-  <text x="4" y="71" font-family="monospace" font-size="6" fill="#ffffff"> Sleep timeout:1m </text>
+  <text x="4" y="71" font-family="monospace" font-size="6" fill="#ffffff"> System Health &gt; </text>
   <text x="4" y="80" font-family="monospace" font-size="6" fill="#ffffff"> Exit &gt;&gt; </text>
 
-  <text x="3" y="121" font-family="monospace" font-size="6" fill="#ffffff"> IDENTIDEM.design MRF 10.0.3</text>
+  <text x="3" y="121" font-family="monospace" font-size="6" fill="#ffffff"> IDENTIDEM.design MRF 10.1.0</text>
 </svg>

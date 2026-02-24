@@ -42,11 +42,32 @@ int cycleFrameTuningValue(int current)
   return current;
 }
 
+int cycleLevelTrimValue(int current)
+{
+  current += LEVEL_TRIM_STEP_DEG;
+  if (current > LEVEL_TRIM_MAX_DEG)
+  {
+    current = LEVEL_TRIM_MIN_DEG;
+  }
+  return current;
+}
+
 int getAdjustedSensorPoint(const FilmFormat &film_format, int point_index)
 {
+  int frame_count = getFilmFormatPointCount(film_format);
+  if (frame_count <= 0)
+  {
+    return 0;
+  }
+
   if (point_index <= 0)
   {
     return film_format.sensor[0];
+  }
+
+  if (point_index >= frame_count)
+  {
+    point_index = frame_count - 1;
   }
 
   long adjusted = static_cast<long>(film_format.sensor[point_index]) +
@@ -222,6 +243,24 @@ void cycleMeterSmoothing()
 void toggleEvReadout()
 {
   show_ev_readout = !show_ev_readout;
+  savePrefs();
+}
+
+void cycleLevelTrimLandscape()
+{
+  level_trim_landscape_deg = cycleLevelTrimValue(level_trim_landscape_deg);
+  savePrefs();
+}
+
+void cycleLevelTrimPortraitPos()
+{
+  level_trim_portrait_pos_deg = cycleLevelTrimValue(level_trim_portrait_pos_deg);
+  savePrefs();
+}
+
+void cycleLevelTrimPortraitNeg()
+{
+  level_trim_portrait_neg_deg = cycleLevelTrimValue(level_trim_portrait_neg_deg);
   savePrefs();
 }
 

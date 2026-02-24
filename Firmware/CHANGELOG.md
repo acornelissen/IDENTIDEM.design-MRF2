@@ -2,6 +2,24 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.1.0 - 2026-02-24
+- Film format and frame-counter updates:
+  - Added `3x6` format (`30 x 56`) with `0..21` frame range.
+  - Kept format ordering consistent in firmware/docs (`PANO`, `3x6`, `6x4.5`, ...).
+  - Increased format-point capacity to support larger frame maps.
+- Viewfinder level updates:
+  - Added adaptive horizon behavior that auto-switches between landscape and portrait handling.
+  - Added portrait-mode indicator (`P`) on the main display with high-contrast boxed rendering.
+  - Added configurable horizon trim offsets in `UI Settings` for `Horizon L`, `Horizon P+`, and `Horizon P-` (`-30..+30`, `5` degree steps, defaults `0`).
+  - Moved sleep timeout setting into `UI Settings`.
+  - Tuned portrait roll/pitch behavior for more accurate in-hand leveling.
+- Robustness and cleanup:
+  - Removed redundant logic paths in activity/LiDAR/encoder handling.
+  - Tightened bounds handling for frame/smoothing index usage.
+  - Reduced variable shadowing and stale fallback checks.
+- Release metadata/docs:
+  - Bumped `FWVERSION` and updated README/manual/UI version snapshots.
+
 ## 10.0.3 - 2026-02-22
 - LiDAR ambient-light handling:
   - Added sunlight-aware SNR scoring (`intensity` relative to `sunlightBase`) for primary/secondary/fallback candidates.

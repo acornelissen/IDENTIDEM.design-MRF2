@@ -49,10 +49,7 @@ void setLensDistanceFromCm(int distance_cm)
 
 void clearLidarDisplay()
 {
-  if (distance_cm != "...")
-  {
-    distance_cm = "...";
-  }
+  distance_cm = "...";
   lidar_quality_level = 0;
 }
 } // namespace
@@ -144,17 +141,17 @@ int getLensSensorReading()
     delay(LENS_ADC_QUIET_DELAY_MS);
   }
 
-  long sampleTotal = 0;
+  long adcSampleTotal = 0;
   for (int i = 0; i < LENS_ADC_SAMPLE_COUNT; i++)
   {
-    sampleTotal += theads.readADC_SingleEnded(LENS_ADC_PIN);
+    adcSampleTotal += theads.readADC_SingleEnded(LENS_ADC_PIN);
     if (LENS_ADC_SAMPLE_DELAY_US > 0)
     {
       delayMicroseconds(LENS_ADC_SAMPLE_DELAY_US);
     }
   }
 
-  int sensorVal = static_cast<int>(sampleTotal / LENS_ADC_SAMPLE_COUNT);
+  int sensorVal = static_cast<int>(adcSampleTotal / LENS_ADC_SAMPLE_COUNT);
   if (ui_mode == UiMode::Main)
   {
     sensorVal += LENS_ADC_MAIN_OFFSET;
@@ -285,11 +282,8 @@ void setFilmCounter()
     int rawDelta = encoder_position - lastRawEncoderPosition;
     if (abs(rawDelta) >= FILM_COUNTER_ACTIVITY_MIN_DELTA)
     {
-      if ((now - lastRawEncoderActivityMs) >= FILM_COUNTER_ACTIVITY_DEBOUNCE_MS)
-      {
-        registerActivity();
-        lastRawEncoderActivityMs = now;
-      }
+      registerActivity();
+      lastRawEncoderActivityMs = now;
       lastRawEncoderPosition = encoder_position;
     }
   }

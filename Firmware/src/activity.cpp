@@ -9,10 +9,7 @@
 void registerActivity()
 {
   lastActivityTime = millis();
-  if (sleepMode)
-  {
-    sleepMode = false;
-  }
+  sleepMode = false;
 }
 
 void updateSleepMode(unsigned long now_ms)
