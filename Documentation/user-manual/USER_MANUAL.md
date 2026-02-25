@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.1.1
+**Firmware version:** 10.1.2
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -224,7 +224,11 @@ Calibration links the lens position sensor to real focus distances, enabling the
 
 For each target distance, set the lens focus to that distance and press **L** to record the sensor reading.
 
-- Distances: **1, 1.2, 1.5, 2, 3, 5, 10 meters**
+- Distance points are lens-specific. The calibration UI shows the exact marker sequence for the selected lens.
+- Default lens sequence: **1, 1.2, 1.5, 2, 3, 5, 10 meters**
+- **150/5.6**: **2, 2.5, 3, 5, 10 meters**
+- **250/5.0**: **2.5, 4, 5, 7, 8, 10, 15, 20, 30, 50 meters**
+- **250/8.0**: **3.5, 4, 5, 7, 10, 15, 20, 30, 50 meters**
 - **L**: store current reading and move to the next distance
 - **R**: cancel and return to Setup
 

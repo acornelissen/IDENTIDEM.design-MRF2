@@ -6,7 +6,12 @@
 
 int findLensSnapIndex(const Lens &lens, int sensor_reading)
 {
-  const int reading_count = sizeof(lens.sensor_reading) / sizeof(lens.sensor_reading[0]);
+  const int reading_count = getLensDistancePointCount(lens);
+  if (reading_count <= 0)
+  {
+    return -1;
+  }
+
   int snap_index = -1;
   int snap_delta = max(LENS_SNAP_DEADZONE, LENS_SNAP_DEADZONE_FAR) + 1;
 
@@ -26,10 +31,14 @@ int findLensSnapIndex(const Lens &lens, int sensor_reading)
 
 LensDistanceEstimate estimateLensDistance(const Lens &lens, int sensor_reading)
 {
-  const int reading_count = sizeof(lens.sensor_reading) / sizeof(lens.sensor_reading[0]);
-  const int last_index = reading_count - 1;
-
   LensDistanceEstimate result = {false, false, 0};
+  const int reading_count = getLensDistancePointCount(lens);
+  if (reading_count <= 0)
+  {
+    return result;
+  }
+
+  const int last_index = reading_count - 1;
 
   if (sensor_reading < lens.sensor_reading[0])
   {

@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.1.1  
+**Version**: 10.1.2  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -128,7 +128,7 @@ Firmware/
 - Mamiya Press / Universal Press lenses
 - Support for multiple lens profiles
 - Position sensing via ADC
-- 7-point calibration curve
+- Lens-specific calibration curves (up to 10 points, depending on lens)
 - Automatic distance correlation
 
 #### Film Management

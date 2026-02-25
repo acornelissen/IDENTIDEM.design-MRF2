@@ -758,9 +758,18 @@ void drawCalibUI()
   setMenuItemColors(calib_step == 0);
   u8g2.print(F(" Lens:")); u8g2.print(lenses[calib_lens].name); u8g2.print(F(" "));
 
+  const Lens &calibrationLens = lenses[calib_lens];
+  int calibrationPointCount = getLensDistancePointCount(calibrationLens);
+  if (calibrationPointCount <= 0)
+  {
+    calibrationPointCount = 1;
+  }
+  int calibrationIndex = max(0, min(current_calib_distance, calibrationPointCount - 1));
+  float calibrationDistance = calibrationLens.distance[calibrationIndex];
+
   u8g2.setCursor(CALIB_ITEM_X, CALIB_DISTANCE_Y);
   setMenuItemColors(calib_step == 1);
-  u8g2.print(F(" ")); u8g2.print(CALIB_DISTANCES[current_calib_distance], DISTANCE_DECIMAL_PLACES);
+  u8g2.print(F(" ")); u8g2.print(calibrationDistance, DISTANCE_DECIMAL_PLACES);
   u8g2.print(F("m: ")); u8g2.print(lens_sensor_reading); u8g2.print(F(" "));
 
   u8g2.setBackgroundColor(BLACK); // Reset for instructions

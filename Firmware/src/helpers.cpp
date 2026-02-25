@@ -178,9 +178,13 @@ void loadLensCalibrationSchemaV2()
     getLensReadingsKey(lensIndex, readingsKey, sizeof(readingsKey));
     getLensCalibratedKey(lensIndex, calibratedKey, sizeof(calibratedKey));
 
-    if (prefs.getBytesLength(readingsKey) == sizeof(lenses[lensIndex].sensor_reading))
+    size_t storedReadingBytes = prefs.getBytesLength(readingsKey);
+    if (storedReadingBytes > 0)
     {
-      prefs.getBytes(readingsKey, lenses[lensIndex].sensor_reading, sizeof(lenses[lensIndex].sensor_reading));
+      int loadedReadings[LENS_DISTANCE_POINT_COUNT] = {};
+      size_t copyBytes = min(storedReadingBytes, sizeof(loadedReadings));
+      prefs.getBytes(readingsKey, loadedReadings, copyBytes);
+      memcpy(lenses[lensIndex].sensor_reading, loadedReadings, sizeof(lenses[lensIndex].sensor_reading));
     }
 
     lenses[lensIndex].calibrated = prefs.getBool(calibratedKey, lenses[lensIndex].calibrated);

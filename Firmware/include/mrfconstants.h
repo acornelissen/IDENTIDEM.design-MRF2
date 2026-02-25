@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity and boot behavior
 // ---------------------------------------------------------------------------
-#define FWVERSION "10.1.1"                  // Version shown in UI and release metadata.
+#define FWVERSION "10.1.2"                  // Version shown in UI and release metadata.
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
 // ---------------------------------------------------------------------------
@@ -413,8 +413,7 @@ const int EXT_SLEEP_TEXT_Y = 22;            // External sleep text Y.
 // Static option lists and calibration flow thresholds
 // ---------------------------------------------------------------------------
 const int ISOS[] = {50, 80, 100, 125, 200, 400, 500, 640, 800, 1600, 3200, 6400}; // Supported ISO list.
-const float CALIB_DISTANCES[] = {1, 1.2f, 1.5f, 2, 3, 5, 10}; // Lens calibration target distances (meters).
-const int CALIB_DISTANCE_COUNT = sizeof(CALIB_DISTANCES) / sizeof(CALIB_DISTANCES[0]); // Calibration point count.
+const int CALIB_DISTANCE_COUNT = 10;         // Max calibration point count across all lens profiles.
 const int CALIB_SAMPLE_COUNT = 8;            // Samples captured per calibration point.
 const int CALIB_SAMPLE_DELAY_MS = 5;         // Delay between calibration samples.
 const int CALIB_MIN_INLIER_COUNT = 5;        // Minimum inliers for a stable reading.

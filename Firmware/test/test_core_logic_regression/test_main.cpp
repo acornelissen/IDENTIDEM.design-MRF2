@@ -448,6 +448,96 @@ void test_lens_snap_and_distance_estimation()
   TEST_ASSERT_EQUAL_INT(LENS_INFINITY_RAW, infinity.distance_cm);
 }
 
+void test_lens_logic_ignores_unused_distance_markers()
+{
+  Lens lens = {
+      15056,
+      "150/5.6",
+      150.0f,
+      {100, 200, 300, 400, 500, 0, 0},
+      {2.0f, 2.5f, 3.0f, 5.0f, 10.0f, 0.0f, 0.0f},
+      {5.6f, 8.0f, 11.0f, 16.0f, 22.0f, 32.0f, 45.0f, 0.0f, 0.0f},
+      {0, 0, 0, 0},
+      true};
+
+  TEST_ASSERT_EQUAL_INT(5, getLensDistancePointCount(lens));
+  TEST_ASSERT_EQUAL_INT(2, findLensSnapIndex(lens, 301));
+
+  LensDistanceEstimate interpolated = estimateLensDistance(lens, 250);
+  TEST_ASSERT_TRUE(interpolated.valid);
+  TEST_ASSERT_FALSE(interpolated.is_infinity);
+  TEST_ASSERT_EQUAL_INT(275, interpolated.distance_cm);
+
+  LensDistanceEstimate infinity = estimateLensDistance(lens, 506);
+  TEST_ASSERT_TRUE(infinity.valid);
+  TEST_ASSERT_TRUE(infinity.is_infinity);
+  TEST_ASSERT_EQUAL_INT(LENS_INFINITY_RAW, infinity.distance_cm);
+}
+
+void test_150mm_profile_uses_custom_distance_scale()
+{
+  const Lens *lens150 = nullptr;
+  for (size_t i = 0; i < NUM_LENSES; i++)
+  {
+    if (lenses[i].id == 15056)
+    {
+      lens150 = &lenses[i];
+      break;
+    }
+  }
+
+  TEST_ASSERT_NOT_NULL(lens150);
+  TEST_ASSERT_EQUAL_INT(5, getLensDistancePointCount(*lens150));
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 2.0f, lens150->distance[0]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 2.5f, lens150->distance[1]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 3.0f, lens150->distance[2]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 5.0f, lens150->distance[3]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 10.0f, lens150->distance[4]);
+}
+
+void test_250mm_profiles_use_custom_distance_scales()
+{
+  const Lens *lens250f5 = nullptr;
+  const Lens *lens250f8 = nullptr;
+  for (size_t i = 0; i < NUM_LENSES; i++)
+  {
+    if (lenses[i].id == 25005)
+    {
+      lens250f5 = &lenses[i];
+    }
+    else if (lenses[i].id == 25008)
+    {
+      lens250f8 = &lenses[i];
+    }
+  }
+
+  TEST_ASSERT_NOT_NULL(lens250f5);
+  TEST_ASSERT_NOT_NULL(lens250f8);
+
+  TEST_ASSERT_EQUAL_INT(10, getLensDistancePointCount(*lens250f5));
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 2.5f, lens250f5->distance[0]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 4.0f, lens250f5->distance[1]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 5.0f, lens250f5->distance[2]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 7.0f, lens250f5->distance[3]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 8.0f, lens250f5->distance[4]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 10.0f, lens250f5->distance[5]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 15.0f, lens250f5->distance[6]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 20.0f, lens250f5->distance[7]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 30.0f, lens250f5->distance[8]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 50.0f, lens250f5->distance[9]);
+
+  TEST_ASSERT_EQUAL_INT(9, getLensDistancePointCount(*lens250f8));
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 3.5f, lens250f8->distance[0]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 4.0f, lens250f8->distance[1]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 5.0f, lens250f8->distance[2]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 7.0f, lens250f8->distance[3]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 10.0f, lens250f8->distance[4]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 15.0f, lens250f8->distance[5]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 20.0f, lens250f8->distance[6]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 30.0f, lens250f8->distance[7]);
+  TEST_ASSERT_FLOAT_WITHIN(0.0001f, 50.0f, lens250f8->distance[8]);
+}
+
 void test_lightmeter_dark_bright_fraction_and_seconds()
 {
   TEST_ASSERT_EQUAL_STRING("Dark!", formatShutterSpeed(0.0f, 8.0f, 400).c_str());
@@ -478,6 +568,9 @@ int main(int, char **)
   RUN_TEST(test_lidar_sunlight_penalizes_confidence_without_dropping_valid_measurement);
   RUN_TEST(test_lidar_sunlight_hard_rejects_very_low_snr_measurement);
   RUN_TEST(test_lens_snap_and_distance_estimation);
+  RUN_TEST(test_lens_logic_ignores_unused_distance_markers);
+  RUN_TEST(test_150mm_profile_uses_custom_distance_scale);
+  RUN_TEST(test_250mm_profiles_use_custom_distance_scales);
   RUN_TEST(test_lightmeter_dark_bright_fraction_and_seconds);
   return UNITY_END();
 }

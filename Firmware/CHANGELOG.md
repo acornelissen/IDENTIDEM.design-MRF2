@@ -2,6 +2,19 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.1.2 - 2026-02-25
+- Lens calibration and distance-scale updates:
+  - Added per-lens calibration point-count support (up to `10` markers per lens profile).
+  - Updated `150/5.6` marker set to `2, 2.5, 3, 5, 10`.
+  - Updated `250/5.0` marker set to `2.5, 4, 5, 7, 8, 10, 15, 20, 30, 50`.
+  - Added `250/8.0` profile with marker set `3.5, 4, 5, 7, 10, 15, 20, 30, 50`.
+  - Calibration UI now reads target distances from the selected lens profile.
+  - Lens snap/interpolation now uses active profile markers and ignores trailing unused slots.
+  - Preferences loading now tolerates older saved calibration array sizes during schema evolution.
+- Release metadata/docs:
+  - Bumped `FWVERSION` to `10.1.2`.
+  - Updated firmware README, user manual, and camera UI SVG snapshots.
+
 ## 10.1.1 - 2026-02-25
 - Viewfinder/UI tuning:
   - Removed the boxed portrait-mode `P` indicator from the main display.
