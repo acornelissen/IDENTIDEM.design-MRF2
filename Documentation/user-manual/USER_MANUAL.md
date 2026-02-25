@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.1.0
+**Firmware version:** 10.1.1
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -64,7 +64,6 @@ The main screen displays:
 ### Portrait leveling
 
 When the camera is rotated to portrait orientation, the level aid automatically rebases to portrait behavior.
-A boxed **`P`** indicator appears at bottom-right in the main display while portrait mode is active.
 You can tune horizon trim offsets independently for landscape, portrait `P+`, and portrait `P-` in **Setup > UI Settings >**.
 
 ![Main screen portrait leveling](images/main-ui-portrait.svg)
@@ -174,9 +173,9 @@ Current frame ranges are format-bound:
 
 ![UI settings menu](images/config-ui-settings.svg)
 
-1. **Horizon L**: landscape trim offset (`-30deg` to `+30deg`, `5deg` steps, default `0deg`).
-2. **Horizon P+**: portrait trim offset for one portrait side (`-30deg` to `+30deg`, `5deg` steps, default `0deg`).
-3. **Horizon P-**: portrait trim offset for the opposite portrait side (`-30deg` to `+30deg`, `5deg` steps, default `0deg`).
+1. **Horizon L**: landscape trim offset (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
+2. **Horizon P+**: portrait trim offset for one portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
+3. **Horizon P-**: portrait trim offset for the opposite portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
 4. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
 5. **Back <<**: return to setup root menu.
 

@@ -44,10 +44,10 @@ int cycleFrameTuningValue(int current)
 
 int cycleLevelTrimValue(int current)
 {
-  current += LEVEL_TRIM_STEP_DEG;
-  if (current > LEVEL_TRIM_MAX_DEG)
+  current += LEVEL_TRIM_STEP_DECI_DEG;
+  if (current > LEVEL_TRIM_MAX_DECI_DEG)
   {
-    current = LEVEL_TRIM_MIN_DEG;
+    current = LEVEL_TRIM_MIN_DECI_DEG;
   }
   return current;
 }
@@ -248,19 +248,19 @@ void toggleEvReadout()
 
 void cycleLevelTrimLandscape()
 {
-  level_trim_landscape_deg = cycleLevelTrimValue(level_trim_landscape_deg);
+  level_trim_landscape_deci_deg = cycleLevelTrimValue(level_trim_landscape_deci_deg);
   savePrefs();
 }
 
 void cycleLevelTrimPortraitPos()
 {
-  level_trim_portrait_pos_deg = cycleLevelTrimValue(level_trim_portrait_pos_deg);
+  level_trim_portrait_pos_deci_deg = cycleLevelTrimValue(level_trim_portrait_pos_deci_deg);
   savePrefs();
 }
 
 void cycleLevelTrimPortraitNeg()
 {
-  level_trim_portrait_neg_deg = cycleLevelTrimValue(level_trim_portrait_neg_deg);
+  level_trim_portrait_neg_deci_deg = cycleLevelTrimValue(level_trim_portrait_neg_deci_deg);
   savePrefs();
 }
 

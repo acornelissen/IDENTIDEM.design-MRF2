@@ -3,361 +3,433 @@
 
 #include <stdint.h>
 
-// Constants
-#define FWVERSION "10.1.0"
-const unsigned long SLEEP_BOOT_GRACE_MS = 15000;
+// ---------------------------------------------------------------------------
+// Firmware identity and boot behavior
+// ---------------------------------------------------------------------------
+#define FWVERSION "10.1.1"                  // Version shown in UI and release metadata.
+const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
-const unsigned long SERIAL_BAUD_RATE = 115200;
-const unsigned long LIDAR_BAUD_RATE = 921600;
-const int LIDAR_SERIAL_PORT = 2;
+// ---------------------------------------------------------------------------
+// Serial ports and sensor transport
+// ---------------------------------------------------------------------------
+const unsigned long SERIAL_BAUD_RATE = 115200; // USB serial console baud.
+const unsigned long LIDAR_BAUD_RATE = 921600;  // DTS6012M UART baud.
+const int LIDAR_SERIAL_PORT = 2;               // ESP32 hardware serial index used for LiDAR.
 
-#define RXD2 RX
-#define TXD2 TX
+#define RXD2 RX // LiDAR RX mapped to board RX pin.
+#define TXD2 TX // LiDAR TX mapped to board TX pin.
 
-const int BUTTON_LEFT_PIN = 9;
-const int BUTTON_RIGHT_PIN = 10;
-const int BUTTON_DEBOUNCE_MS = 5;
-const unsigned long BUTTON_SHORT_PRESS_MAX_MS = 1000;
-const unsigned long BUTTON_LONG_PRESS_MIN_MS = 3000;
+// ---------------------------------------------------------------------------
+// User input buttons
+// ---------------------------------------------------------------------------
+const int BUTTON_LEFT_PIN = 9;                 // Left button GPIO.
+const int BUTTON_RIGHT_PIN = 10;               // Right button GPIO.
+const int BUTTON_DEBOUNCE_MS = 5;              // Software debounce interval.
+const unsigned long BUTTON_SHORT_PRESS_MAX_MS = 1000; // Max press duration treated as "short".
+const unsigned long BUTTON_LONG_PRESS_MIN_MS = 3000;  // Min press duration treated as "long".
 
-#define SS_NEOPIX 6
-#define SEESAW_ADDR 0x36 // Set this to the address of the seesaw
+// ---------------------------------------------------------------------------
+// Seesaw and NeoPixel status LED
+// ---------------------------------------------------------------------------
+#define SS_NEOPIX 6      // Seesaw pin used by onboard NeoPixel.
+#define SEESAW_ADDR 0x36 // I2C address for encoder/NeoPixel seesaw.
 
-const unsigned long SEESAW_INIT_DELAY_MS = 10;
-const int SEESAW_NEOPIXEL_BRIGHTNESS = 80;
-const int NEOPIXEL_COUNT = 1;
-const int NEOPIXEL_INDEX = 0;
-const int NEOPIXEL_COLOR_MAX = 255;
-const int NEOPIXEL_BLUE_R = 0;
-const int NEOPIXEL_BLUE_G = 0;
-const int NEOPIXEL_BLUE_B = 255;
-const int NEOPIXEL_VIOLET_R = 238;
-const int NEOPIXEL_VIOLET_G = 130;
-const int NEOPIXEL_VIOLET_B = 238;
-const int NEOPIXEL_OFF_R = 0;
-const int NEOPIXEL_OFF_G = 0;
-const int NEOPIXEL_OFF_B = 0;
+const unsigned long SEESAW_INIT_DELAY_MS = 10; // Delay after seesaw init before first access.
+const int SEESAW_NEOPIXEL_BRIGHTNESS = 80;     // NeoPixel brightness cap (0..255).
+const int NEOPIXEL_COUNT = 1;                  // Number of status pixels.
+const int NEOPIXEL_INDEX = 0;                  // Active status pixel index.
+const int NEOPIXEL_COLOR_MAX = 255;            // Max RGB channel value.
+const int NEOPIXEL_BLUE_R = 0;                 // Blue status color R channel.
+const int NEOPIXEL_BLUE_G = 0;                 // Blue status color G channel.
+const int NEOPIXEL_BLUE_B = 255;               // Blue status color B channel.
+const int NEOPIXEL_VIOLET_R = 238;             // Violet status color R channel.
+const int NEOPIXEL_VIOLET_G = 130;             // Violet status color G channel.
+const int NEOPIXEL_VIOLET_B = 238;             // Violet status color B channel.
+const int NEOPIXEL_OFF_R = 0;                  // LED-off R channel.
+const int NEOPIXEL_OFF_G = 0;                  // LED-off G channel.
+const int NEOPIXEL_OFF_B = 0;                  // LED-off B channel.
 
-#define LENS_ADC_PIN 1 // Set this to the pin you've soldered the lens position sensor to on the ADS1015
+// ---------------------------------------------------------------------------
+// Analog lens position input
+// ---------------------------------------------------------------------------
+#define LENS_ADC_PIN 1 // ADS1015 channel for lens position sensor.
 
-#define SCREEN_WIDTH 128        // OLED display width, in pixels
-#define SCREEN_HEIGHT 128       // OLED display height, in pixels
-#define SCREEN_HEIGHT_EXT 32    // OLED display height, in pixels
-#define OLED_RESET -1           // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3D     ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-#define SCREEN_ADDRESS_EXT 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+// ---------------------------------------------------------------------------
+// Display and I2C bus setup
+// ---------------------------------------------------------------------------
+#define SCREEN_WIDTH 128        // Main OLED width in pixels.
+#define SCREEN_HEIGHT 128       // Main OLED height in pixels.
+#define SCREEN_HEIGHT_EXT 32    // External OLED height in pixels.
+#define OLED_RESET -1           // Shared reset pin (unused, set to -1).
+#define SCREEN_ADDRESS 0x3D     // Main OLED I2C address.
+#define SCREEN_ADDRESS_EXT 0x3C // External OLED I2C address.
 
-const unsigned long DISPLAY_INIT_DELAY_MS = 1000;
-const unsigned long DISPLAY_EXT_INIT_DELAY_MS = 500;
-const unsigned long DISPLAY_BOOT_SCREEN_MS = 1000;
-const unsigned long LIDAR_SERIAL_STARTUP_DELAY_MS = 20;
-const uint8_t LIGHTMETER_I2C_ADDR = 0x23;
-const uint8_t LIGHTMETER_CMD_POWER_DOWN = 0x00;
-const uint8_t LIGHTMETER_CMD_POWER_ON = 0x01;
-const int DISPLAY_ROTATION = 3;
-const int DISPLAY_BOOT_TEXT_SIZE = 2;
-const int DISPLAY_I2C_FREQUENCY_HZ = 1000000;
-const int DISPLAY_COMMAND_FLIP = 0xC8;
+const unsigned long DISPLAY_INIT_DELAY_MS = 1000;      // Main display power-up settle delay.
+const unsigned long DISPLAY_EXT_INIT_DELAY_MS = 500;   // External display settle delay.
+const unsigned long DISPLAY_BOOT_SCREEN_MS = 1000;     // Boot splash hold time.
+const unsigned long LIDAR_SERIAL_STARTUP_DELAY_MS = 20; // LiDAR serial warm-up delay.
+const uint8_t LIGHTMETER_I2C_ADDR = 0x23;              // BH1750 I2C address.
+const uint8_t LIGHTMETER_CMD_POWER_DOWN = 0x00;        // BH1750 power-down command.
+const uint8_t LIGHTMETER_CMD_POWER_ON = 0x01;          // BH1750 power-on command.
+const int DISPLAY_ROTATION = 3;                        // Main display rotation setting.
+const int DISPLAY_BOOT_TEXT_SIZE = 2;                  // Boot text scale on external display.
+const int DISPLAY_I2C_FREQUENCY_HZ = 1000000;          // Fast I2C bus frequency.
+const int DISPLAY_COMMAND_FLIP = 0xC8;                 // SH1107 vertical flip command.
 
-const int SMOOTHING_WINDOW_SIZE = 13;
-const int LENS_INF_THRESHOLD = 5;
-const int LENS_INFINITY_RAW = 9999999;
-const int LENS_ACTIVITY_THRESHOLD = 3;
-const int LENS_SNAP_DEADZONE = 1;
-const int LENS_SNAP_DEADZONE_FAR = 3;
-const float LENS_SNAP_FAR_DISTANCE_M = 3.0f;
-const int LENS_ADC_SAMPLE_COUNT = 3;
-const int LENS_ADC_SAMPLE_DELAY_US = 200;
-const int LENS_ADC_QUIET_DELAY_MS = 1;
-const int LENS_ADC_MAIN_OFFSET = 4;
-const int LENS_SPIKE_DELTA_THRESHOLD = 8;
-const int LENS_SPIKE_CONFIRMATION_COUNT = 2;
-const int FOCUS_RADIUS_MIN = 3;
-const int FOCUS_RADIUS_MAX = 30;
-const int FOCUS_RING_THICKNESS_MIN = 1;
-const int FOCUS_RING_THICKNESS_MAX = 3;
-const float FOCUS_RING_THICKNESS_SMOOTHING = 0.25f;
+// ---------------------------------------------------------------------------
+// Lens ADC filtering, snap logic, and focus-ring rendering
+// ---------------------------------------------------------------------------
+const int SMOOTHING_WINDOW_SIZE = 13;           // Moving-average window for lens ADC smoothing.
+const int LENS_INF_THRESHOLD = 5;               // Threshold around infinity marker (sensor units).
+const int LENS_INFINITY_RAW = 9999999;          // Sentinel raw distance for infinity.
+const int LENS_ACTIVITY_THRESHOLD = 3;          // Minimum ADC delta considered lens movement.
+const int LENS_SNAP_DEADZONE = 1;               // Snap deadzone near calibrated points (close range).
+const int LENS_SNAP_DEADZONE_FAR = 3;           // Snap deadzone for far focus points.
+const float LENS_SNAP_FAR_DISTANCE_M = 3.0f;    // Distance threshold to switch to far deadzone.
+const int LENS_ADC_SAMPLE_COUNT = 3;            // ADC samples averaged per read.
+const int LENS_ADC_SAMPLE_DELAY_US = 200;       // Delay between ADC sub-samples.
+const int LENS_ADC_QUIET_DELAY_MS = 1;          // Quiet time before ADC sampling.
+const int LENS_ADC_MAIN_OFFSET = 4;             // UI-mode compensation offset for lens ADC.
+const int LENS_SPIKE_DELTA_THRESHOLD = 8;       // Delta treated as potential ADC spike.
+const int LENS_SPIKE_CONFIRMATION_COUNT = 2;    // Consecutive spike readings required for accept.
+const int FOCUS_RADIUS_MIN = 3;                 // Minimum focus-ring radius in pixels.
+const int FOCUS_RADIUS_MAX = 30;                // Maximum focus-ring radius in pixels.
+const int FOCUS_RING_THICKNESS_MIN = 1;         // Minimum focus-ring thickness.
+const int FOCUS_RING_THICKNESS_MAX = 3;         // Maximum focus-ring thickness.
+const float FOCUS_RING_THICKNESS_SMOOTHING = 0.25f; // Exponential smoothing factor for ring thickness.
 
-const float CM_TO_MM = 10.0f;
-const int CM_PER_METER = 100;
+// ---------------------------------------------------------------------------
+// Unit conversion helpers
+// ---------------------------------------------------------------------------
+const float CM_TO_MM = 10.0f; // Centimeter-to-millimeter conversion factor.
+const int CM_PER_METER = 100; // Centimeters per meter.
 
-#define RETICLE_OFFSET_X -5
-#define RETICLE_OFFSET_Y 0
-const int LIDAR_DISTANCE_DIVISOR = 10;
-const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 500;
-const int LIDAR_RECOVERY_ERROR_THRESHOLD = 3;
-const unsigned long LIDAR_RECOVERY_TIMEOUT_MS = 1500;
-const unsigned long LIDAR_RECOVERY_RETRY_BASE_MS = 250;
-const unsigned long LIDAR_RECOVERY_RETRY_MAX_MS = 2000;
-const float LIDAR_LIBRARY_DISTANCE_SCALE = 1.0f;
-const int LIDAR_LIBRARY_DISTANCE_OFFSET_MM = 400;
-const int LIDAR_LIBRARY_MIN_INTENSITY_THRESHOLD = 80;
-const int LIDAR_FUSION_MIN_INTENSITY = 60;
-const int LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM = 220;
-const int LIDAR_FUSION_INTENSITY_MID_RANGE_CM = 500;
-const int LIDAR_FUSION_INTENSITY_FAR_RANGE_CM = 1000;
-const int LIDAR_FUSION_MIN_INTENSITY_MID = 10;
-const int LIDAR_FUSION_MIN_INTENSITY_FAR = 6;
-const int LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE = 3;
-const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 420;
-const int LIDAR_SNR_PERMILLE_TARGET_MID = 280;
-const int LIDAR_SNR_PERMILLE_TARGET_FAR = 180;
-const int LIDAR_SNR_PERMILLE_TARGET_MAX_RANGE = 120;
-const int LIDAR_SNR_PERMILLE_HARD_REJECT = 40;
-const int LIDAR_SNR_HARD_REJECT_INTENSITY_MULTIPLIER = 2;
-const int LIDAR_SNR_PENALTY_DIVISOR = 18;
-const int LIDAR_SNR_PENALTY_MAX = 14;
-const int LIDAR_SNR_FALLBACK_PENALTY_MAX = 8;
-const int LIDAR_FALLBACK_MIN_INTENSITY = 2;
-const int LIDAR_FALLBACK_BASE_CONFIDENCE = 14;
-const int LIDAR_FALLBACK_MAX_CONFIDENCE = 28;
-const int LIDAR_CONFIDENCE_HIGH = 75;
-const int LIDAR_CONFIDENCE_MEDIUM = 55;
-const float LIDAR_MEDIUM_CONF_BLEND = 0.35f;
-const float LIDAR_LOW_CONF_BLEND_MIN = 0.12f;
-const float LIDAR_LOW_CONF_BLEND_MAX = 0.28f;
-const int LIDAR_LOW_CONF_MAX_STEP_CM = 60;
-const int LIDAR_FUSION_AGREE_DELTA_CM = 30;
-const int LIDAR_FUSION_CONF_BONUS = 6;
-const int LIDAR_TEMPORAL_PENALTY_DIVISOR = 20;
-const int LIDAR_TEMPORAL_PENALTY_MAX = 14;
-const int LIDAR_PRIOR_PENALTY_MAX_POOR = 3;
-const int LIDAR_PRIOR_PENALTY_MAX_FAIR = 4;
-const int LIDAR_PRIOR_PENALTY_MAX_GOOD = 5;
-const int LIDAR_PRIOR_PENALTY_MAX_EXCELLENT = 4;
-const int LIDAR_PRIOR_DEADBAND_CM = 25;
-const int LIDAR_PRIOR_RANGE_NEAR_CM = 300;
-const int LIDAR_PRIOR_RANGE_MID_CM = 500;
-const int LIDAR_PRIOR_RANGE_FAR_CM = 1000;
-const float LIDAR_PRIOR_RANGE_SCALE_NEAR = 1.0f;
-const float LIDAR_PRIOR_RANGE_SCALE_MID = 0.75f;
-const float LIDAR_PRIOR_RANGE_SCALE_FAR = 0.5f;
-const float LIDAR_PRIOR_RANGE_SCALE_VERY_FAR = 0.35f;
-const float LIDAR_LENS_PRIOR_WEIGHT_GOOD = 0.025f;
-const float LIDAR_LENS_PRIOR_WEIGHT_EXCELLENT = 0.012f;
+// ---------------------------------------------------------------------------
+// LiDAR fusion and confidence pipeline tuning
+// ---------------------------------------------------------------------------
+#define RETICLE_OFFSET_X -5 // Main reticle X offset for optical alignment.
+#define RETICLE_OFFSET_Y 0  // Main reticle Y offset for optical alignment.
+const int LIDAR_DISTANCE_DIVISOR = 10;           // Raw LiDAR millimeter-to-centimeter divisor.
+const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 500; // Hide stale LiDAR data after this timeout.
+const int LIDAR_RECOVERY_ERROR_THRESHOLD = 3;    // Errors before recovery path escalates.
+const unsigned long LIDAR_RECOVERY_TIMEOUT_MS = 1500; // Timeout window triggering recovery.
+const unsigned long LIDAR_RECOVERY_RETRY_BASE_MS = 250; // Initial retry backoff.
+const unsigned long LIDAR_RECOVERY_RETRY_MAX_MS = 2000; // Max retry backoff.
+const float LIDAR_LIBRARY_DISTANCE_SCALE = 1.0f; // Library-side linear distance scale.
+const int LIDAR_LIBRARY_DISTANCE_OFFSET_MM = 400; // Library-side linear distance offset.
+const int LIDAR_LIBRARY_MIN_INTENSITY_THRESHOLD = 80; // Library reject threshold for weak returns.
+const int LIDAR_FUSION_MIN_INTENSITY = 60;       // Fusion-stage baseline minimum intensity.
+const int LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM = 220; // Near-range boundary for intensity gating.
+const int LIDAR_FUSION_INTENSITY_MID_RANGE_CM = 500;  // Mid-range boundary for intensity gating.
+const int LIDAR_FUSION_INTENSITY_FAR_RANGE_CM = 1000; // Far-range boundary for intensity gating.
+const int LIDAR_FUSION_MIN_INTENSITY_MID = 10;   // Mid-range minimum intensity.
+const int LIDAR_FUSION_MIN_INTENSITY_FAR = 6;    // Far-range minimum intensity.
+const int LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE = 3; // Very-far minimum intensity.
+const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 420;  // Target SNR (permille) for near returns.
+const int LIDAR_SNR_PERMILLE_TARGET_MID = 280;   // Target SNR (permille) for mid returns.
+const int LIDAR_SNR_PERMILLE_TARGET_FAR = 180;   // Target SNR (permille) for far returns.
+const int LIDAR_SNR_PERMILLE_TARGET_MAX_RANGE = 120; // Target SNR (permille) at max range.
+const int LIDAR_SNR_PERMILLE_HARD_REJECT = 40;   // SNR hard-reject floor.
+const int LIDAR_SNR_HARD_REJECT_INTENSITY_MULTIPLIER = 2; // Extra rejection guard in low intensity.
+const int LIDAR_SNR_PENALTY_DIVISOR = 18;        // Maps SNR deficit to confidence penalty.
+const int LIDAR_SNR_PENALTY_MAX = 14;            // Max SNR-based confidence penalty.
+const int LIDAR_SNR_FALLBACK_PENALTY_MAX = 8;    // Max SNR penalty in fallback path.
+const int LIDAR_FALLBACK_MIN_INTENSITY = 2;      // Minimum intensity accepted in fallback.
+const int LIDAR_FALLBACK_BASE_CONFIDENCE = 14;   // Base confidence for fallback candidate.
+const int LIDAR_FALLBACK_MAX_CONFIDENCE = 28;    // Ceiling confidence for fallback candidate.
+const int LIDAR_CONFIDENCE_HIGH = 75;            // High-confidence threshold.
+const int LIDAR_CONFIDENCE_MEDIUM = 55;          // Medium-confidence threshold.
+const float LIDAR_MEDIUM_CONF_BLEND = 0.35f;     // Blend factor when confidence is medium.
+const float LIDAR_LOW_CONF_BLEND_MIN = 0.12f;    // Minimum blend at low confidence.
+const float LIDAR_LOW_CONF_BLEND_MAX = 0.28f;    // Maximum blend at low confidence.
+const int LIDAR_LOW_CONF_MAX_STEP_CM = 60;       // Max accepted per-frame distance step at low confidence.
+const int LIDAR_FUSION_AGREE_DELTA_CM = 30;      // Agreement delta between primary/secondary returns.
+const int LIDAR_FUSION_CONF_BONUS = 6;           // Confidence bonus when candidates agree.
+const int LIDAR_TEMPORAL_PENALTY_DIVISOR = 20;   // Maps temporal jump size to confidence penalty.
+const int LIDAR_TEMPORAL_PENALTY_MAX = 14;       // Max temporal confidence penalty.
+const int LIDAR_PRIOR_PENALTY_MAX_POOR = 3;      // Prior penalty cap for poor candidate quality.
+const int LIDAR_PRIOR_PENALTY_MAX_FAIR = 4;      // Prior penalty cap for fair candidate quality.
+const int LIDAR_PRIOR_PENALTY_MAX_GOOD = 5;      // Prior penalty cap for good candidate quality.
+const int LIDAR_PRIOR_PENALTY_MAX_EXCELLENT = 4; // Prior penalty cap for excellent candidate quality.
+const int LIDAR_PRIOR_DEADBAND_CM = 25;          // No prior penalty inside this distance error band.
+const int LIDAR_PRIOR_RANGE_NEAR_CM = 300;       // Near band for prior scaling.
+const int LIDAR_PRIOR_RANGE_MID_CM = 500;        // Mid band for prior scaling.
+const int LIDAR_PRIOR_RANGE_FAR_CM = 1000;       // Far band for prior scaling.
+const float LIDAR_PRIOR_RANGE_SCALE_NEAR = 1.0f; // Prior penalty scale at near range.
+const float LIDAR_PRIOR_RANGE_SCALE_MID = 0.75f; // Prior penalty scale at mid range.
+const float LIDAR_PRIOR_RANGE_SCALE_FAR = 0.5f;  // Prior penalty scale at far range.
+const float LIDAR_PRIOR_RANGE_SCALE_VERY_FAR = 0.35f; // Prior penalty scale at very far range.
+const float LIDAR_LENS_PRIOR_WEIGHT_GOOD = 0.025f;    // Lens-prior pull when confidence is good.
+const float LIDAR_LENS_PRIOR_WEIGHT_EXCELLENT = 0.012f; // Lens-prior pull when confidence is excellent.
 
-const int LIDAR_RESIDUAL_POINT_COUNT = 6;
-const int LIDAR_RESIDUAL_DIST_CM[LIDAR_RESIDUAL_POINT_COUNT] = {50, 100, 150, 200, 500, 1000};
-const int LIDAR_RESIDUAL_DELTA_CM[LIDAR_RESIDUAL_POINT_COUNT] = {0, 0, 0, 0, 0, 0};
+const int LIDAR_RESIDUAL_POINT_COUNT = 6; // Number of residual correction table points.
+const int LIDAR_RESIDUAL_DIST_CM[LIDAR_RESIDUAL_POINT_COUNT] = {50, 100, 150, 200, 500, 1000}; // Residual table X-axis.
+const int LIDAR_RESIDUAL_DELTA_CM[LIDAR_RESIDUAL_POINT_COUNT] = {0, 0, 0, 0, 0, 0};             // Residual table Y-axis.
 
-const int FILM_COUNTER_SNAP_THRESHOLD = 1;
-const int FILM_COUNTER_END = 99;
-const int FILM_COUNTER_FORWARD_HYSTERESIS = 2;
-const unsigned long FILM_COUNTER_FORWARD_DEBOUNCE_MS = 35;
-const int FILM_COUNTER_ACTIVITY_MIN_DELTA = 1;
-const bool FILM_COUNTER_ALLOW_REWIND = false;
-const int FILM_COUNTER_REWIND_HYSTERESIS = 4;
-const unsigned long FILM_COUNTER_REWIND_DEBOUNCE_MS = 120;
+// ---------------------------------------------------------------------------
+// Film counter/encoder filtering
+// ---------------------------------------------------------------------------
+const int FILM_COUNTER_SNAP_THRESHOLD = 1;       // Snap-to-frame threshold near known points.
+const int FILM_COUNTER_END = 99;                 // Sentinel frame value for roll end.
+const int FILM_COUNTER_FORWARD_HYSTERESIS = 2;   // Forward movement hysteresis in encoder ticks.
+const unsigned long FILM_COUNTER_FORWARD_DEBOUNCE_MS = 35; // Forward movement debounce.
+const int FILM_COUNTER_ACTIVITY_MIN_DELTA = 1;   // Raw encoder delta considered activity.
+const bool FILM_COUNTER_ALLOW_REWIND = false;    // Allow backward counting when rewinding.
+const int FILM_COUNTER_REWIND_HYSTERESIS = 4;    // Rewind hysteresis if rewind mode is enabled.
+const unsigned long FILM_COUNTER_REWIND_DEBOUNCE_MS = 120; // Rewind debounce.
 
-// LiDAR correction curve (cm). Below cutoff, apply a smooth correction based on a single reference point.
-const float LIDAR_CAL_CUTOFF_CM = 150.0f;
-const float LIDAR_CAL_REF_RAW_CM = 130.0f;
-const float LIDAR_CAL_REF_TRUE_CM = 100.0f;
+// LiDAR correction curve (cm). Below cutoff, apply a smooth correction based on one reference point.
+const float LIDAR_CAL_CUTOFF_CM = 150.0f; // Upper bound where near-range correction is applied.
+const float LIDAR_CAL_REF_RAW_CM = 130.0f; // Raw reference distance used for correction.
+const float LIDAR_CAL_REF_TRUE_CM = 100.0f; // True distance for the correction reference.
 
-// Parallax correction (mm offsets between lens axis and viewfinder axis)
+// ---------------------------------------------------------------------------
+// Frameline and parallax correction model
+// ---------------------------------------------------------------------------
 // +X = viewfinder is to the right of the lens; +Y = viewfinder is above the lens.
-// Mamiya top finder is centered horizontally and sits above the lens; adjust magnitude as measured.
-#define PARALLAX_OFFSET_X_MM 0.0f
-#define PARALLAX_OFFSET_Y_MM 30.0f
-#define PARALLAX_MIN_DISTANCE_MM 500.0f // clamp very close focus to avoid huge shifts
-#define PARALLAX_MAX_SHIFT_PX 24        // guardrail on-screen shift
+// Mamiya top finder is centered horizontally and sits above the lens.
+#define PARALLAX_OFFSET_X_MM 0.0f   // Horizontal optical offset between lens and finder.
+#define PARALLAX_OFFSET_Y_MM 30.0f  // Vertical optical offset between lens and finder.
+#define PARALLAX_MIN_DISTANCE_MM 500.0f // Clamp close focus distance for stable shifts.
+#define PARALLAX_MAX_SHIFT_PX 24        // Maximum frameline shift guardrail.
 
-// Viewfinder overlay geometry (approximate) used to size framelines.
+// Viewfinder overlay geometry limits used for frameline scaling.
+#define DISTANCE_MIN 5  // Minimum optical distance used by frameline mapping.
+#define DISTANCE_MAX 18 // Maximum optical distance used by frameline mapping.
+const int LIDAR_DISPLAY_MIN_CM = 15;            // Display "<15cm" below this threshold.
+const int LIDAR_DISPLAY_INF_THRESHOLD_CM = 1050; // Display "Inf." above this threshold.
 
-#define DISTANCE_MIN 5
-#define DISTANCE_MAX 18
-const int LIDAR_DISPLAY_MIN_CM = 15;
-const int LIDAR_DISPLAY_INF_THRESHOLD_CM = 1050;
+// ---------------------------------------------------------------------------
+// Battery and readout formatting
+// ---------------------------------------------------------------------------
+const int BATTERY_PERCENT_MAX = 100;          // Clamp battery percentage upper bound.
+const int BATTERY_PERCENT_LOW_THRESHOLD = 10; // Low-battery threshold used by external UI layout.
+const int DISTANCE_DECIMAL_PLACES = 1;        // Decimal precision for meter display text.
 
-const int BATTERY_PERCENT_MAX = 100;
-const int BATTERY_PERCENT_LOW_THRESHOLD = 10;
-const int DISTANCE_DECIMAL_PLACES = 1;
+// ---------------------------------------------------------------------------
+// Light meter and shutter text formatting
+// ---------------------------------------------------------------------------
+const float LIGHTMETER_SPEED_ROUND_SCALE = 1000.0f; // Round shutter speed to 1/1000s precision.
+const float SPEED_SECONDS_THRESHOLD = 1.0f;         // Threshold between fractional and second display styles.
+const int SPEED_TEXT_BUFFER_LEN = 10;               // Buffer size for shutter-speed text.
+const int SPEED_TEXT_WIDTH = 4;                     // Max digit width for integer speed formatting.
+const int SPEED_TEXT_DECIMALS_SHORT = 1;            // Decimals for shorter second values.
+const int SPEED_TEXT_DECIMALS_LONG = 2;             // Decimals for longer second values.
+const int LIGHTMETER_EV_COMP_MIN_THIRDS = -9;       // EV compensation lower bound (-3 EV).
+const int LIGHTMETER_EV_COMP_MAX_THIRDS = 9;        // EV compensation upper bound (+3 EV).
+const int LIGHTMETER_SMOOTHING_MODE_MIN = 0;        // Smoothing enum minimum.
+const int LIGHTMETER_SMOOTHING_MODE_MAX = 3;        // Smoothing enum maximum.
+const int LIGHTMETER_SMOOTHING_MODE_COUNT = 4;      // Number of smoothing modes.
 
-const float LIGHTMETER_SPEED_ROUND_SCALE = 1000.0f;
-const float SPEED_SECONDS_THRESHOLD = 1.0f;
-const int SPEED_TEXT_BUFFER_LEN = 10;
-const int SPEED_TEXT_WIDTH = 4;
-const int SPEED_TEXT_DECIMALS_SHORT = 1;
-const int SPEED_TEXT_DECIMALS_LONG = 2;
-const int LIGHTMETER_EV_COMP_MIN_THIRDS = -9;
-const int LIGHTMETER_EV_COMP_MAX_THIRDS = 9;
-const int LIGHTMETER_SMOOTHING_MODE_MIN = 0;
-const int LIGHTMETER_SMOOTHING_MODE_MAX = 3;
-const int LIGHTMETER_SMOOTHING_MODE_COUNT = 4;
+// ---------------------------------------------------------------------------
+// Sleep timeout mode enum values
+// ---------------------------------------------------------------------------
+const int SLEEP_TIMEOUT_MODE_MIN = 0;   // Smallest valid sleep timeout mode.
+const int SLEEP_TIMEOUT_MODE_MAX = 5;   // Largest valid sleep timeout mode.
+const int SLEEP_TIMEOUT_MODE_COUNT = 6; // Number of sleep timeout options.
+const int SLEEP_TIMEOUT_MODE_OFF = 0;   // Disable auto-sleep.
+const int SLEEP_TIMEOUT_MODE_15S = 1;   // 15-second auto-sleep.
+const int SLEEP_TIMEOUT_MODE_30S = 2;   // 30-second auto-sleep.
+const int SLEEP_TIMEOUT_MODE_1M = 3;    // 1-minute auto-sleep.
+const int SLEEP_TIMEOUT_MODE_1M30S = 4; // 90-second auto-sleep.
+const int SLEEP_TIMEOUT_MODE_2M = 5;    // 2-minute auto-sleep.
 
-const int SLEEP_TIMEOUT_MODE_MIN = 0;
-const int SLEEP_TIMEOUT_MODE_MAX = 5;
-const int SLEEP_TIMEOUT_MODE_COUNT = 6;
-const int SLEEP_TIMEOUT_MODE_OFF = 0;
-const int SLEEP_TIMEOUT_MODE_15S = 1;
-const int SLEEP_TIMEOUT_MODE_30S = 2;
-const int SLEEP_TIMEOUT_MODE_1M = 3;
-const int SLEEP_TIMEOUT_MODE_1M30S = 4;
-const int SLEEP_TIMEOUT_MODE_2M = 5;
+// ---------------------------------------------------------------------------
+// Persisted defaults and preferences schema
+// ---------------------------------------------------------------------------
+const int DEFAULT_ISO = 400;                        // Default ISO on first boot.
+const int DEFAULT_ISO_INDEX = 5;                    // Default index into ISOS[].
+const int DEFAULT_SELECTED_LENS = 1;                // Default lens profile index.
+const int DEFAULT_SELECTED_FORMAT = 4;              // Default film format index.
+const int DEFAULT_EXPOSURE_COMP_THIRDS = 0;         // Default EV compensation (third-stops).
+const int DEFAULT_METER_SMOOTHING_MODE = 2;         // Default light meter smoothing mode.
+const bool DEFAULT_SHOW_EV_READOUT = false;         // EV readout hidden by default.
+const int DEFAULT_SLEEP_TIMEOUT_MODE = SLEEP_TIMEOUT_MODE_1M; // Default auto-sleep mode.
+const int DEFAULT_FRAME_ONE_OFFSET = 0;             // Default film frame-1 tuning offset.
+const int DEFAULT_FRAME_SPACING_OFFSET = 0;         // Default film frame-spacing tuning offset.
+const int DEFAULT_LEVEL_TRIM_LANDSCAPE_DECI_DEG = 0;    // Default landscape level trim in 0.1-degree units.
+const int DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DECI_DEG = 0; // Default portrait (+) level trim in 0.1-degree units.
+const int DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DECI_DEG = 0; // Default portrait (-) level trim in 0.1-degree units.
+const uint16_t PREFS_SCHEMA_VERSION = 2;            // Preferences schema version for migration.
 
-const int DEFAULT_ISO = 400;
-const int DEFAULT_ISO_INDEX = 5;
-const int DEFAULT_SELECTED_LENS = 1;
-const int DEFAULT_SELECTED_FORMAT = 4;
-const int DEFAULT_EXPOSURE_COMP_THIRDS = 0;
-const int DEFAULT_METER_SMOOTHING_MODE = 2;
-const bool DEFAULT_SHOW_EV_READOUT = false;
-const int DEFAULT_SLEEP_TIMEOUT_MODE = SLEEP_TIMEOUT_MODE_1M;
-const int DEFAULT_FRAME_ONE_OFFSET = 0;
-const int DEFAULT_FRAME_SPACING_OFFSET = 0;
-const int DEFAULT_LEVEL_TRIM_LANDSCAPE_DEG = 0;
-const int DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DEG = 0;
-const int DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DEG = 0;
-const uint16_t PREFS_SCHEMA_VERSION = 2;
+// ---------------------------------------------------------------------------
+// Film frame tuning ranges
+// ---------------------------------------------------------------------------
+const int FRAME_TUNING_MIN = -10; // Minimum frame tuning value.
+const int FRAME_TUNING_MAX = 10;  // Maximum frame tuning value.
 
-const int FRAME_TUNING_MIN = -10;
-const int FRAME_TUNING_MAX = 10;
+// ---------------------------------------------------------------------------
+// Main loop scheduler cadence and wake thresholds
+// ---------------------------------------------------------------------------
+const unsigned long LOOP_INPUT_INTERVAL_MS = 5;           // Input polling cadence while awake.
+const unsigned long LOOP_FILM_COUNTER_INTERVAL_MS = 5;    // Film counter update cadence.
+const unsigned long LOOP_SLEEP_CHECK_INTERVAL_MS = 50;    // Sleep-state check cadence.
+const unsigned long LOOP_SLEEP_INPUT_INTERVAL_MS = 25;    // Input polling cadence while asleep.
+const unsigned long LOOP_SLEEP_ENCODER_POLL_INTERVAL_MS = 50; // Encoder wake polling cadence.
+const unsigned long LOOP_SLEEP_LENS_POLL_INTERVAL_MS = 100;   // Lens wake polling cadence.
+const unsigned long LOOP_LIDAR_INTERVAL_MS = 25;          // LiDAR update cadence.
+const unsigned long LOOP_LENS_INTERVAL_MS = 25;           // Lens ADC + mapping cadence.
+const unsigned long LOOP_LIGHTMETER_INTERVAL_MS = 100;    // Light meter update cadence.
+const unsigned long LOOP_BATTERY_INTERVAL_MS = 1500;      // Battery gauge update cadence.
+const unsigned long LOOP_UI_INTERVAL_MS = 33;             // UI redraw cadence (~30 FPS).
+const unsigned long LOOP_PREFS_FLUSH_INTERVAL_MS = 200;   // Preferences flush check cadence.
+const int SLEEP_WAKE_ENCODER_DELTA = 1;                   // Encoder delta to wake device.
+const int SLEEP_WAKE_LENS_DELTA = 8;                      // Lens ADC delta to wake device.
 
-const unsigned long LOOP_INPUT_INTERVAL_MS = 5;
-const unsigned long LOOP_FILM_COUNTER_INTERVAL_MS = 5;
-const unsigned long LOOP_SLEEP_CHECK_INTERVAL_MS = 50;
-const unsigned long LOOP_SLEEP_INPUT_INTERVAL_MS = 25;
-const unsigned long LOOP_SLEEP_ENCODER_POLL_INTERVAL_MS = 50;
-const unsigned long LOOP_SLEEP_LENS_POLL_INTERVAL_MS = 100;
-const unsigned long LOOP_LIDAR_INTERVAL_MS = 25;
-const unsigned long LOOP_LENS_INTERVAL_MS = 25;
-const unsigned long LOOP_LIGHTMETER_INTERVAL_MS = 100;
-const unsigned long LOOP_BATTERY_INTERVAL_MS = 1500;
-const unsigned long LOOP_UI_INTERVAL_MS = 33;
-const unsigned long LOOP_PREFS_FLUSH_INTERVAL_MS = 200;
-const int SLEEP_WAKE_ENCODER_DELTA = 1;
-const int SLEEP_WAKE_LENS_DELTA = 8;
+// ---------------------------------------------------------------------------
+// Config menu indexes: setup root
+// ---------------------------------------------------------------------------
+const int CONFIG_ROOT_STEP_FILM_MENU = 0;  // Enter Film submenu.
+const int CONFIG_ROOT_STEP_LENS_MENU = 1;  // Enter Lens submenu.
+const int CONFIG_ROOT_STEP_METER_MENU = 2; // Enter Light Meter submenu.
+const int CONFIG_ROOT_STEP_UI_MENU = 3;    // Enter UI Settings submenu.
+const int CONFIG_ROOT_STEP_RESET = 4;      // Enter reset-frame confirmation.
+const int CONFIG_ROOT_STEP_HEALTH = 5;     // Enter health diagnostics screen.
+const int CONFIG_ROOT_STEP_EXIT = 6;       // Exit setup to main UI.
+const int CONFIG_ROOT_STEP_MAX = CONFIG_ROOT_STEP_EXIT; // Last valid root step index.
 
-const int CONFIG_ROOT_STEP_FILM_MENU = 0;
-const int CONFIG_ROOT_STEP_LENS_MENU = 1;
-const int CONFIG_ROOT_STEP_METER_MENU = 2;
-const int CONFIG_ROOT_STEP_UI_MENU = 3;
-const int CONFIG_ROOT_STEP_RESET = 4;
-const int CONFIG_ROOT_STEP_HEALTH = 5;
-const int CONFIG_ROOT_STEP_EXIT = 6;
-const int CONFIG_ROOT_STEP_MAX = CONFIG_ROOT_STEP_EXIT;
+// Config menu indexes: Film submenu.
+const int CONFIG_FILM_STEP_FORMAT = 0;          // Film format selector.
+const int CONFIG_FILM_STEP_CURRENT_FRAME = 1;   // Current frame selector.
+const int CONFIG_FILM_STEP_FRAME_ONE_OFFSET = 2; // Frame-1 offset tuning.
+const int CONFIG_FILM_STEP_FRAME_SPACING = 3;   // Frame spacing tuning.
+const int CONFIG_FILM_STEP_BACK = 4;            // Back to setup root.
+const int CONFIG_FILM_STEP_MAX = CONFIG_FILM_STEP_BACK; // Last valid film step.
 
-const int CONFIG_FILM_STEP_FORMAT = 0;
-const int CONFIG_FILM_STEP_CURRENT_FRAME = 1;
-const int CONFIG_FILM_STEP_FRAME_ONE_OFFSET = 2;
-const int CONFIG_FILM_STEP_FRAME_SPACING = 3;
-const int CONFIG_FILM_STEP_BACK = 4;
-const int CONFIG_FILM_STEP_MAX = CONFIG_FILM_STEP_BACK;
+// Config menu indexes: Lens submenu.
+const int CONFIG_LENS_STEP_LENS = 0;      // Lens selector.
+const int CONFIG_LENS_STEP_PARALLAX = 1;  // Parallax toggle.
+const int CONFIG_LENS_STEP_CALIB = 2;     // Enter lens calibration.
+const int CONFIG_LENS_STEP_BACK = 3;      // Back to setup root.
+const int CONFIG_LENS_STEP_MAX = CONFIG_LENS_STEP_BACK; // Last valid lens step.
 
-const int CONFIG_LENS_STEP_LENS = 0;
-const int CONFIG_LENS_STEP_PARALLAX = 1;
-const int CONFIG_LENS_STEP_CALIB = 2;
-const int CONFIG_LENS_STEP_BACK = 3;
-const int CONFIG_LENS_STEP_MAX = CONFIG_LENS_STEP_BACK;
+// Config menu indexes: Meter submenu.
+const int CONFIG_METER_STEP_ISO = 0;       // ISO selector.
+const int CONFIG_METER_STEP_EV_COMP = 1;   // EV compensation selector.
+const int CONFIG_METER_STEP_SMOOTHING = 2; // Smoothing selector.
+const int CONFIG_METER_STEP_EV_READOUT = 3; // EV readout toggle.
+const int CONFIG_METER_STEP_BACK = 4;      // Back to setup root.
+const int CONFIG_METER_STEP_MAX = CONFIG_METER_STEP_BACK; // Last valid meter step.
 
-const int CONFIG_METER_STEP_ISO = 0;
-const int CONFIG_METER_STEP_EV_COMP = 1;
-const int CONFIG_METER_STEP_SMOOTHING = 2;
-const int CONFIG_METER_STEP_EV_READOUT = 3;
-const int CONFIG_METER_STEP_BACK = 4;
-const int CONFIG_METER_STEP_MAX = CONFIG_METER_STEP_BACK;
+// Config menu indexes: UI Settings submenu.
+const int CONFIG_UI_STEP_HORIZON_LANDSCAPE = 0;  // Landscape horizon trim.
+const int CONFIG_UI_STEP_HORIZON_PORTRAIT_POS = 1; // Portrait + horizon trim.
+const int CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG = 2; // Portrait - horizon trim.
+const int CONFIG_UI_STEP_SLEEP_TIMEOUT = 3;       // Sleep timeout selector.
+const int CONFIG_UI_STEP_BACK = 4;                // Back to setup root.
+const int CONFIG_UI_STEP_MAX = CONFIG_UI_STEP_BACK; // Last valid UI settings step.
 
-const int CONFIG_UI_STEP_HORIZON_LANDSCAPE = 0;
-const int CONFIG_UI_STEP_HORIZON_PORTRAIT_POS = 1;
-const int CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG = 2;
-const int CONFIG_UI_STEP_SLEEP_TIMEOUT = 3;
-const int CONFIG_UI_STEP_BACK = 4;
-const int CONFIG_UI_STEP_MAX = CONFIG_UI_STEP_BACK;
+// ---------------------------------------------------------------------------
+// Main UI numeric formatting and level-aid tuning
+// ---------------------------------------------------------------------------
+const int APERTURE_DECIMAL_PLACES = 1;      // Decimal precision for aperture display.
+const float LEVEL_PITCH_SCALE = 25.0f;      // Landscape pitch sensitivity scaling.
+const float LEVEL_ROLL_SCALE = 0.5f;        // Landscape roll sensitivity scaling.
+const float LEVEL_DEADZONE = 0.03f;         // Level deadzone around zero tilt (radians).
+const float LEVEL_PITCH_SCALE_PORTRAIT = 12.0f; // Portrait pitch sensitivity scaling.
+const float LEVEL_ROLL_SCALE_PORTRAIT = 1.0f;   // Portrait roll sensitivity scaling.
+const float LEVEL_PORTRAIT_ROLL_DEVIATION_SIGN = 1.0f; // Portrait deviation polarity.
+const int LEVEL_TRIM_MIN_DECI_DEG = -300;   // Minimum user-adjustable horizon trim (-30.0deg).
+const int LEVEL_TRIM_MAX_DECI_DEG = 300;    // Maximum user-adjustable horizon trim (+30.0deg).
+const int LEVEL_TRIM_STEP_DECI_DEG = 25;    // Horizon trim increment size (2.5deg).
+const float LEVEL_PORTRAIT_ENTER_RAD = 1.00f; // Enter portrait mode threshold.
+const float LEVEL_PORTRAIT_EXIT_RAD = 0.75f;  // Exit portrait mode threshold.
+const int LEVEL_LINE_MARGIN_PX = 10;        // Horizon line horizontal margin.
+const int LEVEL_VERTICAL_LINE_LENGTH = 30;  // Center marker vertical line length.
 
-const int APERTURE_DECIMAL_PLACES = 1;
-const float LEVEL_PITCH_SCALE = 25.0f;
-const float LEVEL_ROLL_SCALE = 0.5f;
-const float LEVEL_DEADZONE = 0.03f;
-const float LEVEL_PITCH_SCALE_PORTRAIT = 12.0f;
-const float LEVEL_ROLL_SCALE_PORTRAIT = 1.0f;
-const float LEVEL_PORTRAIT_ROLL_DEVIATION_SIGN = 1.0f;
-const int LEVEL_TRIM_MIN_DEG = -30;
-const int LEVEL_TRIM_MAX_DEG = 30;
-const int LEVEL_TRIM_STEP_DEG = 5;
-const float LEVEL_PORTRAIT_ENTER_RAD = 1.00f;
-const float LEVEL_PORTRAIT_EXIT_RAD = 0.75f;
-const int LEVEL_LINE_MARGIN_PX = 10;
-const int LEVEL_VERTICAL_LINE_LENGTH = 30;
-const int LEVEL_PORTRAIT_INDICATOR_X = 116;
-const int LEVEL_PORTRAIT_INDICATOR_Y = 116;
-const int LEVEL_PORTRAIT_INDICATOR_SIZE = 10;
-const int LEVEL_PORTRAIT_INDICATOR_TOP_PADDING = 2;
-const int MAIN_HEADER_HEIGHT = 15;
-const int MAIN_RETICLE_CENTER_Y_OFFSET = 5;
-const int MAIN_RETICLE_CENTER_RADIUS = 3;
-const int MAIN_ISO_X = 2;
-const int MAIN_ISO_Y = 7;
-const int MAIN_APERTURE_X = 46;
-const int MAIN_APERTURE_Y = 7;
-const int MAIN_SHUTTER_X = 2;
-const int MAIN_SHUTTER_Y = 14;
-const int MAIN_DISTANCE_X = 68;
-const int MAIN_DISTANCE_Y = 7;
-const int MAIN_LENS_X = 68;
-const int MAIN_LENS_Y = 14;
-const int MAIN_LIDAR_QUALITY_X = 123;
-const int MAIN_LIDAR_QUALITY_Y = 2;
-const int MAIN_LIDAR_QUALITY_SIZE = 2;
-const int MAIN_LIDAR_QUALITY_GAP = 1;
-const int CONFIG_TITLE_X = 3;
-const int CONFIG_TITLE_Y = 15;
-const int CONFIG_HEADER_PADDING_Y = 4;
-const int CONFIG_ITEM_X = 3;
-const int CONFIG_ITEM_Y_START = 22;
-const int CONFIG_ITEM_Y_STEP = 9;
-const int CONFIG_FOOTER_Y = 121;
-const int CALIB_TITLE_X = 3;
-const int CALIB_TITLE_Y = 15;
-const int CALIB_ITEM_X = 3;
-const int CALIB_LENS_Y = 35;
-const int CALIB_DISTANCE_Y = 47;
-const int CALIB_HELP_Y1 = 70;
-const int CALIB_HELP_Y2 = 81;
-const int HEALTH_TITLE_X = 3;
-const int HEALTH_TITLE_Y = 15;
-const int HEALTH_ITEM_X = 3;
-const int HEALTH_ITEM_Y_START = 30;
-const int HEALTH_ITEM_Y_STEP = 10;
-const int HEALTH_FOOTER_Y = 112;
-const int EXT_HEADER_HEIGHT = 10;
-const int EXT_HEADER_FORMAT_X = 2;
-const int EXT_HEADER_FORMAT_Y = 8;
-const int EXT_HEADER_DIVIDER_X = 33;
-const int EXT_HEADER_LENS_X = 37;
-const int EXT_HEADER_LENS_Y = 8;
-const int EXT_BATTERY_DIVIDER_FULL_X = 100;
-const int EXT_BATTERY_CURSOR_FULL_X = 104;
-const int EXT_BATTERY_DIVIDER_LOW_X = 111;
-const int EXT_BATTERY_CURSOR_LOW_X = 115;
-const int EXT_BATTERY_DIVIDER_MID_X = 103;
-const int EXT_BATTERY_CURSOR_MID_X = 107;
-const int EXT_PROGRESS_BAR_WIDTH = 90;
-const int EXT_PROGRESS_BAR_HEIGHT = 17;
-const int EXT_PROGRESS_BAR_X = 34;
-const int EXT_PROGRESS_BAR_Y = 15;
-const float PERCENT_SCALE = 100.0f;
-const int EXT_COUNTER_TEXT_Y = 30;
-const int EXT_COUNTER_MESSAGE_X = 8;
-const int EXT_COUNTER_VALUE_X_WITH_PROGRESS = 8;
-const int EXT_COUNTER_VALUE_X_NO_PROGRESS = 60;
-const int EXT_SLEEP_TEXT_X = 8;
-const int EXT_SLEEP_TEXT_Y = 22;
+// ---------------------------------------------------------------------------
+// Main display layout coordinates
+// ---------------------------------------------------------------------------
+const int MAIN_HEADER_HEIGHT = 15;         // Header bar height.
+const int MAIN_RETICLE_CENTER_Y_OFFSET = 5; // Reticle center vertical offset.
+const int MAIN_RETICLE_CENTER_RADIUS = 3;  // Reticle center dot radius.
+const int MAIN_ISO_X = 2;                  // ISO label X position.
+const int MAIN_ISO_Y = 7;                  // ISO label Y position.
+const int MAIN_APERTURE_X = 46;            // Aperture label X position.
+const int MAIN_APERTURE_Y = 7;             // Aperture label Y position.
+const int MAIN_SHUTTER_X = 2;              // Shutter label X position.
+const int MAIN_SHUTTER_Y = 14;             // Shutter label Y position.
+const int MAIN_DISTANCE_X = 68;            // LiDAR distance label X position.
+const int MAIN_DISTANCE_Y = 7;             // LiDAR distance label Y position.
+const int MAIN_LENS_X = 68;                // Lens distance label X position.
+const int MAIN_LENS_Y = 14;                // Lens distance label Y position.
+const int MAIN_LIDAR_QUALITY_X = 123;      // LiDAR quality indicator origin X.
+const int MAIN_LIDAR_QUALITY_Y = 2;        // LiDAR quality indicator origin Y.
+const int MAIN_LIDAR_QUALITY_SIZE = 2;     // LiDAR quality block size.
+const int MAIN_LIDAR_QUALITY_GAP = 1;      // Gap between LiDAR quality blocks.
 
-const int ISOS[] = {50, 80, 100, 125, 200, 400, 500, 640, 800, 1600, 3200, 6400};
-const float CALIB_DISTANCES[] = {1, 1.2, 1.5, 2, 3, 5, 10};
-const int CALIB_DISTANCE_COUNT = sizeof(CALIB_DISTANCES) / sizeof(CALIB_DISTANCES[0]);
-const int CALIB_SAMPLE_COUNT = 8;
-const int CALIB_SAMPLE_DELAY_MS = 5;
-const int CALIB_MIN_INLIER_COUNT = 5;
-const int CALIB_OUTLIER_MAX_DELTA = 6;
-const int CALIB_INLIER_SPREAD_MAX = 10;
-const int CALIB_MONOTONIC_MIN_STEP = 1;
-const int CALIB_CAPTURE_STATUS_NONE = 0;
-const int CALIB_CAPTURE_STATUS_UNSTABLE = 1;
-const int CALIB_CAPTURE_STATUS_NON_MONOTONIC = 2;
-const int CALIB_STATUS_Y1 = 94;
-const int CALIB_STATUS_Y2 = 104;
+// ---------------------------------------------------------------------------
+// Setup/calibration/health UI layout coordinates
+// ---------------------------------------------------------------------------
+const int CONFIG_TITLE_X = 3;              // Setup title X position.
+const int CONFIG_TITLE_Y = 15;             // Setup title Y position.
+const int CONFIG_HEADER_PADDING_Y = 4;     // Vertical padding below setup title.
+const int CONFIG_ITEM_X = 3;               // Setup item X position.
+const int CONFIG_ITEM_Y_START = 22;        // Setup item Y start.
+const int CONFIG_ITEM_Y_STEP = 9;          // Setup item Y spacing.
+const int CONFIG_FOOTER_Y = 121;           // Setup footer Y position.
+const int CALIB_TITLE_X = 3;               // Calibration title X position.
+const int CALIB_TITLE_Y = 15;              // Calibration title Y position.
+const int CALIB_ITEM_X = 3;                // Calibration item X position.
+const int CALIB_LENS_Y = 35;               // Calibration lens line Y position.
+const int CALIB_DISTANCE_Y = 47;           // Calibration distance line Y position.
+const int CALIB_HELP_Y1 = 70;              // Calibration help line 1 Y.
+const int CALIB_HELP_Y2 = 81;              // Calibration help line 2 Y.
+const int HEALTH_TITLE_X = 3;              // Health title X position.
+const int HEALTH_TITLE_Y = 15;             // Health title Y position.
+const int HEALTH_ITEM_X = 3;               // Health item X position.
+const int HEALTH_ITEM_Y_START = 30;        // Health item start Y.
+const int HEALTH_ITEM_Y_STEP = 10;         // Health item line spacing.
+const int HEALTH_FOOTER_Y = 112;           // Health footer Y position.
 
-const int K = 20;
+// ---------------------------------------------------------------------------
+// External display layout coordinates
+// ---------------------------------------------------------------------------
+const int EXT_HEADER_HEIGHT = 10;          // External header bar height.
+const int EXT_HEADER_FORMAT_X = 2;         // Format label X.
+const int EXT_HEADER_FORMAT_Y = 8;         // Format label Y.
+const int EXT_HEADER_DIVIDER_X = 33;       // Header divider X.
+const int EXT_HEADER_LENS_X = 37;          // Lens label X.
+const int EXT_HEADER_LENS_Y = 8;           // Lens label Y.
+const int EXT_BATTERY_DIVIDER_FULL_X = 100; // Battery divider X when >=100%.
+const int EXT_BATTERY_CURSOR_FULL_X = 104;  // Battery cursor X when >=100%.
+const int EXT_BATTERY_DIVIDER_LOW_X = 111;  // Battery divider X for low percentage layout.
+const int EXT_BATTERY_CURSOR_LOW_X = 115;   // Battery cursor X for low percentage layout.
+const int EXT_BATTERY_DIVIDER_MID_X = 103;  // Battery divider X for mid percentage layout.
+const int EXT_BATTERY_CURSOR_MID_X = 107;   // Battery cursor X for mid percentage layout.
+const int EXT_PROGRESS_BAR_WIDTH = 90;      // Progress bar width.
+const int EXT_PROGRESS_BAR_HEIGHT = 17;     // Progress bar height.
+const int EXT_PROGRESS_BAR_X = 34;          // Progress bar X origin.
+const int EXT_PROGRESS_BAR_Y = 15;          // Progress bar Y origin.
+const float PERCENT_SCALE = 100.0f;         // Percentage scaling helper.
+const int EXT_COUNTER_TEXT_Y = 30;          // Counter text baseline Y.
+const int EXT_COUNTER_MESSAGE_X = 8;        // "Load film"/"Roll end" message X.
+const int EXT_COUNTER_VALUE_X_WITH_PROGRESS = 8; // Counter X when progress bar is visible.
+const int EXT_COUNTER_VALUE_X_NO_PROGRESS = 60;  // Counter X when no progress bar is visible.
+const int EXT_SLEEP_TEXT_X = 8;             // External sleep text X.
+const int EXT_SLEEP_TEXT_Y = 22;            // External sleep text Y.
+
+// ---------------------------------------------------------------------------
+// Static option lists and calibration flow thresholds
+// ---------------------------------------------------------------------------
+const int ISOS[] = {50, 80, 100, 125, 200, 400, 500, 640, 800, 1600, 3200, 6400}; // Supported ISO list.
+const float CALIB_DISTANCES[] = {1, 1.2f, 1.5f, 2, 3, 5, 10}; // Lens calibration target distances (meters).
+const int CALIB_DISTANCE_COUNT = sizeof(CALIB_DISTANCES) / sizeof(CALIB_DISTANCES[0]); // Calibration point count.
+const int CALIB_SAMPLE_COUNT = 8;            // Samples captured per calibration point.
+const int CALIB_SAMPLE_DELAY_MS = 5;         // Delay between calibration samples.
+const int CALIB_MIN_INLIER_COUNT = 5;        // Minimum inliers for a stable reading.
+const int CALIB_OUTLIER_MAX_DELTA = 6;       // Max sample delta to still count as inlier.
+const int CALIB_INLIER_SPREAD_MAX = 10;      // Max spread across accepted inliers.
+const int CALIB_MONOTONIC_MIN_STEP = 1;      // Minimum monotonic step between calibration readings.
+const int CALIB_CAPTURE_STATUS_NONE = 0;     // Calibration capture status: no error.
+const int CALIB_CAPTURE_STATUS_UNSTABLE = 1; // Calibration capture status: unstable reading.
+const int CALIB_CAPTURE_STATUS_NON_MONOTONIC = 2; // Calibration capture status: invalid sequence.
+const int CALIB_STATUS_Y1 = 94;              // Calibration status line 1 Y.
+const int CALIB_STATUS_Y2 = 104;             // Calibration status line 2 Y.
+
+// ---------------------------------------------------------------------------
+// Light meter exposure constant
+// ---------------------------------------------------------------------------
+const int K = 20; // Calibration constant used in EV/shutter equations.
 
 #endif // MRFCONSTANTS_H

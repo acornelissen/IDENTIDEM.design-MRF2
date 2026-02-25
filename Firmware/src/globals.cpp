@@ -23,9 +23,9 @@ int exposure_comp_thirds = DEFAULT_EXPOSURE_COMP_THIRDS;
 int meter_smoothing_mode = DEFAULT_METER_SMOOTHING_MODE;
 bool show_ev_readout = DEFAULT_SHOW_EV_READOUT;
 int sleep_timeout_mode = DEFAULT_SLEEP_TIMEOUT_MODE;
-int level_trim_landscape_deg = DEFAULT_LEVEL_TRIM_LANDSCAPE_DEG;
-int level_trim_portrait_pos_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DEG;
-int level_trim_portrait_neg_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DEG;
+int level_trim_landscape_deci_deg = DEFAULT_LEVEL_TRIM_LANDSCAPE_DECI_DEG;
+int level_trim_portrait_pos_deci_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DECI_DEG;
+int level_trim_portrait_neg_deci_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DECI_DEG;
 
 // Filter algorithm
 int samples[SMOOTHING_WINDOW_SIZE];

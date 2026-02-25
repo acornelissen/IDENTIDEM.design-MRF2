@@ -2,6 +2,15 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.1.1 - 2026-02-25
+- Viewfinder/UI tuning:
+  - Removed the boxed portrait-mode `P` indicator from the main display.
+  - Increased `UI Settings` horizon trim granularity from `5deg` to `2.5deg` steps (`-30deg..+30deg`).
+  - Added backward-compatible migration for older stored trim keys to the new `0.1deg` internal format.
+- Release metadata/docs:
+  - Bumped `FWVERSION` to `10.1.1`.
+  - Updated firmware README, user manual, and camera UI SVG snapshots.
+
 ## 10.1.0 - 2026-02-24
 - Film format and frame-counter updates:
   - Added `3x6` format (`30 x 56`) with `0..21` frame range.

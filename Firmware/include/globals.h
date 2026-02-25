@@ -39,9 +39,9 @@ extern int exposure_comp_thirds;
 extern int meter_smoothing_mode;
 extern bool show_ev_readout;
 extern int sleep_timeout_mode;
-extern int level_trim_landscape_deg;
-extern int level_trim_portrait_pos_deg;
-extern int level_trim_portrait_neg_deg;
+extern int level_trim_landscape_deci_deg;
+extern int level_trim_portrait_pos_deci_deg;
+extern int level_trim_portrait_neg_deci_deg;
 
 // Filter algorithm
 extern int samples[SMOOTHING_WINDOW_SIZE];

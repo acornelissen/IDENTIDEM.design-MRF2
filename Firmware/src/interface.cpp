@@ -168,73 +168,6 @@ static void drawLidarQualityIndicator()
   }
 }
 
-static void drawPortraitIndicator(int rotationQuarterTurns)
-{
-  const int boxX = LEVEL_PORTRAIT_INDICATOR_X;
-  const int boxY = LEVEL_PORTRAIT_INDICATOR_Y;
-  const int boxSize = LEVEL_PORTRAIT_INDICATOR_SIZE;
-  int rotation = rotationQuarterTurns % 4;
-  if (rotation < 0)
-  {
-    rotation += 4;
-  }
-
-  display.fillRect(boxX, boxY, boxSize, boxSize, WHITE);
-  display.drawRect(boxX, boxY, boxSize, boxSize, BLACK);
-
-  // 3x5 "P" glyph (black pixels on white box).
-  const int glyphWidth = 3;
-  const int glyphHeight = 5;
-  static const uint8_t glyphRows[5] = {
-      0b111,
-      0b101,
-      0b111,
-      0b100,
-      0b100};
-
-  int rotatedWidth = (rotation % 2 == 0) ? glyphWidth : glyphHeight;
-  int rotatedHeight = (rotation % 2 == 0) ? glyphHeight : glyphWidth;
-  int glyphX = boxX + ((boxSize - rotatedWidth) / 2);
-  int glyphY = boxY + LEVEL_PORTRAIT_INDICATOR_TOP_PADDING;
-  int maxGlyphY = boxY + boxSize - rotatedHeight - 1;
-  if (glyphY > maxGlyphY)
-  {
-    glyphY = maxGlyphY;
-  }
-
-  for (int row = 0; row < glyphHeight; row++)
-  {
-    for (int col = 0; col < glyphWidth; col++)
-    {
-      bool pixelOn = (glyphRows[row] & (1 << (2 - col))) != 0;
-      if (!pixelOn)
-      {
-        continue;
-      }
-
-      int drawCol = col;
-      int drawRow = row;
-      if (rotation == 1)
-      {
-        drawCol = glyphHeight - 1 - row;
-        drawRow = col;
-      }
-      else if (rotation == 2)
-      {
-        drawCol = glyphWidth - 1 - col;
-        drawRow = glyphHeight - 1 - row;
-      }
-      else if (rotation == 3)
-      {
-        drawCol = row;
-        drawRow = glyphWidth - 1 - col;
-      }
-
-      display.drawPixel(glyphX + drawCol, glyphY + drawRow, BLACK);
-    }
-  }
-}
-
 static void setMenuItemColors(bool selected)
 {
   if (selected)
@@ -256,6 +189,15 @@ static void printSignedInt(int value)
     u8g2.print(F("+"));
   }
   u8g2.print(value);
+}
+
+static void printSignedDeciDegrees(int deciDegrees)
+{
+  if (deciDegrees > 0)
+  {
+    u8g2.print(F("+"));
+  }
+  u8g2.print(static_cast<float>(deciDegrees) / 10.0f, 1);
 }
 
 // Functions to draw UI
@@ -488,7 +430,6 @@ void drawMainUI()
 
   float roll_angle = 0.0f;
   const float degToRad = PI / 180.0f;
-  int portraitIndicatorRotation = 0;
   if (portraitMode)
   {
     float portraitSign = (roll_portrait_raw >= 0.0f) ? 1.0f : -1.0f;
@@ -503,13 +444,12 @@ void drawMainUI()
     // In portrait, keep the indicator centered at +/-90deg and mirror deviation by side.
     // Use per-side trim so left/right portrait can be calibrated independently.
     float portraitDeviationScale = LEVEL_PORTRAIT_ROLL_DEVIATION_SIGN * portraitSign;
-    int portraitTrimDegrees = (portraitSign > 0.0f) ? level_trim_portrait_pos_deg
-                                                     : level_trim_portrait_neg_deg;
-    float portraitTrim = static_cast<float>(portraitTrimDegrees) * degToRad;
+    int portraitTrimDeciDegrees = (portraitSign > 0.0f) ? level_trim_portrait_pos_deci_deg
+                                                         : level_trim_portrait_neg_deci_deg;
+    float portraitTrim = (static_cast<float>(portraitTrimDeciDegrees) / 10.0f) * degToRad;
     roll_angle = portraitCenter +
                  (portraitDeviationScale * rollDeviation * roll_scale) +
                  portraitTrim;
-    portraitIndicatorRotation = (portraitSign > 0.0f) ? 1 : 3;
   }
   else
   {
@@ -518,7 +458,7 @@ void drawMainUI()
     {
       rollLandscape = 0.0f;
     }
-    float landscapeTrim = static_cast<float>(level_trim_landscape_deg) * degToRad;
+    float landscapeTrim = (static_cast<float>(level_trim_landscape_deci_deg) / 10.0f) * degToRad;
     roll_angle = (rollLandscape * roll_scale) + landscapeTrim;
   }
 
@@ -551,11 +491,6 @@ void drawMainUI()
 
   // Draw the vertical line on the display
   display.drawLine(rectCenterX, vertLineStartY, rectCenterX, vertLineEndY, INVERSE);
-
-  if (portraitMode)
-  {
-    drawPortraitIndicator(portraitIndicatorRotation);
-  }
 
   display.display();
 }
@@ -773,21 +708,21 @@ void drawUiConfigUI()
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_HORIZON_LANDSCAPE));
   setMenuItemColors(config_step == CONFIG_UI_STEP_HORIZON_LANDSCAPE);
   u8g2.print(F(" Horizon L: "));
-  printSignedInt(level_trim_landscape_deg);
+  printSignedDeciDegrees(level_trim_landscape_deci_deg);
   u8g2.print(F("deg"));
   u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_HORIZON_PORTRAIT_POS));
   setMenuItemColors(config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_POS);
   u8g2.print(F(" Horizon P+: "));
-  printSignedInt(level_trim_portrait_pos_deg);
+  printSignedDeciDegrees(level_trim_portrait_pos_deci_deg);
   u8g2.print(F("deg"));
   u8g2.print(F(" "));
 
   u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG));
   setMenuItemColors(config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG);
   u8g2.print(F(" Horizon P-: "));
-  printSignedInt(level_trim_portrait_neg_deg);
+  printSignedDeciDegrees(level_trim_portrait_neg_deci_deg);
   u8g2.print(F("deg"));
   u8g2.print(F(" "));
 

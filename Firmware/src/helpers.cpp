@@ -65,9 +65,9 @@ void writePrefsToOpenNamespace()
   prefs.putInt("meter_smooth", meter_smoothing_mode);
   prefs.putBool("show_ev", show_ev_readout);
   prefs.putInt("sleep_to_mode", sleep_timeout_mode);
-  prefs.putInt("lvl_trim_l", level_trim_landscape_deg);
-  prefs.putInt("lvl_trim_pp", level_trim_portrait_pos_deg);
-  prefs.putInt("lvl_trim_pn", level_trim_portrait_neg_deg);
+  prefs.putInt("lvl_trim_l10", level_trim_landscape_deci_deg);
+  prefs.putInt("lvl_trim_pp10", level_trim_portrait_pos_deci_deg);
+  prefs.putInt("lvl_trim_pn10", level_trim_portrait_neg_deci_deg);
   prefs.putInt("film_counter", film_counter);
   prefs.putInt("encoder_value", encoder_value);
   prefs.putInt("prev_encoder_value", prev_encoder_value);
@@ -151,16 +151,16 @@ void clampLoadedState()
       SLEEP_TIMEOUT_MODE_MIN,
       SLEEP_TIMEOUT_MODE_MAX);
 
-  auto snapLevelTrimDeg = [](int value) {
-    int clamped = constrain(value, LEVEL_TRIM_MIN_DEG, LEVEL_TRIM_MAX_DEG);
-    int normalized = clamped - LEVEL_TRIM_MIN_DEG;
-    int snappedSteps = (normalized + (LEVEL_TRIM_STEP_DEG / 2)) / LEVEL_TRIM_STEP_DEG;
-    return LEVEL_TRIM_MIN_DEG + (snappedSteps * LEVEL_TRIM_STEP_DEG);
+  auto snapLevelTrimDeciDeg = [](int value) {
+    int clamped = constrain(value, LEVEL_TRIM_MIN_DECI_DEG, LEVEL_TRIM_MAX_DECI_DEG);
+    int normalized = clamped - LEVEL_TRIM_MIN_DECI_DEG;
+    int snappedSteps = (normalized + (LEVEL_TRIM_STEP_DECI_DEG / 2)) / LEVEL_TRIM_STEP_DECI_DEG;
+    return LEVEL_TRIM_MIN_DECI_DEG + (snappedSteps * LEVEL_TRIM_STEP_DECI_DEG);
   };
 
-  level_trim_landscape_deg = snapLevelTrimDeg(level_trim_landscape_deg);
-  level_trim_portrait_pos_deg = snapLevelTrimDeg(level_trim_portrait_pos_deg);
-  level_trim_portrait_neg_deg = snapLevelTrimDeg(level_trim_portrait_neg_deg);
+  level_trim_landscape_deci_deg = snapLevelTrimDeciDeg(level_trim_landscape_deci_deg);
+  level_trim_portrait_pos_deci_deg = snapLevelTrimDeciDeg(level_trim_portrait_pos_deci_deg);
+  level_trim_portrait_neg_deci_deg = snapLevelTrimDeciDeg(level_trim_portrait_neg_deci_deg);
 
   frame_one_offset = constrain(frame_one_offset, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
   frame_spacing_offset = constrain(frame_spacing_offset, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
@@ -244,9 +244,12 @@ void loadPrefs()
   meter_smoothing_mode = prefs.getInt("meter_smooth", DEFAULT_METER_SMOOTHING_MODE);
   show_ev_readout = prefs.getBool("show_ev", DEFAULT_SHOW_EV_READOUT);
   sleep_timeout_mode = prefs.getInt("sleep_to_mode", DEFAULT_SLEEP_TIMEOUT_MODE);
-  level_trim_landscape_deg = prefs.getInt("lvl_trim_l", DEFAULT_LEVEL_TRIM_LANDSCAPE_DEG);
-  level_trim_portrait_pos_deg = prefs.getInt("lvl_trim_pp", DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DEG);
-  level_trim_portrait_neg_deg = prefs.getInt("lvl_trim_pn", DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DEG);
+  int legacy_trim_l = prefs.getInt("lvl_trim_l", DEFAULT_LEVEL_TRIM_LANDSCAPE_DECI_DEG / 10);
+  int legacy_trim_pp = prefs.getInt("lvl_trim_pp", DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DECI_DEG / 10);
+  int legacy_trim_pn = prefs.getInt("lvl_trim_pn", DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DECI_DEG / 10);
+  level_trim_landscape_deci_deg = prefs.getInt("lvl_trim_l10", legacy_trim_l * 10);
+  level_trim_portrait_pos_deci_deg = prefs.getInt("lvl_trim_pp10", legacy_trim_pp * 10);
+  level_trim_portrait_neg_deci_deg = prefs.getInt("lvl_trim_pn10", legacy_trim_pn * 10);
   film_counter = prefs.getInt("film_counter", 0);
   encoder_value = prefs.getInt("encoder_value", 0);
   prev_encoder_value = prefs.getInt("prev_encoder_value", 0);

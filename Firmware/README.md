@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.1.0  
+**Version**: 10.1.1  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -139,8 +139,7 @@ Firmware/
 #### Level Aid
 - Horizon line with accelerometer-based tilt compensation
 - Automatic landscape/portrait orientation handling
-- Portrait mode indicator (`P`) in high-contrast boxed style
-- Per-orientation horizon trim controls (`Horizon L`, `Horizon P+`, `Horizon P-`) in `5deg` steps (`-30deg..+30deg`)
+- Per-orientation horizon trim controls (`Horizon L`, `Horizon P+`, `Horizon P-`) in `2.5deg` steps (`-30deg..+30deg`)
 
 ## Building and Flashing
 
