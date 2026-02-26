@@ -488,6 +488,21 @@
     return rhs.localeCompare(lhs, undefined, { numeric: true, sensitivity: "base" });
   }
 
+  function normalizeVersionString(rawVersion) {
+    if (typeof rawVersion !== "string") return "";
+    const trimmed = rawVersion.trim();
+    if (!trimmed) return "";
+    const match = trimmed.match(/([0-9]+(?:\.[0-9]+)+)/);
+    return match ? match[1] : "";
+  }
+
+  function inferVersionFromManifestPath(manifestPath) {
+    if (!manifestPath || typeof manifestPath !== "string") return "";
+    const match = manifestPath.match(/(?:^|\/)versions\/([^/]+)\/manifest\.json$/i);
+    if (!match || !match[1]) return "";
+    return normalizeVersionString(match[1]);
+  }
+
   async function fetchManifest(manifestPath) {
     const response = await fetch(manifestPath, { cache: "no-store" });
     if (!response.ok) {
@@ -498,15 +513,16 @@
 
   function normalizeVersionEntry(entry) {
     if (!entry || typeof entry !== "object") return null;
-    const version = typeof entry.version === "string" ? entry.version.trim() : "";
+    const rawVersion = typeof entry.version === "string" ? entry.version.trim() : "";
     const manifestPath =
       typeof entry.manifest === "string" && entry.manifest.trim()
         ? entry.manifest.trim()
-        : version
-          ? `firmware/versions/${version}/manifest.json`
+        : rawVersion
+          ? `firmware/versions/${rawVersion}/manifest.json`
           : "";
     const manifest = normalizeManifestPath(manifestPath);
     if (!manifest) return null;
+    const version = normalizeVersionString(rawVersion) || inferVersionFromManifestPath(manifest);
     return { version, manifest };
   }
 
@@ -569,7 +585,8 @@
 
       entries.sort((lhs, rhs) => compareVersionsDescending(lhs.version, rhs.version));
 
-      let latestVersion = typeof payload.latest === "string" ? payload.latest.trim() : "";
+      let latestVersion =
+        typeof payload.latest === "string" ? normalizeVersionString(payload.latest) : "";
       if (!latestVersion || !entries.some((entry) => entry.version === latestVersion)) {
         latestVersion = entries[0].version;
       }
@@ -591,7 +608,9 @@
     try {
       const manifest = await fetchManifest(FALLBACK_MANIFEST_PATH);
       const version =
-        manifest && typeof manifest.version === "string" ? manifest.version.trim() : "";
+        manifest && typeof manifest.version === "string"
+          ? normalizeVersionString(manifest.version)
+          : "";
       versionEl.textContent = version || "Available";
       debug.log("manifest-load-success", { version });
       return {

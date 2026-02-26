@@ -69,8 +69,10 @@ jobs:
 
           extract_fw_version() {
             local firmware_dir="$1"
+            local fw_line
             local fw_version
-            fw_version=$(grep -E '^#define FWVERSION ' "$firmware_dir/include/mrfconstants.h" | sed 's/^#define FWVERSION "\(.*\)"$/\1/')
+            fw_line=$(grep -E '^[[:space:]]*#define[[:space:]]+FWVERSION[[:space:]]+' "$firmware_dir/include/mrfconstants.h" | head -n 1 || true)
+            fw_version=$(printf '%s\n' "$fw_line" | sed -nE 's/.*"([0-9]+(\.[0-9]+)*)".*/\1/p')
             if [ -z "$fw_version" ]; then
               fw_version="unknown"
             fi
