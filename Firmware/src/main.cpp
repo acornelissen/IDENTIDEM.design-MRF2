@@ -2,6 +2,7 @@
 // Hardware: DTS6012M LiDAR, STEMMA I2C QT Rotary Encoder (4991), SH1107 main + SSD1306 external OLEDs
 
 #include <Arduino.h>
+#include <string.h>
 #include "esp_wifi.h"
 #include "esp_bt.h"
 
@@ -35,13 +36,179 @@ struct LoopScheduler
   unsigned long lastPrefsFlushMs = 0;
 };
 
+struct UiRenderCache
+{
+  bool initialized = false;
+  UiMode lastMode = UiMode::Main;
+  uint32_t mainSignature = 0;
+  uint32_t menuSignature = 0;
+  uint32_t externalSignature = 0;
+  unsigned long lastMainDrawMs = 0;
+  unsigned long lastHealthDrawMs = 0;
+};
+
 LoopScheduler scheduler;
+UiRenderCache uiRenderCache;
 bool sleepServicesActive = false;
 bool sleepWakeBaselinesInitialized = false;
 bool lightMeterSleeping = false;
 bool lidarIdleStandbyActive = false;
 int sleepWakeEncoderBaseline = 0;
 int sleepWakeLensBaseline = 0;
+
+constexpr uint32_t HASH_OFFSET_BASIS = 2166136261u;
+constexpr uint32_t HASH_PRIME = 16777619u;
+
+uint32_t hashUint32(uint32_t hash, uint32_t value)
+{
+  hash ^= value;
+  hash *= HASH_PRIME;
+  return hash;
+}
+
+uint32_t hashInt(uint32_t hash, int value)
+{
+  return hashUint32(hash, static_cast<uint32_t>(value));
+}
+
+uint32_t hashBool(uint32_t hash, bool value)
+{
+  return hashUint32(hash, value ? 1u : 0u);
+}
+
+uint32_t hashFloat(uint32_t hash, float value)
+{
+  uint32_t bits = 0;
+  memcpy(&bits, &value, sizeof(bits));
+  return hashUint32(hash, bits);
+}
+
+uint32_t hashString(uint32_t hash, const String &value)
+{
+  const char *raw = value.c_str();
+  size_t len = strlen(raw);
+  hash = hashUint32(hash, static_cast<uint32_t>(len));
+  for (size_t i = 0; i < len; i++)
+  {
+    hash = hashUint32(hash, static_cast<uint8_t>(raw[i]));
+  }
+  return hash;
+}
+
+uint32_t buildMainUiSignature()
+{
+  uint32_t hash = HASH_OFFSET_BASIS;
+  hash = hashInt(hash, static_cast<int>(ui_mode));
+  hash = hashInt(hash, selected_lens);
+  hash = hashInt(hash, selected_format);
+  hash = hashInt(hash, iso);
+  hash = hashFloat(hash, aperture);
+  hash = hashBool(hash, show_ev_readout);
+  hash = hashFloat(hash, ev_readout);
+  hash = hashString(hash, shutter_speed);
+  hash = hashString(hash, distance_cm);
+  hash = hashString(hash, lens_distance_cm);
+  hash = hashInt(hash, distance);
+  hash = hashInt(hash, lens_distance_raw);
+  hash = hashInt(hash, lidar_quality_level);
+  hash = hashBool(hash, parallaxEnabled);
+  return hash;
+}
+
+uint32_t buildMenuUiSignature()
+{
+  uint32_t hash = HASH_OFFSET_BASIS;
+  hash = hashInt(hash, static_cast<int>(ui_mode));
+  hash = hashInt(hash, config_step);
+  hash = hashInt(hash, calib_step);
+  hash = hashInt(hash, selected_lens);
+  hash = hashInt(hash, selected_format);
+  hash = hashInt(hash, calib_lens);
+  hash = hashInt(hash, current_calib_distance);
+  hash = hashInt(hash, calib_capture_status);
+  hash = hashInt(hash, lens_sensor_reading);
+  hash = hashInt(hash, iso);
+  hash = hashFloat(hash, aperture);
+  hash = hashInt(hash, exposure_comp_thirds);
+  hash = hashInt(hash, meter_smoothing_mode);
+  hash = hashBool(hash, show_ev_readout);
+  hash = hashBool(hash, parallaxEnabled);
+  hash = hashInt(hash, sleep_timeout_mode);
+  hash = hashInt(hash, level_trim_landscape_deci_deg);
+  hash = hashInt(hash, level_trim_portrait_pos_deci_deg);
+  hash = hashInt(hash, level_trim_portrait_neg_deci_deg);
+  hash = hashInt(hash, frame_one_offset);
+  hash = hashInt(hash, frame_spacing_offset);
+  hash = hashInt(hash, film_counter);
+  hash = hashInt(hash, last_lidar_error_code);
+  hash = hashInt(hash, lidar_recovery_count);
+  hash = hashBool(hash, lidarEnabled);
+  hash = hashBool(hash, prefsSchemaValid);
+  hash = hashBool(hash, prefsLoadedLegacy);
+  hash = hashInt(hash, prefsSchemaVersionLoaded);
+  return hash;
+}
+
+uint32_t buildExternalUiSignature()
+{
+  uint32_t hash = HASH_OFFSET_BASIS;
+  hash = hashInt(hash, selected_format);
+  hash = hashInt(hash, selected_lens);
+  hash = hashInt(hash, bat_per);
+  hash = hashInt(hash, film_counter);
+  hash = hashInt(hash, static_cast<int>(frame_progress * 1000.0f));
+  hash = hashBool(hash, sleepMode);
+  return hash;
+}
+
+bool shouldDrawPrimaryUi(unsigned long nowMs)
+{
+  if (ui_mode == UiMode::Main)
+  {
+    uint32_t signature = buildMainUiSignature();
+    bool changed = !uiRenderCache.initialized ||
+                   uiRenderCache.lastMode != ui_mode ||
+                   signature != uiRenderCache.mainSignature;
+    bool refreshDue = (nowMs - uiRenderCache.lastMainDrawMs) >= LOOP_UI_MAIN_REFRESH_MS;
+    if (!changed && !refreshDue)
+    {
+      return false;
+    }
+
+    uiRenderCache.mainSignature = signature;
+    uiRenderCache.lastMainDrawMs = nowMs;
+    return true;
+  }
+
+  uint32_t signature = buildMenuUiSignature();
+  bool changed = !uiRenderCache.initialized ||
+                 uiRenderCache.lastMode != ui_mode ||
+                 signature != uiRenderCache.menuSignature;
+  bool healthRefreshDue = (ui_mode == UiMode::Health) &&
+                          ((nowMs - uiRenderCache.lastHealthDrawMs) >= LOOP_UI_HEALTH_REFRESH_MS);
+  if (!changed && !healthRefreshDue)
+  {
+    return false;
+  }
+
+  uiRenderCache.menuSignature = signature;
+  if (ui_mode == UiMode::Health)
+  {
+    uiRenderCache.lastHealthDrawMs = nowMs;
+  }
+  return true;
+}
+
+bool shouldDrawExternalUi()
+{
+  uint32_t signature = buildExternalUiSignature();
+  bool changed = !uiRenderCache.initialized || signature != uiRenderCache.externalSignature;
+  if (changed)
+  {
+    uiRenderCache.externalSignature = signature;
+  }
+  return changed;
+}
 
 bool sendLightMeterCommand(uint8_t command)
 {
@@ -116,6 +283,7 @@ void enterSleepServices()
 {
   toggleLidar(false);
   lidarIdleStandbyActive = false;
+  uiRenderCache.initialized = false;
   powerDownLightMeterForSleep();
   drawSleepUI();
 
@@ -134,6 +302,7 @@ void exitSleepServices()
   wakeLightMeterFromSleep();
   toggleLidar(true);
   lidarIdleStandbyActive = false;
+  uiRenderCache.initialized = false;
   sleepWakeBaselinesInitialized = false;
 
   // Force immediate sensor/UI refresh right after wake.
@@ -392,43 +561,55 @@ void loop()
 
     if (shouldRunTask(now, scheduler.lastUiMs, LOOP_UI_INTERVAL_MS))
     {
-      if (ui_mode == UiMode::Main)
+      bool drewPrimaryUi = false;
+      if (shouldDrawPrimaryUi(now))
       {
-        drawMainUI();
+        drewPrimaryUi = true;
+        if (ui_mode == UiMode::Main)
+        {
+          drawMainUI();
+        }
+        else if (ui_mode == UiMode::Config)
+        {
+          drawConfigUI();
+        }
+        else if (ui_mode == UiMode::ConfigFilm)
+        {
+          drawFilmConfigUI();
+        }
+        else if (ui_mode == UiMode::ConfigLens)
+        {
+          drawLensConfigUI();
+        }
+        else if (ui_mode == UiMode::ConfigMeter)
+        {
+          drawMeterConfigUI();
+        }
+        else if (ui_mode == UiMode::ConfigUi)
+        {
+          drawUiConfigUI();
+        }
+        else if (ui_mode == UiMode::Calib)
+        {
+          drawCalibUI();
+        }
+        else if (ui_mode == UiMode::ResetConfirm)
+        {
+          drawResetConfirmUI();
+        }
+        else if (ui_mode == UiMode::Health)
+        {
+          drawHealthUI();
+        }
       }
-      else if (ui_mode == UiMode::Config)
+
+      if (drewPrimaryUi || shouldDrawExternalUi())
       {
-        drawConfigUI();
+        drawExternalUI();
       }
-      else if (ui_mode == UiMode::ConfigFilm)
-      {
-        drawFilmConfigUI();
-      }
-      else if (ui_mode == UiMode::ConfigLens)
-      {
-        drawLensConfigUI();
-      }
-      else if (ui_mode == UiMode::ConfigMeter)
-      {
-        drawMeterConfigUI();
-      }
-      else if (ui_mode == UiMode::ConfigUi)
-      {
-        drawUiConfigUI();
-      }
-      else if (ui_mode == UiMode::Calib)
-      {
-        drawCalibUI();
-      }
-      else if (ui_mode == UiMode::ResetConfirm)
-      {
-        drawResetConfirmUI();
-      }
-      else if (ui_mode == UiMode::Health)
-      {
-        drawHealthUI();
-      }
-      drawExternalUI();
+
+      uiRenderCache.initialized = true;
+      uiRenderCache.lastMode = ui_mode;
     }
   }
 
