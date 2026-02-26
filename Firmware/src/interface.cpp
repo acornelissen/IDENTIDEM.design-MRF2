@@ -1,27 +1,58 @@
 #include "interface.h"
 
 #include <Arduino.h>
-#include <Adafruit_Sensor.h> // For sensors_event_t
-#include <math.h>            // For atan2, sqrt, cos, sin, abs
-#include <string.h>          // For strlen, strcmp, memcpy
+#include <Adafruit_Sensor.h>
+#include <math.h>
+#include <string.h>
 
+#include "activity.h"
+#include "cyclefuncs.h"
+#include "formats.h"
 #include "globals.h"
 #include "hardware.h"
-#include "mrfconstants.h"
+#include "helpers.h"
 #include "lenses.h"
-#include "formats.h"
-#include "helpers.h" // For getFocusRadius
 #include "lightmeter_logic.h"
-#include "cyclefuncs.h"
-#include "activity.h"
+#include "mrfconstants.h"
 
+// Define colors for U8G2 if not available (GFX uses BLACK/WHITE)
+#ifndef BLACK
+#define BLACK 0
+#endif
+#ifndef WHITE
+#define WHITE 1
+#endif
+#ifndef INVERSE
+#define INVERSE 2
+#endif
+
+namespace
+{
 struct ParallaxShift
 {
   float x;
   float y;
 };
 
-static String getCompactShutterDisplay(const String &fullShutter)
+struct MainFramelineLayout
+{
+  int baseX;
+  int baseY;
+  int width;
+  int height;
+  int shiftedX;
+  int shiftedY;
+  int innerX;
+  int innerY;
+  int innerWidth;
+  int innerHeight;
+  int reticleCenterX;
+  int reticleCenterY;
+};
+
+constexpr int LIDAR_QUALITY_BLOCK_COUNT = 4;
+
+String getCompactShutterDisplay(const String &fullShutter)
 {
   const char *suffix = " sec.";
   const size_t suffixLen = 5;
@@ -39,13 +70,13 @@ static String getCompactShutterDisplay(const String &fullShutter)
   return fullShutter;
 }
 
-static void getFormatWidthHeightMm(const FilmFormat &format, float &widthMm, float &heightMm)
+void getFormatWidthHeightMm(const FilmFormat &format, float &widthMm, float &heightMm)
 {
   widthMm = format.frame_mm_width;
   heightMm = format.frame_mm_height;
 }
 
-static float getParallaxDistanceMm()
+float getParallaxDistanceMm()
 {
   // Prefer lens focus distance so framelines track focus changes, but only if calibrated.
   if (lenses[selected_lens].calibrated && lens_distance_raw == LENS_INFINITY_RAW)
@@ -71,7 +102,7 @@ static float getParallaxDistanceMm()
   return 0.0f;
 }
 
-static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
+ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
 {
   ParallaxShift shift = {0.0f, 0.0f};
 
@@ -129,46 +160,7 @@ static ParallaxShift computeParallaxShiftPx(int frameWidthPx, int frameHeightPx)
   return shift;
 }
 
-// Define colors for U8G2 if not available (GFX uses BLACK/WHITE)
-#ifndef BLACK
-#define BLACK 0
-#endif
-#ifndef WHITE
-#define WHITE 1
-#endif
-#ifndef INVERSE
-#define INVERSE 2
-#endif
-
-static void drawLidarQualityIndicator()
-{
-  const int maxBlocks = 4;
-  int blocks = lidar_quality_level;
-  if (blocks < 0)
-  {
-    blocks = 0;
-  }
-  else if (blocks > maxBlocks)
-  {
-    blocks = maxBlocks;
-  }
-
-  for (int i = 0; i < maxBlocks; i++)
-  {
-    int x = MAIN_LIDAR_QUALITY_X;
-    int y = MAIN_LIDAR_QUALITY_Y + (i * (MAIN_LIDAR_QUALITY_SIZE + MAIN_LIDAR_QUALITY_GAP));
-    if (i >= (maxBlocks - blocks))
-    {
-      display.fillRect(x, y, MAIN_LIDAR_QUALITY_SIZE, MAIN_LIDAR_QUALITY_SIZE, BLACK);
-    }
-    else
-    {
-      display.fillRect(x, y, MAIN_LIDAR_QUALITY_SIZE, MAIN_LIDAR_QUALITY_SIZE, WHITE);
-    }
-  }
-}
-
-static void setMenuItemColors(bool selected)
+void setMenuItemColors(bool selected)
 {
   if (selected)
   {
@@ -182,7 +174,7 @@ static void setMenuItemColors(bool selected)
   }
 }
 
-static void printSignedInt(int value)
+void printSignedInt(int value)
 {
   if (value > 0)
   {
@@ -191,7 +183,7 @@ static void printSignedInt(int value)
   u8g2.print(value);
 }
 
-static void printSignedDeciDegrees(int deciDegrees)
+void printSignedDeciDegrees(int deciDegrees)
 {
   if (deciDegrees > 0)
   {
@@ -200,22 +192,78 @@ static void printSignedDeciDegrees(int deciDegrees)
   u8g2.print(static_cast<float>(deciDegrees) / 10.0f, 1);
 }
 
-// Functions to draw UI
-// ---------------------
-void drawMainUI()
+void preparePrimaryDisplayTextMode()
 {
   display.clearDisplay();
-
   u8g2.setFontMode(1);
   u8g2.setFontDirection(0);
-  u8g2.setForegroundColor(BLACK); // U8G2 uses 0/1, GFX uses BLACK/WHITE defines
+  u8g2.setForegroundColor(WHITE);
+  u8g2.setBackgroundColor(BLACK);
+}
+
+int getConfigMenuRowY(int step)
+{
+  const int menuItemStart = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
+  return menuItemStart + (CONFIG_ITEM_Y_STEP * step);
+}
+
+void beginConfigMenuScreen(const __FlashStringHelper *title)
+{
+  preparePrimaryDisplayTextMode();
+  u8g2.setFont(u8g2_font_9x15_mf);
+  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
+  u8g2.print(title);
+  u8g2.setFont(u8g2_font_4x6_mf);
+}
+
+void selectConfigMenuRow(int step, bool selected)
+{
+  u8g2.setCursor(CONFIG_ITEM_X, getConfigMenuRowY(step));
+  setMenuItemColors(selected);
+}
+
+void resetConfigTextColors()
+{
+  u8g2.setBackgroundColor(BLACK);
+  u8g2.setForegroundColor(WHITE);
+}
+
+void drawLidarQualityIndicator()
+{
+  int blocks = lidar_quality_level;
+  if (blocks < 0)
+  {
+    blocks = 0;
+  }
+  else if (blocks > LIDAR_QUALITY_BLOCK_COUNT)
+  {
+    blocks = LIDAR_QUALITY_BLOCK_COUNT;
+  }
+
+  for (int i = 0; i < LIDAR_QUALITY_BLOCK_COUNT; i++)
+  {
+    int x = MAIN_LIDAR_QUALITY_X;
+    int y = MAIN_LIDAR_QUALITY_Y + (i * (MAIN_LIDAR_QUALITY_SIZE + MAIN_LIDAR_QUALITY_GAP));
+    int color = (i >= (LIDAR_QUALITY_BLOCK_COUNT - blocks)) ? BLACK : WHITE;
+    display.fillRect(x, y, MAIN_LIDAR_QUALITY_SIZE, MAIN_LIDAR_QUALITY_SIZE, color);
+  }
+}
+
+void drawMainHeader()
+{
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(BLACK);
   u8g2.setBackgroundColor(WHITE);
   u8g2.setFont(u8g2_font_4x6_mf);
+
   display.fillRect(0, 0, SCREEN_WIDTH, MAIN_HEADER_HEIGHT, WHITE);
   display.drawLine(SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT, BLACK);
+
   u8g2.setCursor(MAIN_ISO_X, MAIN_ISO_Y);
   u8g2.print(F("ISO"));
   u8g2.print(iso);
+
   u8g2.setCursor(MAIN_APERTURE_X, MAIN_APERTURE_Y);
   u8g2.print(F("f"));
   if (aperture == static_cast<int>(aperture))
@@ -226,6 +274,7 @@ void drawMainUI()
   {
     u8g2.print(aperture, APERTURE_DECIMAL_PLACES);
   }
+
   u8g2.setCursor(MAIN_SHUTTER_X, MAIN_SHUTTER_Y);
   if (show_ev_readout)
   {
@@ -245,41 +294,40 @@ void drawMainUI()
   {
     u8g2.print(shutter_speed);
   }
+
   u8g2.setCursor(MAIN_DISTANCE_X, MAIN_DISTANCE_Y);
   u8g2.print(F("Dist:"));
   u8g2.print(distance_cm);
   drawLidarQualityIndicator();
+
   u8g2.setCursor(MAIN_LENS_X, MAIN_LENS_Y);
   u8g2.print(F("Lens:"));
   u8g2.print(lens_distance_cm);
+}
 
-  int framelineX = lenses[selected_lens].framelines[0];
-  int framelineY = lenses[selected_lens].framelines[1];
-  int framelineW = lenses[selected_lens].framelines[2];
-  int framelineH = lenses[selected_lens].framelines[3];
-  int baseFramelineX = framelineX;
-  int baseFramelineY = framelineY;
-
+void getScaledFramelineDimensions(int baseWidth,
+                                  int baseHeight,
+                                  int &scaledWidth,
+                                  int &scaledHeight)
+{
   float formatWidthMm = 0.0f;
   float formatHeightMm = 0.0f;
   getFormatWidthHeightMm(film_formats[selected_format], formatWidthMm, formatHeightMm);
 
-  int baseFormatIndex = constrain(
-      DEFAULT_SELECTED_FORMAT,
-      0,
-      static_cast<int>(NUM_FILM_FORMATS) - 1);
+  int baseFormatIndex = constrain(DEFAULT_SELECTED_FORMAT, 0, static_cast<int>(NUM_FILM_FORMATS) - 1);
 
   float baseFormatWidthMm = 0.0f;
   float baseFormatHeightMm = 0.0f;
   getFormatWidthHeightMm(film_formats[baseFormatIndex], baseFormatWidthMm, baseFormatHeightMm);
 
-  int new_width = framelineW;
-  int new_height = framelineH;
+  scaledWidth = baseWidth;
+  scaledHeight = baseHeight;
   bool allowOverflow = false;
+
   if (formatWidthMm > 0.0f && formatHeightMm > 0.0f)
   {
     float formatRatio = formatWidthMm / formatHeightMm;
-    float baseRatio = static_cast<float>(framelineW) / static_cast<float>(framelineH);
+    float baseRatio = static_cast<float>(baseWidth) / static_cast<float>(baseHeight);
 
     if (baseFormatWidthMm > 0.0f && baseFormatHeightMm > 0.0f)
     {
@@ -289,76 +337,75 @@ void drawMainUI()
 
     if (allowOverflow)
     {
-      new_height = framelineH;
-      new_width = static_cast<int>(roundf(framelineH * formatRatio));
+      scaledHeight = baseHeight;
+      scaledWidth = static_cast<int>(roundf(baseHeight * formatRatio));
     }
     else if (formatRatio >= baseRatio)
     {
-      new_width = framelineW;
-      new_height = static_cast<int>(roundf(framelineW / formatRatio));
+      scaledWidth = baseWidth;
+      scaledHeight = static_cast<int>(roundf(baseWidth / formatRatio));
     }
     else
     {
-      new_height = framelineH;
-      new_width = static_cast<int>(roundf(framelineH * formatRatio));
+      scaledHeight = baseHeight;
+      scaledWidth = static_cast<int>(roundf(baseHeight * formatRatio));
     }
   }
 
   if (allowOverflow)
   {
-    new_width = max(1, new_width);
-    new_height = max(1, min(framelineH, new_height));
+    scaledWidth = max(1, scaledWidth);
+    scaledHeight = max(1, min(baseHeight, scaledHeight));
   }
   else
   {
-    new_width = max(1, min(framelineW, new_width));
-    new_height = max(1, min(framelineH, new_height));
+    scaledWidth = max(1, min(baseWidth, scaledWidth));
+    scaledHeight = max(1, min(baseHeight, scaledHeight));
   }
+}
 
-  ParallaxShift parallax = computeParallaxShiftPx(new_width, new_height);
-  int parallaxX = static_cast<int>(roundf(parallax.x));
-  int parallaxY = static_cast<int>(roundf(parallax.y));
+MainFramelineLayout buildMainFramelineLayout()
+{
+  MainFramelineLayout layout = {};
 
-  framelineX += parallaxX;
-  framelineY += parallaxY;
+  layout.baseX = lenses[selected_lens].framelines[0];
+  layout.baseY = lenses[selected_lens].framelines[1];
+  layout.width = lenses[selected_lens].framelines[2];
+  layout.height = lenses[selected_lens].framelines[3];
 
-  display.fillRect(
-    framelineX, 
-    framelineY, 
-    framelineW,
-    framelineH, 
-    WHITE
-  );
+  int scaledWidth = layout.width;
+  int scaledHeight = layout.height;
+  getScaledFramelineDimensions(layout.width, layout.height, scaledWidth, scaledHeight);
 
-  float frameCenterX = framelineX + framelineW / 2.0f;
-  float frameCenterY = framelineY + framelineH / 2.0f;
-  int width_offset = static_cast<int>(roundf(frameCenterX - new_width / 2.0f));
-  int heigh_offset = static_cast<int>(roundf(frameCenterY - new_height / 2.0f));
-  
-  display.fillRect(
-    width_offset,
-    heigh_offset,
-    new_width,
-    new_height, 
-    BLACK
-  );
-  display.drawRect(
-    width_offset,
-    heigh_offset,
-    new_width,
-    new_height,
-    WHITE
-  );
+  ParallaxShift parallax = computeParallaxShiftPx(scaledWidth, scaledHeight);
+  layout.shiftedX = layout.baseX + static_cast<int>(roundf(parallax.x));
+  layout.shiftedY = layout.baseY + static_cast<int>(roundf(parallax.y));
 
-  // Calculate the center of the rectangle
-  int rectCenterX = (baseFramelineX + framelineW / 2) + RETICLE_OFFSET_X;
-  int rectCenterY = (baseFramelineY + framelineH / 2 - MAIN_RETICLE_CENTER_Y_OFFSET) + RETICLE_OFFSET_Y;
- 
-  // Draw a circle at the center of the rectangle
-  display.fillCircle(rectCenterX, rectCenterY, MAIN_RETICLE_CENTER_RADIUS, INVERSE);
-  int focusRadius = getFocusRadius();
+  float frameCenterX = layout.shiftedX + (layout.width / 2.0f);
+  float frameCenterY = layout.shiftedY + (layout.height / 2.0f);
+  layout.innerWidth = scaledWidth;
+  layout.innerHeight = scaledHeight;
+  layout.innerX = static_cast<int>(roundf(frameCenterX - (scaledWidth / 2.0f)));
+  layout.innerY = static_cast<int>(roundf(frameCenterY - (scaledHeight / 2.0f)));
+
+  layout.reticleCenterX = (layout.baseX + (layout.width / 2)) + RETICLE_OFFSET_X;
+  layout.reticleCenterY = (layout.baseY + (layout.height / 2) - MAIN_RETICLE_CENTER_Y_OFFSET) + RETICLE_OFFSET_Y;
+
+  return layout;
+}
+
+void drawMainFrameline(const MainFramelineLayout &layout)
+{
+  display.fillRect(layout.shiftedX, layout.shiftedY, layout.width, layout.height, WHITE);
+  display.fillRect(layout.innerX, layout.innerY, layout.innerWidth, layout.innerHeight, BLACK);
+  display.drawRect(layout.innerX, layout.innerY, layout.innerWidth, layout.innerHeight, WHITE);
+}
+
+int getSmoothedFocusRingThickness(int focusRadius)
+{
   static bool focusThicknessInit = false;
   static float focusThicknessSmoothed = 0.0f;
+
   float targetThickness = static_cast<float>(FOCUS_RING_THICKNESS_MIN);
   if (FOCUS_RADIUS_MAX > FOCUS_RADIUS_MIN)
   {
@@ -367,41 +414,58 @@ void drawMainUI()
     targetThickness = static_cast<float>(FOCUS_RING_THICKNESS_MIN) +
                       (ratio * (FOCUS_RING_THICKNESS_MAX - FOCUS_RING_THICKNESS_MIN));
   }
+
   targetThickness = max(static_cast<float>(FOCUS_RING_THICKNESS_MIN),
                         min(static_cast<float>(FOCUS_RING_THICKNESS_MAX), targetThickness));
+
   if (!focusThicknessInit)
   {
     focusThicknessSmoothed = targetThickness;
     focusThicknessInit = true;
   }
+
   focusThicknessSmoothed += (targetThickness - focusThicknessSmoothed) * FOCUS_RING_THICKNESS_SMOOTHING;
+
   int focusThickness = static_cast<int>(roundf(focusThicknessSmoothed));
-  focusThickness = max(FOCUS_RING_THICKNESS_MIN, min(FOCUS_RING_THICKNESS_MAX, focusThickness));
+  return max(FOCUS_RING_THICKNESS_MIN, min(FOCUS_RING_THICKNESS_MAX, focusThickness));
+}
+
+void drawReticleAndFocusRing(const MainFramelineLayout &layout)
+{
+  display.fillCircle(layout.reticleCenterX, layout.reticleCenterY, MAIN_RETICLE_CENTER_RADIUS, INVERSE);
+
+  int focusRadius = getFocusRadius();
+  int focusThickness = getSmoothedFocusRingThickness(focusRadius);
   int outerRadius = focusRadius;
   int innerRadius = focusRadius - focusThickness;
+
   if (outerRadius >= 1)
   {
-    display.fillCircle(rectCenterX, rectCenterY, outerRadius, INVERSE);
+    display.fillCircle(layout.reticleCenterX, layout.reticleCenterY, outerRadius, INVERSE);
   }
   if (innerRadius >= 1)
   {
-    display.fillCircle(rectCenterX, rectCenterY, innerRadius, INVERSE);
+    display.fillCircle(layout.reticleCenterX, layout.reticleCenterY, innerRadius, INVERSE);
   }
+}
 
+void drawLevelIndicator(int centerX, int centerY)
+{
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
+
   float x = a.acceleration.x;
   float y = a.acceleration.y;
   float z = a.acceleration.z;
 
   // Convert accelerometer readings into angles.
   // Keep the existing calibration basis but auto-rebase roll when in portrait.
-  float pitch_raw = atan2(x, sqrt(x * x + z * z));
-  float roll_raw = atan2(y, sqrt(x * x + z * z));
-  float roll_portrait_raw = atan2(y, z);
+  float pitchRaw = atan2(x, sqrt(x * x + z * z));
+  float rollRaw = atan2(y, sqrt(x * x + z * z));
+  float rollPortraitRaw = atan2(y, z);
 
   static bool portraitMode = false;
-  float absRollRaw = fabsf(roll_raw);
+  float absRollRaw = fabsf(rollRaw);
   if (!portraitMode)
   {
     if (absRollRaw >= LEVEL_PORTRAIT_ENTER_RAD)
@@ -414,134 +478,222 @@ void drawMainUI()
     portraitMode = false;
   }
 
-  float pitch_scale = portraitMode ? LEVEL_PITCH_SCALE_PORTRAIT : LEVEL_PITCH_SCALE;
-  float roll_scale = portraitMode ? LEVEL_ROLL_SCALE_PORTRAIT : LEVEL_ROLL_SCALE;
+  float pitchScale = portraitMode ? LEVEL_PITCH_SCALE_PORTRAIT : LEVEL_PITCH_SCALE;
+  float rollScale = portraitMode ? LEVEL_ROLL_SCALE_PORTRAIT : LEVEL_ROLL_SCALE;
 
-  float pitch_angle = pitch_raw;
-
-  // Define the deadzone
-  float deadzone = LEVEL_DEADZONE;
-
-  // Apply the deadzone to pitch before scaling.
-  if (fabsf(pitch_angle) < deadzone) {
-    pitch_angle = 0;
+  float pitchAngle = pitchRaw;
+  const float deadzone = LEVEL_DEADZONE;
+  if (fabsf(pitchAngle) < deadzone)
+  {
+    pitchAngle = 0.0f;
   }
-  pitch_angle = pitch_angle * pitch_scale;
+  pitchAngle *= pitchScale;
 
-  float roll_angle = 0.0f;
+  float rollAngle = 0.0f;
   const float degToRad = PI / 180.0f;
   if (portraitMode)
   {
-    float portraitSign = (roll_portrait_raw >= 0.0f) ? 1.0f : -1.0f;
+    float portraitSign = (rollPortraitRaw >= 0.0f) ? 1.0f : -1.0f;
     float portraitCenter = portraitSign * HALF_PI;
-    float rollDeviation = roll_portrait_raw - portraitCenter;
+    float rollDeviation = rollPortraitRaw - portraitCenter;
+
     // Normalize deviation so both sides around portrait center are represented.
     rollDeviation = atan2f(sinf(rollDeviation), cosf(rollDeviation));
+
     if (fabsf(rollDeviation) < deadzone)
     {
       rollDeviation = 0.0f;
     }
+
     // In portrait, keep the indicator centered at +/-90deg and mirror deviation by side.
     // Use per-side trim so left/right portrait can be calibrated independently.
     float portraitDeviationScale = LEVEL_PORTRAIT_ROLL_DEVIATION_SIGN * portraitSign;
-    int portraitTrimDeciDegrees = (portraitSign > 0.0f) ? level_trim_portrait_pos_deci_deg
-                                                         : level_trim_portrait_neg_deci_deg;
+    int portraitTrimDeciDegrees = (portraitSign > 0.0f)
+                                      ? level_trim_portrait_pos_deci_deg
+                                      : level_trim_portrait_neg_deci_deg;
     float portraitTrim = (static_cast<float>(portraitTrimDeciDegrees) / 10.0f) * degToRad;
-    roll_angle = portraitCenter +
-                 (portraitDeviationScale * rollDeviation * roll_scale) +
-                 portraitTrim;
+
+    rollAngle = portraitCenter +
+                (portraitDeviationScale * rollDeviation * rollScale) +
+                portraitTrim;
   }
   else
   {
-    float rollLandscape = roll_raw;
+    float rollLandscape = rollRaw;
     if (fabsf(rollLandscape) < deadzone)
     {
       rollLandscape = 0.0f;
     }
+
     float landscapeTrim = (static_cast<float>(level_trim_landscape_deci_deg) / 10.0f) * degToRad;
-    roll_angle = (rollLandscape * roll_scale) + landscapeTrim;
+    rollAngle = (rollLandscape * rollScale) + landscapeTrim;
   }
 
-  // Define the length of the line
-  float length = SCREEN_WIDTH - LEVEL_LINE_MARGIN_PX;
+  float lineLength = SCREEN_WIDTH - LEVEL_LINE_MARGIN_PX;
+  float halfLength = lineLength * 0.5f;
 
   // Calculate the horizon line direction and shift pitch along the line normal.
-  float halfLength = length * 0.5f;
-  float dirX = cosf(roll_angle);
-  float dirY = sinf(roll_angle);
+  float dirX = cosf(rollAngle);
+  float dirY = sinf(rollAngle);
   float normalX = -dirY;
   float normalY = dirX;
-  float offsetX = normalX * pitch_angle;
-  float offsetY = normalY * pitch_angle;
+  float offsetX = normalX * pitchAngle;
+  float offsetY = normalY * pitchAngle;
 
-  float startX = rectCenterX + offsetX - (halfLength * dirX);
-  float startY = rectCenterY + offsetY - (halfLength * dirY);
-  float endX = rectCenterX + offsetX + (halfLength * dirX);
-  float endY = rectCenterY + offsetY + (halfLength * dirY);
+  float startX = centerX + offsetX - (halfLength * dirX);
+  float startY = centerY + offsetY - (halfLength * dirY);
+  float endX = centerX + offsetX + (halfLength * dirX);
+  float endY = centerY + offsetY + (halfLength * dirY);
 
-  // Draw the line on the display
-  display.drawLine(startX, startY, endX, endY, INVERSE);   
+  display.drawLine(startX, startY, endX, endY, INVERSE);
 
-  // Define the length of the vertical line
-  int vertLineLength = LEVEL_VERTICAL_LINE_LENGTH;
+  int verticalLineStartY = centerY - (LEVEL_VERTICAL_LINE_LENGTH / 2);
+  int verticalLineEndY = centerY + (LEVEL_VERTICAL_LINE_LENGTH / 2);
+  display.drawLine(centerX, verticalLineStartY, centerX, verticalLineEndY, INVERSE);
+}
 
-  // Calculate the start and end points of the vertical line
-  int vertLineStartY = rectCenterY - vertLineLength / 2;
-  int vertLineEndY = rectCenterY + vertLineLength / 2;
+void prepareExternalDisplayTextMode()
+{
+  display_ext.clearDisplay();
+  u8g2_ext.setFontMode(1);
+  u8g2_ext.setFontDirection(0);
+  u8g2_ext.setForegroundColor(BLACK);
+  u8g2_ext.setBackgroundColor(WHITE);
+  u8g2_ext.setFont(u8g2_font_6x10_mf);
+}
 
-  // Draw the vertical line on the display
-  display.drawLine(rectCenterX, vertLineStartY, rectCenterX, vertLineEndY, INVERSE);
+void drawExternalHeader()
+{
+  display_ext.fillRect(0, 0, SCREEN_WIDTH, EXT_HEADER_HEIGHT, WHITE);
+
+  u8g2_ext.setCursor(EXT_HEADER_FORMAT_X, EXT_HEADER_FORMAT_Y);
+  u8g2_ext.print(film_formats[selected_format].name);
+
+  display_ext.drawLine(EXT_HEADER_DIVIDER_X, 0, EXT_HEADER_DIVIDER_X, EXT_HEADER_HEIGHT, BLACK);
+
+  u8g2_ext.setCursor(EXT_HEADER_LENS_X, EXT_HEADER_LENS_Y);
+  u8g2_ext.print(lenses[selected_lens].name);
+}
+
+void drawExternalBatteryReadout()
+{
+  if (bat_per == BATTERY_PERCENT_MAX)
+  {
+    display_ext.drawLine(EXT_BATTERY_DIVIDER_FULL_X, 0, EXT_BATTERY_DIVIDER_FULL_X, EXT_HEADER_HEIGHT, BLACK);
+    u8g2_ext.setCursor(EXT_BATTERY_CURSOR_FULL_X, EXT_HEADER_FORMAT_Y);
+  }
+  else if (bat_per < BATTERY_PERCENT_LOW_THRESHOLD)
+  {
+    display_ext.drawLine(EXT_BATTERY_DIVIDER_LOW_X, 0, EXT_BATTERY_DIVIDER_LOW_X, EXT_HEADER_HEIGHT, BLACK);
+    u8g2_ext.setCursor(EXT_BATTERY_CURSOR_LOW_X, EXT_HEADER_FORMAT_Y);
+  }
+  else
+  {
+    display_ext.drawLine(EXT_BATTERY_DIVIDER_MID_X, 0, EXT_BATTERY_DIVIDER_MID_X, EXT_HEADER_HEIGHT, BLACK);
+    u8g2_ext.setCursor(EXT_BATTERY_CURSOR_MID_X, EXT_HEADER_FORMAT_Y);
+  }
+
+  u8g2_ext.print(bat_per);
+  u8g2_ext.print(F("%"));
+}
+
+bool drawExternalProgressBarAndLed()
+{
+  if (frame_progress <= 0.0f)
+  {
+    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_BLUE_R, NEOPIXEL_BLUE_G, NEOPIXEL_BLUE_B));
+    return false;
+  }
+
+  float progressPercentage = frame_progress * PERCENT_SCALE;
+  int progressWidth = static_cast<int>(EXT_PROGRESS_BAR_WIDTH * (progressPercentage / PERCENT_SCALE));
+
+  display_ext.drawRect(EXT_PROGRESS_BAR_X, EXT_PROGRESS_BAR_Y, EXT_PROGRESS_BAR_WIDTH, EXT_PROGRESS_BAR_HEIGHT, WHITE);
+  display_ext.fillRect(EXT_PROGRESS_BAR_X, EXT_PROGRESS_BAR_Y, progressWidth, EXT_PROGRESS_BAR_HEIGHT, WHITE);
+
+  if (frame_progress != prev_frame_progress)
+  {
+    if (progressPercentage > 0 && progressPercentage < PERCENT_SCALE)
+    {
+      int greenValue = static_cast<int>(frame_progress * NEOPIXEL_COLOR_MAX);
+      int redValue = static_cast<int>((1 - frame_progress) * NEOPIXEL_COLOR_MAX);
+      sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(redValue, greenValue, NEOPIXEL_OFF_B));
+    }
+    prev_frame_progress = frame_progress;
+  }
+
+  return true;
+}
+
+void drawExternalCounterText(bool progressVisible)
+{
+  u8g2_ext.setForegroundColor(WHITE);
+  u8g2_ext.setBackgroundColor(BLACK);
+  u8g2_ext.setFont(u8g2_font_10x20_mf);
+
+  if (film_counter == 0 && frame_progress == 0)
+  {
+    u8g2_ext.setCursor(EXT_COUNTER_MESSAGE_X, EXT_COUNTER_TEXT_Y);
+    u8g2_ext.print(F(" Load film."));
+    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_VIOLET_R, NEOPIXEL_VIOLET_G, NEOPIXEL_VIOLET_B));
+  }
+  else if (film_counter == FILM_COUNTER_END)
+  {
+    u8g2_ext.setCursor(EXT_COUNTER_MESSAGE_X, EXT_COUNTER_TEXT_Y);
+    u8g2_ext.print(F(" Roll end."));
+    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_VIOLET_R, NEOPIXEL_VIOLET_G, NEOPIXEL_VIOLET_B));
+  }
+  else
+  {
+    u8g2_ext.setCursor(progressVisible ? EXT_COUNTER_VALUE_X_WITH_PROGRESS : EXT_COUNTER_VALUE_X_NO_PROGRESS,
+                       EXT_COUNTER_TEXT_Y);
+    u8g2_ext.print(film_counter);
+  }
+}
+} // namespace
+
+// Functions to draw UI
+// ---------------------
+void drawMainUI()
+{
+  display.clearDisplay();
+  drawMainHeader();
+
+  MainFramelineLayout framelineLayout = buildMainFramelineLayout();
+  drawMainFrameline(framelineLayout);
+  drawReticleAndFocusRing(framelineLayout);
+  drawLevelIndicator(framelineLayout.reticleCenterX, framelineLayout.reticleCenterY);
 
   display.display();
 }
 
 void drawConfigUI()
 {
-  display.clearDisplay();
+  beginConfigMenuScreen(F("Setup"));
 
-  u8g2.setFontMode(1);
-  u8g2.setFontDirection(0);
-  u8g2.setForegroundColor(WHITE);
-  u8g2.setBackgroundColor(BLACK);
-
-  u8g2.setFont(u8g2_font_9x15_mf);
-  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
-  u8g2.print(F("Setup"));
-
-  u8g2.setFont(u8g2_font_4x6_mf);
-  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
-
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_FILM_MENU));
-  setMenuItemColors(config_step == CONFIG_ROOT_STEP_FILM_MENU);
+  selectConfigMenuRow(CONFIG_ROOT_STEP_FILM_MENU, config_step == CONFIG_ROOT_STEP_FILM_MENU);
   u8g2.print(F(" Film > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_LENS_MENU));
-  setMenuItemColors(config_step == CONFIG_ROOT_STEP_LENS_MENU);
+  selectConfigMenuRow(CONFIG_ROOT_STEP_LENS_MENU, config_step == CONFIG_ROOT_STEP_LENS_MENU);
   u8g2.print(F(" Lens Settings > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_METER_MENU));
-  setMenuItemColors(config_step == CONFIG_ROOT_STEP_METER_MENU);
+  selectConfigMenuRow(CONFIG_ROOT_STEP_METER_MENU, config_step == CONFIG_ROOT_STEP_METER_MENU);
   u8g2.print(F(" Light Meter > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_UI_MENU));
-  setMenuItemColors(config_step == CONFIG_ROOT_STEP_UI_MENU);
+  selectConfigMenuRow(CONFIG_ROOT_STEP_UI_MENU, config_step == CONFIG_ROOT_STEP_UI_MENU);
   u8g2.print(F(" UI Settings > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_RESET));
-  setMenuItemColors(config_step == CONFIG_ROOT_STEP_RESET);
+  selectConfigMenuRow(CONFIG_ROOT_STEP_RESET, config_step == CONFIG_ROOT_STEP_RESET);
   u8g2.print(F(" Reset frame counter >> "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_HEALTH));
-  setMenuItemColors(config_step == CONFIG_ROOT_STEP_HEALTH);
+  selectConfigMenuRow(CONFIG_ROOT_STEP_HEALTH, config_step == CONFIG_ROOT_STEP_HEALTH);
   u8g2.print(F(" System Health > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_ROOT_STEP_EXIT));
-  setMenuItemColors(config_step == CONFIG_ROOT_STEP_EXIT);
+  selectConfigMenuRow(CONFIG_ROOT_STEP_EXIT, config_step == CONFIG_ROOT_STEP_EXIT);
   u8g2.print(F(" Exit >> "));
 
   u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y);
-  u8g2.setBackgroundColor(BLACK); // Reset for footer
-  u8g2.setForegroundColor(WHITE);
+  resetConfigTextColors();
   u8g2.print(F(" IDENTIDEM.design MRF "));
   u8g2.print(FWVERSION);
 
@@ -550,51 +702,34 @@ void drawConfigUI()
 
 void drawFilmConfigUI()
 {
-  display.clearDisplay();
-
-  u8g2.setFontMode(1);
-  u8g2.setFontDirection(0);
-  u8g2.setForegroundColor(WHITE);
-  u8g2.setBackgroundColor(BLACK);
-
-  u8g2.setFont(u8g2_font_9x15_mf);
-  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
-  u8g2.print(F("Film"));
-
-  u8g2.setFont(u8g2_font_4x6_mf);
-  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
-
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FORMAT));
-  setMenuItemColors(config_step == CONFIG_FILM_STEP_FORMAT);
-  u8g2.print(F(" Format: "));
-  u8g2.print(film_formats[selected_format].name);
-  u8g2.print(F(" "));
+  beginConfigMenuScreen(F("Film"));
 
   int maxFrameForFormat = getFilmFormatMaxFrame(film_formats[selected_format]);
   int displayedFrame = constrain(film_counter, 0, maxFrameForFormat);
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_CURRENT_FRAME));
-  setMenuItemColors(config_step == CONFIG_FILM_STEP_CURRENT_FRAME);
+  selectConfigMenuRow(CONFIG_FILM_STEP_FORMAT, config_step == CONFIG_FILM_STEP_FORMAT);
+  u8g2.print(F(" Format: "));
+  u8g2.print(film_formats[selected_format].name);
+  u8g2.print(F(" "));
+
+  selectConfigMenuRow(CONFIG_FILM_STEP_CURRENT_FRAME, config_step == CONFIG_FILM_STEP_CURRENT_FRAME);
   u8g2.print(F(" Current frame: "));
   u8g2.print(displayedFrame);
   u8g2.print(F(" (0.."));
   u8g2.print(maxFrameForFormat);
   u8g2.print(F(") "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FRAME_ONE_OFFSET));
-  setMenuItemColors(config_step == CONFIG_FILM_STEP_FRAME_ONE_OFFSET);
+  selectConfigMenuRow(CONFIG_FILM_STEP_FRAME_ONE_OFFSET, config_step == CONFIG_FILM_STEP_FRAME_ONE_OFFSET);
   u8g2.print(F(" Frame 1 offset: "));
   printSignedInt(frame_one_offset);
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_FRAME_SPACING));
-  setMenuItemColors(config_step == CONFIG_FILM_STEP_FRAME_SPACING);
+  selectConfigMenuRow(CONFIG_FILM_STEP_FRAME_SPACING, config_step == CONFIG_FILM_STEP_FRAME_SPACING);
   u8g2.print(F(" Frame spacing: "));
   printSignedInt(frame_spacing_offset);
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_FILM_STEP_BACK));
-  setMenuItemColors(config_step == CONFIG_FILM_STEP_BACK);
+  selectConfigMenuRow(CONFIG_FILM_STEP_BACK, config_step == CONFIG_FILM_STEP_BACK);
   u8g2.print(F(" Back << "));
 
   display.display();
@@ -602,36 +737,22 @@ void drawFilmConfigUI()
 
 void drawLensConfigUI()
 {
-  display.clearDisplay();
+  beginConfigMenuScreen(F("Lens"));
 
-  u8g2.setFontMode(1);
-  u8g2.setFontDirection(0);
-  u8g2.setForegroundColor(WHITE);
-  u8g2.setBackgroundColor(BLACK);
+  selectConfigMenuRow(CONFIG_LENS_STEP_LENS, config_step == CONFIG_LENS_STEP_LENS);
+  u8g2.print(F(" Lens:"));
+  u8g2.print(lenses[selected_lens].name);
+  u8g2.print(F(" "));
 
-  u8g2.setFont(u8g2_font_9x15_mf);
-  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
-  u8g2.print(F("Lens"));
-
-  u8g2.setFont(u8g2_font_4x6_mf);
-  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
-
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_LENS));
-  setMenuItemColors(config_step == CONFIG_LENS_STEP_LENS);
-  u8g2.print(F(" Lens:")); u8g2.print(lenses[selected_lens].name); u8g2.print(F(" "));
-
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_PARALLAX));
-  setMenuItemColors(config_step == CONFIG_LENS_STEP_PARALLAX);
+  selectConfigMenuRow(CONFIG_LENS_STEP_PARALLAX, config_step == CONFIG_LENS_STEP_PARALLAX);
   u8g2.print(F(" Parallax correction: "));
   u8g2.print(parallaxEnabled ? F("On") : F("Off"));
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_CALIB));
-  setMenuItemColors(config_step == CONFIG_LENS_STEP_CALIB);
+  selectConfigMenuRow(CONFIG_LENS_STEP_CALIB, config_step == CONFIG_LENS_STEP_CALIB);
   u8g2.print(F(" Lens Calibration > "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_LENS_STEP_BACK));
-  setMenuItemColors(config_step == CONFIG_LENS_STEP_BACK);
+  selectConfigMenuRow(CONFIG_LENS_STEP_BACK, config_step == CONFIG_LENS_STEP_BACK);
   u8g2.print(F(" Back << "));
 
   display.display();
@@ -639,28 +760,14 @@ void drawLensConfigUI()
 
 void drawMeterConfigUI()
 {
-  display.clearDisplay();
+  beginConfigMenuScreen(F("Meter"));
 
-  u8g2.setFontMode(1);
-  u8g2.setFontDirection(0);
-  u8g2.setForegroundColor(WHITE);
-  u8g2.setBackgroundColor(BLACK);
-
-  u8g2.setFont(u8g2_font_9x15_mf);
-  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
-  u8g2.print(F("Meter"));
-
-  u8g2.setFont(u8g2_font_4x6_mf);
-  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
-
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_ISO));
-  setMenuItemColors(config_step == CONFIG_METER_STEP_ISO);
+  selectConfigMenuRow(CONFIG_METER_STEP_ISO, config_step == CONFIG_METER_STEP_ISO);
   u8g2.print(F(" ISO:"));
   u8g2.print(iso);
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_EV_COMP));
-  setMenuItemColors(config_step == CONFIG_METER_STEP_EV_COMP);
+  selectConfigMenuRow(CONFIG_METER_STEP_EV_COMP, config_step == CONFIG_METER_STEP_EV_COMP);
   u8g2.print(F(" EV Comp:"));
   float evComp = static_cast<float>(exposure_comp_thirds) / 3.0f;
   if (evComp >= 0.0f)
@@ -670,20 +777,17 @@ void drawMeterConfigUI()
   u8g2.print(evComp, 1);
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_SMOOTHING));
-  setMenuItemColors(config_step == CONFIG_METER_STEP_SMOOTHING);
+  selectConfigMenuRow(CONFIG_METER_STEP_SMOOTHING, config_step == CONFIG_METER_STEP_SMOOTHING);
   u8g2.print(F(" Smoothing:"));
   u8g2.print(getMeterSmoothingLabel(meter_smoothing_mode));
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_EV_READOUT));
-  setMenuItemColors(config_step == CONFIG_METER_STEP_EV_READOUT);
+  selectConfigMenuRow(CONFIG_METER_STEP_EV_READOUT, config_step == CONFIG_METER_STEP_EV_READOUT);
   u8g2.print(F(" EV Readout:"));
   u8g2.print(show_ev_readout ? F("On") : F("Off"));
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_METER_STEP_BACK));
-  setMenuItemColors(config_step == CONFIG_METER_STEP_BACK);
+  selectConfigMenuRow(CONFIG_METER_STEP_BACK, config_step == CONFIG_METER_STEP_BACK);
   u8g2.print(F(" Back << "));
 
   display.display();
@@ -691,49 +795,29 @@ void drawMeterConfigUI()
 
 void drawUiConfigUI()
 {
-  display.clearDisplay();
+  beginConfigMenuScreen(F("UI Settings"));
 
-  u8g2.setFontMode(1);
-  u8g2.setFontDirection(0);
-  u8g2.setForegroundColor(WHITE);
-  u8g2.setBackgroundColor(BLACK);
-
-  u8g2.setFont(u8g2_font_9x15_mf);
-  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
-  u8g2.print(F("UI Settings"));
-
-  u8g2.setFont(u8g2_font_4x6_mf);
-  const int menu_item_y_start = CONFIG_ITEM_Y_START + CONFIG_HEADER_PADDING_Y;
-
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_HORIZON_LANDSCAPE));
-  setMenuItemColors(config_step == CONFIG_UI_STEP_HORIZON_LANDSCAPE);
+  selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_LANDSCAPE, config_step == CONFIG_UI_STEP_HORIZON_LANDSCAPE);
   u8g2.print(F(" Horizon L: "));
   printSignedDeciDegrees(level_trim_landscape_deci_deg);
-  u8g2.print(F("deg"));
-  u8g2.print(F(" "));
+  u8g2.print(F("deg "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_HORIZON_PORTRAIT_POS));
-  setMenuItemColors(config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_POS);
+  selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_PORTRAIT_POS, config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_POS);
   u8g2.print(F(" Horizon P+: "));
   printSignedDeciDegrees(level_trim_portrait_pos_deci_deg);
-  u8g2.print(F("deg"));
-  u8g2.print(F(" "));
+  u8g2.print(F("deg "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG));
-  setMenuItemColors(config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG);
+  selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG, config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG);
   u8g2.print(F(" Horizon P-: "));
   printSignedDeciDegrees(level_trim_portrait_neg_deci_deg);
-  u8g2.print(F("deg"));
-  u8g2.print(F(" "));
+  u8g2.print(F("deg "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_SLEEP_TIMEOUT));
-  setMenuItemColors(config_step == CONFIG_UI_STEP_SLEEP_TIMEOUT);
+  selectConfigMenuRow(CONFIG_UI_STEP_SLEEP_TIMEOUT, config_step == CONFIG_UI_STEP_SLEEP_TIMEOUT);
   u8g2.print(F(" Sleep timeout: "));
   u8g2.print(getSleepTimeoutModeLabel(sleep_timeout_mode));
   u8g2.print(F(" "));
 
-  u8g2.setCursor(CONFIG_ITEM_X, menu_item_y_start + (CONFIG_ITEM_Y_STEP * CONFIG_UI_STEP_BACK));
-  setMenuItemColors(config_step == CONFIG_UI_STEP_BACK);
+  selectConfigMenuRow(CONFIG_UI_STEP_BACK, config_step == CONFIG_UI_STEP_BACK);
   u8g2.print(F(" Back << "));
 
   display.display();
@@ -741,12 +825,7 @@ void drawUiConfigUI()
 
 void drawCalibUI()
 {
-  display.clearDisplay();
-
-  u8g2.setFontMode(1);
-  u8g2.setFontDirection(0);
-  u8g2.setForegroundColor(WHITE);
-  u8g2.setBackgroundColor(BLACK);
+  preparePrimaryDisplayTextMode();
 
   u8g2.setFont(u8g2_font_6x10_mf);
   u8g2.setCursor(CALIB_TITLE_X, CALIB_TITLE_Y);
@@ -756,7 +835,9 @@ void drawCalibUI()
 
   u8g2.setCursor(CALIB_ITEM_X, CALIB_LENS_Y);
   setMenuItemColors(calib_step == 0);
-  u8g2.print(F(" Lens:")); u8g2.print(lenses[calib_lens].name); u8g2.print(F(" "));
+  u8g2.print(F(" Lens:"));
+  u8g2.print(lenses[calib_lens].name);
+  u8g2.print(F(" "));
 
   const Lens &calibrationLens = lenses[calib_lens];
   int calibrationPointCount = getLensDistancePointCount(calibrationLens);
@@ -764,36 +845,47 @@ void drawCalibUI()
   {
     calibrationPointCount = 1;
   }
+
   int calibrationIndex = max(0, min(current_calib_distance, calibrationPointCount - 1));
   float calibrationDistance = calibrationLens.distance[calibrationIndex];
 
   u8g2.setCursor(CALIB_ITEM_X, CALIB_DISTANCE_Y);
   setMenuItemColors(calib_step == 1);
-  u8g2.print(F(" ")); u8g2.print(calibrationDistance, DISTANCE_DECIMAL_PLACES);
-  u8g2.print(F("m: ")); u8g2.print(lens_sensor_reading); u8g2.print(F(" "));
+  u8g2.print(F(" "));
+  u8g2.print(calibrationDistance, DISTANCE_DECIMAL_PLACES);
+  u8g2.print(F("m: "));
+  u8g2.print(lens_sensor_reading);
+  u8g2.print(F(" "));
 
-  u8g2.setBackgroundColor(BLACK); // Reset for instructions
-  u8g2.setForegroundColor(WHITE);
+  resetConfigTextColors();
 
   if (calib_step == 0)
   {
-    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1); u8g2.print(F(" (L) to Cycle"));
-    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2); u8g2.print(F(" (R) to Select"));
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1);
+    u8g2.print(F(" (L) to Cycle"));
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2);
+    u8g2.print(F(" (R) to Select"));
   }
   else
   {
-    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1); u8g2.print(F(" (L) to Select"));
-    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2); u8g2.print(F(" (R) to Cancel"));
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1);
+    u8g2.print(F(" (L) to Select"));
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2);
+    u8g2.print(F(" (R) to Cancel"));
 
     if (calib_capture_status == CALIB_CAPTURE_STATUS_UNSTABLE)
     {
-      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1); u8g2.print(F(" Unstable reading"));
-      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2); u8g2.print(F(" Hold still + retry"));
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
+      u8g2.print(F(" Unstable reading"));
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
+      u8g2.print(F(" Hold still + retry"));
     }
     else if (calib_capture_status == CALIB_CAPTURE_STATUS_NON_MONOTONIC)
     {
-      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1); u8g2.print(F(" Out of sequence"));
-      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2); u8g2.print(F(" Recheck distance"));
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
+      u8g2.print(F(" Out of sequence"));
+      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
+      u8g2.print(F(" Recheck distance"));
     }
   }
 
@@ -802,18 +894,8 @@ void drawCalibUI()
 
 void drawResetConfirmUI()
 {
-  display.clearDisplay();
+  beginConfigMenuScreen(F("Reset Count?"));
 
-  u8g2.setFontMode(1);
-  u8g2.setFontDirection(0);
-  u8g2.setForegroundColor(WHITE);
-  u8g2.setBackgroundColor(BLACK);
-
-  u8g2.setFont(u8g2_font_9x15_mf);
-  u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
-  u8g2.print(F("Reset Count?"));
-
-  u8g2.setFont(u8g2_font_4x6_mf);
   u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y1);
   u8g2.print(F(" (L) Cancel"));
   u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y2);
@@ -827,18 +909,14 @@ void drawHealthUI()
   const unsigned long now = millis();
   const unsigned long idleMs = getIdleDurationMs(now);
 
-  display.clearDisplay();
-
-  u8g2.setFontMode(1);
-  u8g2.setFontDirection(0);
-  u8g2.setForegroundColor(WHITE);
-  u8g2.setBackgroundColor(BLACK);
+  preparePrimaryDisplayTextMode();
 
   u8g2.setFont(u8g2_font_6x10_mf);
   u8g2.setCursor(HEALTH_TITLE_X, HEALTH_TITLE_Y);
   u8g2.print(F("System Health"));
 
   u8g2.setFont(u8g2_font_4x6_mf);
+
   u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 0));
   u8g2.print(F("FW: "));
   u8g2.print(FWVERSION);
@@ -883,77 +961,12 @@ void drawHealthUI()
 
 void drawExternalUI()
 {
-  int progessBarWidth = EXT_PROGRESS_BAR_WIDTH;
-  int progressBarHeight = EXT_PROGRESS_BAR_HEIGHT;
-  int progressBarX = EXT_PROGRESS_BAR_X;
-  int progressBarY = EXT_PROGRESS_BAR_Y;
+  prepareExternalDisplayTextMode();
+  drawExternalHeader();
+  drawExternalBatteryReadout();
 
-  display_ext.clearDisplay();
-
-  u8g2_ext.setFontMode(1);
-  u8g2_ext.setFontDirection(0);
-  u8g2_ext.setForegroundColor(BLACK);
-  u8g2_ext.setBackgroundColor(WHITE);
-  u8g2_ext.setFont(u8g2_font_6x10_mf);
-
-  u8g2_ext.setCursor(EXT_HEADER_FORMAT_X, EXT_HEADER_FORMAT_Y);
-  display_ext.fillRect(0, 0, SCREEN_WIDTH, EXT_HEADER_HEIGHT, WHITE);
-  u8g2_ext.print(film_formats[selected_format].name);
-
-  display_ext.drawLine(EXT_HEADER_DIVIDER_X, 0, EXT_HEADER_DIVIDER_X, EXT_HEADER_HEIGHT, BLACK);
-
-  u8g2_ext.setCursor(EXT_HEADER_LENS_X, EXT_HEADER_LENS_Y);
-  u8g2_ext.print(lenses[selected_lens].name);
-
-  // Adjust cursor for battery percentage display
-  if (bat_per == BATTERY_PERCENT_MAX) {
-    display_ext.drawLine(EXT_BATTERY_DIVIDER_FULL_X, 0, EXT_BATTERY_DIVIDER_FULL_X, EXT_HEADER_HEIGHT, BLACK);
-    u8g2_ext.setCursor(EXT_BATTERY_CURSOR_FULL_X, EXT_HEADER_FORMAT_Y);
-  } else if (bat_per < BATTERY_PERCENT_LOW_THRESHOLD) {
-    display_ext.drawLine(EXT_BATTERY_DIVIDER_LOW_X, 0, EXT_BATTERY_DIVIDER_LOW_X, EXT_HEADER_HEIGHT, BLACK);
-    u8g2_ext.setCursor(EXT_BATTERY_CURSOR_LOW_X, EXT_HEADER_FORMAT_Y);
-  } else {
-    display_ext.drawLine(EXT_BATTERY_DIVIDER_MID_X, 0, EXT_BATTERY_DIVIDER_MID_X, EXT_HEADER_HEIGHT, BLACK);
-    u8g2_ext.setCursor(EXT_BATTERY_CURSOR_MID_X, EXT_HEADER_FORMAT_Y);
-  }
-  u8g2_ext.print(bat_per); u8g2_ext.print(F("%"));
-
-  if (frame_progress > 0)
-  {
-    float progressPercentage = frame_progress * PERCENT_SCALE;
-    int progressWidth = progessBarWidth * (progressPercentage / PERCENT_SCALE);
-    display_ext.drawRect(progressBarX, progressBarY, progessBarWidth, progressBarHeight, WHITE);
-    display_ext.fillRect(progressBarX, progressBarY, progressWidth, progressBarHeight, WHITE);
-
-    if (frame_progress != prev_frame_progress) {
-      if (progressPercentage > 0 && progressPercentage < PERCENT_SCALE) {
-        int greenValue = frame_progress * NEOPIXEL_COLOR_MAX;
-        int redValue = (1 - frame_progress) * NEOPIXEL_COLOR_MAX;
-        sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(redValue, greenValue, NEOPIXEL_OFF_B));
-      }
-      prev_frame_progress = frame_progress;
-    }
-  }
-  else
-  {
-    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_BLUE_R, NEOPIXEL_BLUE_G, NEOPIXEL_BLUE_B)); // Blue for no progress
-    // No need to set cursor if nothing is printed here for this case
-  }
-
-  u8g2_ext.setForegroundColor(WHITE); // Text on black background for counter
-  u8g2_ext.setBackgroundColor(BLACK);
-  u8g2_ext.setFont(u8g2_font_10x20_mf);
-
-  if (film_counter == 0 && frame_progress == 0) {
-    u8g2_ext.setCursor(EXT_COUNTER_MESSAGE_X, EXT_COUNTER_TEXT_Y); u8g2_ext.print(F(" Load film."));
-    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_VIOLET_R, NEOPIXEL_VIOLET_G, NEOPIXEL_VIOLET_B)); // Violet
-  } else if (film_counter == FILM_COUNTER_END) {
-    u8g2_ext.setCursor(EXT_COUNTER_MESSAGE_X, EXT_COUNTER_TEXT_Y); u8g2_ext.print(F(" Roll end."));
-    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_VIOLET_R, NEOPIXEL_VIOLET_G, NEOPIXEL_VIOLET_B)); // Violet
-  } else {
-    u8g2_ext.setCursor((frame_progress > 0) ? EXT_COUNTER_VALUE_X_WITH_PROGRESS : EXT_COUNTER_VALUE_X_NO_PROGRESS, EXT_COUNTER_TEXT_Y); // Adjust cursor based on progress bar
-    u8g2_ext.print(film_counter);
-  }
+  bool progressVisible = drawExternalProgressBarAndLed();
+  drawExternalCounterText(progressVisible);
 
   sspixel.show();
   display_ext.display();
