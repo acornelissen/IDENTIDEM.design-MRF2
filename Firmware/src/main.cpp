@@ -39,6 +39,7 @@ LoopScheduler scheduler;
 bool sleepServicesActive = false;
 bool sleepWakeBaselinesInitialized = false;
 bool lightMeterSleeping = false;
+bool lidarIdleStandbyActive = false;
 int sleepWakeEncoderBaseline = 0;
 int sleepWakeLensBaseline = 0;
 
@@ -114,6 +115,7 @@ void pollSleepWakeLens()
 void enterSleepServices()
 {
   toggleLidar(false);
+  lidarIdleStandbyActive = false;
   powerDownLightMeterForSleep();
   drawSleepUI();
 
@@ -131,6 +133,7 @@ void exitSleepServices()
   display.oled_command(0xAF);
   wakeLightMeterFromSleep();
   toggleLidar(true);
+  lidarIdleStandbyActive = false;
   sleepWakeBaselinesInitialized = false;
 
   // Force immediate sensor/UI refresh right after wake.
@@ -139,6 +142,43 @@ void exitSleepServices()
   scheduler.lastMeterMs = 0;
   scheduler.lastBatteryMs = 0;
   scheduler.lastUiMs = 0;
+}
+
+void clearLidarUiForStandby()
+{
+  distance_cm = "...";
+  lidar_quality_level = 0;
+}
+
+void updateLidarIdleStandby(unsigned long nowMs)
+{
+  // Keep LiDAR active when not in Main UI; wake immediately on any activity.
+  bool canStandby = (ui_mode == UiMode::Main);
+  unsigned long idleDurationMs = getIdleDurationMs(nowMs);
+
+  if (!lidarIdleStandbyActive)
+  {
+    if (canStandby && lidarEnabled && idleDurationMs >= LIDAR_IDLE_STANDBY_TIMEOUT_MS)
+    {
+      toggleLidar(false);
+      lidarIdleStandbyActive = !lidarEnabled;
+      if (lidarIdleStandbyActive)
+      {
+        clearLidarUiForStandby();
+      }
+    }
+    return;
+  }
+
+  if (!canStandby || idleDurationMs < LIDAR_IDLE_STANDBY_TIMEOUT_MS)
+  {
+    toggleLidar(true);
+    lidarIdleStandbyActive = !lidarEnabled;
+    if (!lidarIdleStandbyActive)
+    {
+      scheduler.lastLidarMs = 0; // Force immediate re-acquisition after wake.
+    }
+  }
 }
 
 bool shouldRunTask(unsigned long nowMs, unsigned long &lastRunMs, unsigned long intervalMs)
@@ -330,7 +370,9 @@ void loop()
       setFilmCounter();
     }
 
-    if (shouldRunTask(now, scheduler.lastLidarMs, LOOP_LIDAR_INTERVAL_MS))
+    updateLidarIdleStandby(now);
+
+    if (!lidarIdleStandbyActive && shouldRunTask(now, scheduler.lastLidarMs, LOOP_LIDAR_INTERVAL_MS))
     {
       setDistance();
     }

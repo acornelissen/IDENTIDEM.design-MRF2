@@ -273,6 +273,7 @@ const unsigned long LOOP_LIGHTMETER_INTERVAL_MS = 100;    // Light meter update 
 const unsigned long LOOP_BATTERY_INTERVAL_MS = 1500;      // Battery gauge update cadence.
 const unsigned long LOOP_UI_INTERVAL_MS = 33;             // UI redraw cadence (~30 FPS).
 const unsigned long LOOP_PREFS_FLUSH_INTERVAL_MS = 200;   // Preferences flush check cadence.
+const unsigned long LIDAR_IDLE_STANDBY_TIMEOUT_MS = 5000; // Awake-main idle time before LiDAR enters standby.
 const int SLEEP_WAKE_ENCODER_DELTA = 1;                   // Encoder delta to wake device.
 const int SLEEP_WAKE_LENS_DELTA = 8;                      // Lens ADC delta to wake device.
 
