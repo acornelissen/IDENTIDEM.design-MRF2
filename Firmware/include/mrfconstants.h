@@ -263,19 +263,26 @@ const int FRAME_TUNING_MAX = 10;  // Maximum frame tuning value.
 // ---------------------------------------------------------------------------
 const unsigned long LOOP_INPUT_INTERVAL_MS = 5;           // Input polling cadence while awake.
 const unsigned long LOOP_FILM_COUNTER_INTERVAL_MS = 5;    // Film counter update cadence.
+const unsigned long LOOP_FILM_COUNTER_IDLE_INTERVAL_MS = 25; // Film counter cadence when advance lever is stable.
+const unsigned long LOOP_FILM_COUNTER_ACTIVE_HOLD_MS = 500;  // Keep fast film polling after recent movement.
 const unsigned long LOOP_SLEEP_CHECK_INTERVAL_MS = 50;    // Sleep-state check cadence.
 const unsigned long LOOP_SLEEP_INPUT_INTERVAL_MS = 25;    // Input polling cadence while asleep.
 const unsigned long LOOP_SLEEP_ENCODER_POLL_INTERVAL_MS = 50; // Encoder wake polling cadence.
 const unsigned long LOOP_SLEEP_LENS_POLL_INTERVAL_MS = 100;   // Lens wake polling cadence.
 const unsigned long LOOP_LIDAR_INTERVAL_MS = 25;          // LiDAR update cadence.
 const unsigned long LOOP_LENS_INTERVAL_MS = 25;           // Lens ADC + mapping cadence.
+const unsigned long LOOP_LENS_IDLE_INTERVAL_MS = 100;     // Lens ADC cadence when focus ring is stable.
+const unsigned long LOOP_LENS_ACTIVE_HOLD_MS = 750;       // Keep fast lens polling after recent focus movement.
 const unsigned long LOOP_LIGHTMETER_INTERVAL_MS = 100;    // Light meter update cadence.
+const unsigned long LOOP_LIGHTMETER_IDLE_INTERVAL_MS = 500; // Light meter cadence when scene/settings are stable.
+const unsigned long LOOP_LIGHTMETER_ACTIVE_HOLD_MS = 1500;  // Keep fast light-meter polling after recent changes.
 const unsigned long LOOP_BATTERY_INTERVAL_MS = 1500;      // Battery gauge update cadence.
 const unsigned long LOOP_UI_INTERVAL_MS = 33;             // UI redraw cadence (~30 FPS).
 const unsigned long LOOP_UI_MAIN_REFRESH_MS = 100;        // Forced redraw cadence in Main mode when state is stable.
 const unsigned long LOOP_UI_HEALTH_REFRESH_MS = 1000;     // Forced redraw cadence for Health idle timer updates.
 const unsigned long LOOP_PREFS_FLUSH_INTERVAL_MS = 200;   // Preferences flush check cadence.
 const unsigned long LIDAR_IDLE_STANDBY_TIMEOUT_MS = 5000; // Awake-main idle time before LiDAR enters standby.
+const float LIGHTMETER_ACTIVITY_DELTA_LUX = 1.0f;         // Lux delta that keeps light-meter polling in fast mode.
 const int SLEEP_WAKE_ENCODER_DELTA = 1;                   // Encoder delta to wake device.
 const int SLEEP_WAKE_LENS_DELTA = 8;                      // Lens ADC delta to wake device.
 

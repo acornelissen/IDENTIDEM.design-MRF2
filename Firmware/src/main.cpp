@@ -2,6 +2,7 @@
 // Hardware: DTS6012M LiDAR, STEMMA I2C QT Rotary Encoder (4991), SH1107 main + SSD1306 external OLEDs
 
 #include <Arduino.h>
+#include <math.h>
 #include <string.h>
 #include "esp_wifi.h"
 #include "esp_bt.h"
@@ -55,6 +56,9 @@ bool lightMeterSleeping = false;
 bool lidarIdleStandbyActive = false;
 int sleepWakeEncoderBaseline = 0;
 int sleepWakeLensBaseline = 0;
+unsigned long lastFilmMovementMs = 0;
+unsigned long lastLensMovementMs = 0;
+unsigned long lastMeterChangeMs = 0;
 
 constexpr uint32_t HASH_OFFSET_BASIS = 2166136261u;
 constexpr uint32_t HASH_PRIME = 16777619u;
@@ -210,6 +214,55 @@ bool shouldDrawExternalUi()
   return changed;
 }
 
+unsigned long selectAdaptiveInterval(unsigned long nowMs,
+                                     unsigned long lastActivityMs,
+                                     unsigned long fastIntervalMs,
+                                     unsigned long idleIntervalMs,
+                                     unsigned long holdWindowMs)
+{
+  if ((nowMs - lastActivityMs) < holdWindowMs)
+  {
+    return fastIntervalMs;
+  }
+  return idleIntervalMs;
+}
+
+unsigned long getFilmCounterIntervalMs(unsigned long nowMs)
+{
+  return selectAdaptiveInterval(
+      nowMs,
+      lastFilmMovementMs,
+      LOOP_FILM_COUNTER_INTERVAL_MS,
+      LOOP_FILM_COUNTER_IDLE_INTERVAL_MS,
+      LOOP_FILM_COUNTER_ACTIVE_HOLD_MS);
+}
+
+unsigned long getLensIntervalMs(unsigned long nowMs)
+{
+  return selectAdaptiveInterval(
+      nowMs,
+      lastLensMovementMs,
+      LOOP_LENS_INTERVAL_MS,
+      LOOP_LENS_IDLE_INTERVAL_MS,
+      LOOP_LENS_ACTIVE_HOLD_MS);
+}
+
+unsigned long getLightMeterIntervalMs(unsigned long nowMs)
+{
+  // Keep meter updates snappy whenever user-adjusted settings are pending.
+  if (aperture != prev_aperture || iso != prev_iso)
+  {
+    return LOOP_LIGHTMETER_INTERVAL_MS;
+  }
+
+  return selectAdaptiveInterval(
+      nowMs,
+      lastMeterChangeMs,
+      LOOP_LIGHTMETER_INTERVAL_MS,
+      LOOP_LIGHTMETER_IDLE_INTERVAL_MS,
+      LOOP_LIGHTMETER_ACTIVE_HOLD_MS);
+}
+
 bool sendLightMeterCommand(uint8_t command)
 {
   Wire.beginTransmission(LIGHTMETER_I2C_ADDR);
@@ -311,6 +364,11 @@ void exitSleepServices()
   scheduler.lastMeterMs = 0;
   scheduler.lastBatteryMs = 0;
   scheduler.lastUiMs = 0;
+
+  unsigned long nowMs = millis();
+  lastFilmMovementMs = nowMs;
+  lastLensMovementMs = nowMs;
+  lastMeterChangeMs = nowMs;
 }
 
 void clearLidarUiForStandby()
@@ -494,6 +552,9 @@ void loop()
     scheduler.lastBatteryMs = 0;
     scheduler.lastUiMs = 0;
     scheduler.lastPrefsFlushMs = 0;
+    lastFilmMovementMs = now;
+    lastLensMovementMs = now;
+    lastMeterChangeMs = now;
   }
 
   if (shouldRunTask(now, scheduler.lastSleepCheckMs, LOOP_SLEEP_CHECK_INTERVAL_MS))
@@ -534,9 +595,16 @@ void loop()
     {
       checkButtons();
     }
-    if (shouldRunTask(now, scheduler.lastFilmCounterMs, LOOP_FILM_COUNTER_INTERVAL_MS))
+    unsigned long filmCounterIntervalMs = getFilmCounterIntervalMs(now);
+    if (shouldRunTask(now, scheduler.lastFilmCounterMs, filmCounterIntervalMs))
     {
+      int previousEncoder = encoder_value;
+      float previousProgress = frame_progress;
       setFilmCounter();
+      if (encoder_value != previousEncoder || fabsf(frame_progress - previousProgress) > 0.0001f)
+      {
+        lastFilmMovementMs = now;
+      }
     }
 
     updateLidarIdleStandby(now);
@@ -545,14 +613,33 @@ void loop()
     {
       setDistance();
     }
-    if (shouldRunTask(now, scheduler.lastLensMs, LOOP_LENS_INTERVAL_MS))
+    unsigned long lensIntervalMs = getLensIntervalMs(now);
+    if (shouldRunTask(now, scheduler.lastLensMs, lensIntervalMs))
     {
+      int previousReading = lens_sensor_reading;
       lens_sensor_reading = getLensSensorReading();
+      if (abs(lens_sensor_reading - previousReading) > LENS_ACTIVITY_THRESHOLD)
+      {
+        lastLensMovementMs = now;
+      }
       setLensDistance();
     }
-    if (shouldRunTask(now, scheduler.lastMeterMs, LOOP_LIGHTMETER_INTERVAL_MS))
+    unsigned long lightMeterIntervalMs = getLightMeterIntervalMs(now);
+    if (shouldRunTask(now, scheduler.lastMeterMs, lightMeterIntervalMs))
     {
+      float previousLux = lux;
+      float previousAperture = aperture;
+      int previousIso = iso;
+      String previousShutter = shutter_speed;
       setLightMeter();
+      bool meterChanged = fabsf(lux - previousLux) >= LIGHTMETER_ACTIVITY_DELTA_LUX ||
+                          aperture != previousAperture ||
+                          iso != previousIso ||
+                          shutter_speed != previousShutter;
+      if (meterChanged)
+      {
+        lastMeterChangeMs = now;
+      }
     }
     if (shouldRunTask(now, scheduler.lastBatteryMs, LOOP_BATTERY_INTERVAL_MS))
     {
