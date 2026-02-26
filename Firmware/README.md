@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.1.3  
+**Version**: 10.1.2  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -51,6 +51,7 @@ Firmware/
 │   ├── setfuncs.h        # Sensor reading and setting functions
 │   ├── inputs.h          # Input handling functions
 │   ├── activity.h        # Shared activity/sleep state helpers
+│   ├── loop_runtime.h    # Runtime scheduler and awake/sleep loop orchestration
 │   ├── lidar_logic.h     # LiDAR fusion and correction logic
 │   ├── lens_logic.h      # Lens sensor-to-distance mapping logic
 │   ├── film_counter_logic.h # Film counter interpolation logic
@@ -64,6 +65,7 @@ Firmware/
 │   ├── interface.cpp     # UI rendering implementation
 │   ├── helpers.cpp       # Helper function implementations
 │   ├── activity.cpp      # Activity and sleep state implementation
+│   ├── loop_runtime.cpp  # Runtime scheduler and task execution pipeline
 │   ├── cyclefuncs.cpp    # Cycling logic
 │   ├── setfuncs.cpp      # Sensor orchestration
 │   ├── lidar_logic.cpp   # LiDAR processing pipeline
@@ -87,6 +89,7 @@ Firmware/
    - Start sensor readings
 
 2. **Main Loop** (`loop()` in `src/main.cpp`)
+   - Delegate runtime scheduling to `runLoopRuntimeIteration()` in `src/loop_runtime.cpp`
    - Check configurable sleep timeout (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
    - Apply adaptive sensor polling and state-aware UI redraws to reduce idle power draw
    - Process button inputs
