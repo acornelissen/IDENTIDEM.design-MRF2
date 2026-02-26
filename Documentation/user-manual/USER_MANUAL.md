@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.1.2
+**Firmware version:** 10.1.3
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -258,6 +258,8 @@ The external display shows:
 - **Numeric counter** appears for frame one to last frame.
 
 ## Sleep mode
+
+In Main mode, LiDAR now enters a low-power standby after a short idle period and wakes automatically on user activity.
 
 After the configured **Sleep timeout** period of inactivity (default **1 minute**, set in **Setup > UI Settings >**), the firmware enters sleep mode:
 

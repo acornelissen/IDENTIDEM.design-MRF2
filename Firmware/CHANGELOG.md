@@ -2,6 +2,15 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.1.3 - 2026-02-26
+- Power and runtime efficiency:
+  - Added awake-idle LiDAR standby that disables LiDAR after short inactivity in Main mode and wakes immediately on activity.
+  - Added state-aware UI redraw caching so displays redraw only when state changes (with bounded periodic refresh for Main/Health screens).
+  - Added adaptive polling intervals for film counter, lens sensor, and light meter (fast when active, slower when stable).
+- Release metadata/docs:
+  - Bumped `FWVERSION` to `10.1.3`.
+  - Updated firmware README, user manual, and camera UI SVG snapshots.
+
 ## 10.1.2 - 2026-02-25
 - Lens calibration and distance-scale updates:
   - Added per-lens calibration point-count support (up to `10` markers per lens profile).

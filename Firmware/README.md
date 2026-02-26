@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.1.2  
+**Version**: 10.1.3  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -88,6 +88,7 @@ Firmware/
 
 2. **Main Loop** (`loop()` in `src/main.cpp`)
    - Check configurable sleep timeout (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
+   - Apply adaptive sensor polling and state-aware UI redraws to reduce idle power draw
    - Process button inputs
    - Update film counter
    - Read sensors (distance, light, battery)
@@ -113,6 +114,7 @@ Firmware/
 - Confidence scoring combines data quality, intensity, ambient sunlight ratio (SNR), temporal consistency, and lens-position prior
 - Two-stage correction: library scale/offset in mm, then curve/residual correction in cm
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
+- In Main mode, LiDAR enters idle standby after inactivity and wakes immediately on activity
 - Distance display uses `cm` below `1m`, with `< 5cm` and `> 18m` bounds
 - Range: 5cm to 18m
 
