@@ -2,6 +2,11 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.1.3 - 2026-02-26
+- Release metadata/docs:
+  - Bumped `FWVERSION` to `10.1.3`.
+  - Updated firmware README, user manual, and camera UI SVG version snapshots.
+
 ## 10.1.2 - 2026-02-26
 - Lens calibration and distance-scale updates:
   - Added per-lens calibration point-count support (up to `10` markers per lens profile).
