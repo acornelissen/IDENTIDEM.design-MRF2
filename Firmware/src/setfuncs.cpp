@@ -92,7 +92,7 @@ void setDistance()
     lidar_quality_level = chosen.quality_level;
 
     distance = static_cast<int16_t>(blendLidarDistance(prev_distance, chosen.distance_cm, chosen.confidence));
-    if (distance != prev_distance || distance_cm == "...")
+    if (distance != prev_distance || distance_cm == "..." || distance_cm == "Zzz")
     {
       distance_cm = formatDistanceDisplay(distance);
       prev_distance = distance;

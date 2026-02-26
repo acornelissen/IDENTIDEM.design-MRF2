@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.1.1  
+**Version**: 10.1.2  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -51,6 +51,7 @@ Firmware/
 │   ├── setfuncs.h        # Sensor reading and setting functions
 │   ├── inputs.h          # Input handling functions
 │   ├── activity.h        # Shared activity/sleep state helpers
+│   ├── loop_runtime.h    # Runtime scheduler and awake/sleep loop orchestration
 │   ├── lidar_logic.h     # LiDAR fusion and correction logic
 │   ├── lens_logic.h      # Lens sensor-to-distance mapping logic
 │   ├── film_counter_logic.h # Film counter interpolation logic
@@ -64,6 +65,7 @@ Firmware/
 │   ├── interface.cpp     # UI rendering implementation
 │   ├── helpers.cpp       # Helper function implementations
 │   ├── activity.cpp      # Activity and sleep state implementation
+│   ├── loop_runtime.cpp  # Runtime scheduler and task execution pipeline
 │   ├── cyclefuncs.cpp    # Cycling logic
 │   ├── setfuncs.cpp      # Sensor orchestration
 │   ├── lidar_logic.cpp   # LiDAR processing pipeline
@@ -87,7 +89,9 @@ Firmware/
    - Start sensor readings
 
 2. **Main Loop** (`loop()` in `src/main.cpp`)
+   - Delegate runtime scheduling to `runLoopRuntimeIteration()` in `src/loop_runtime.cpp`
    - Check configurable sleep timeout (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
+   - Apply adaptive sensor polling and state-aware UI redraws to reduce idle power draw
    - Process button inputs
    - Update film counter
    - Read sensors (distance, light, battery)
@@ -101,7 +105,7 @@ Firmware/
 - **Film Submenu**: format selection, frame-1 offset, and frame-spacing offset
 - **Lens Submenu**: Lens profile, parallax correction toggle, and lens calibration entry
 - **Light Meter Submenu**: ISO, EV compensation, smoothing strength, EV readout toggle
-- **UI Settings Submenu**: landscape/portrait horizon trims and sleep timeout
+- **UI Settings Submenu**: landscape/portrait horizon trims, sleep timeout, and LiDAR idle timeout
 - **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, and idle timer
 - **Calibration Mode**: Lens calibration interface
 - **Sleep Mode**: Low-power state with minimal display
@@ -113,7 +117,9 @@ Firmware/
 - Confidence scoring combines data quality, intensity, ambient sunlight ratio (SNR), temporal consistency, and lens-position prior
 - Two-stage correction: library scale/offset in mm, then curve/residual correction in cm
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
-- Distance display uses `cm` below `1m`, with `< 5cm` and `> 18m` bounds
+- In Main mode, LiDAR idle standby timeout is user-configurable (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
+- While LiDAR is in idle standby, the distance readout shows `Zzz`
+- Distance display uses `cm` below `1m`, with `<15cm` near clamp and `Inf.` above `10.5m`
 - Range: 5cm to 18m
 
 #### Light Metering
@@ -128,7 +134,7 @@ Firmware/
 - Mamiya Press / Universal Press lenses
 - Support for multiple lens profiles
 - Position sensing via ADC
-- 7-point calibration curve
+- Lens-specific calibration curves (up to 10 points, depending on lens)
 - Automatic distance correlation
 
 #### Film Management
@@ -171,6 +177,7 @@ pio test -e native_core_tests
 
 - `FWVERSION`: Firmware version string
 - `DEFAULT_SLEEP_TIMEOUT_MODE` / `SLEEP_TIMEOUT_MODE_*`: Auto-sleep options (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`)
+- `DEFAULT_LIDAR_IDLE_TIMEOUT_MODE`: Awake-main LiDAR standby timeout default (`1m`)
 - `SMOOTHING_WINDOW_SIZE`: Filter window (13 samples)
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
 - `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor
@@ -193,6 +200,7 @@ The system saves:
 - Film counter and encoder position
 - Parallax correction toggle state
 - Sleep timeout mode
+- LiDAR idle timeout mode
 - UI horizon trim offsets (landscape, portrait `P+`, portrait `P-`)
 - Light-meter EV/smoothing/readout settings
 - Lens calibration data

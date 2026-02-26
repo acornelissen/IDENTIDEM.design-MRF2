@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.1.1
+**Firmware version:** 10.1.2
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -13,7 +13,7 @@ If this is your first time using the camera, this sequence keeps things simple a
 3. Load your film, aligning the arrow on the backing paper to the arrow on the top-left edge of the film chamber.
 4. Close and secure the film door, then switch on the camera.
 5. Long-press **Right (R)** to enter **Setup**, open **Lens Settings >**, then run **Lens Calibration** for the mounted lens.
-6. Still in **Setup**, open **Film >** to set frame size and frame tuning, open **Light Meter >** to set ISO, then open **UI Settings >** to set your preferred **sleep timeout** and horizon trim values.
+6. Still in **Setup**, open **Film >** to set frame size and frame tuning, open **Light Meter >** to set ISO, then open **UI Settings >** to set your preferred **sleep timeout**, **LiDAR idle timeout**, and horizon trim values.
 7. In **Setup**, select **Reset frame counter >>** so the frame counter starts at zero.
 8. Use the **advance lever** to wind to frame 1. This takes a little while. Power through!
 
@@ -76,6 +76,7 @@ You can tune horizon trim offsets independently for landscape, portrait `P+`, an
   - Measurement range: 5 cm to 18 m.
   - Displays values below 1 meter in centimeters (for example, `75cm`), and 1 meter and above in meters.
   - Displays `...` if the sensor has no recent data.
+  - Displays `Zzz` when LiDAR is in idle standby (wake by focusing or pressing a button).
   - Displays `<15cm` for near readings below display threshold.
   - Displays `Inf.` for readings above 10.5 meters.
 - **Lens distance (Lens)**
@@ -91,7 +92,7 @@ The four tiny squares at the right edge of the top status bar show return qualit
 - **3 squares**: Good
 - **4 squares**: Excellent
 
-When no valid recent LiDAR data is available (`Dist: ...`), the quality indicator clears.
+When no valid recent LiDAR data is available (`Dist: ...`) or LiDAR is in idle standby (`Dist: Zzz`), the quality indicator clears.
 
 ### Light meter / shutter speed
 
@@ -177,7 +178,8 @@ Current frame ranges are format-bound:
 2. **Horizon P+**: portrait trim offset for one portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
 3. **Horizon P-**: portrait trim offset for the opposite portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
 4. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
-5. **Back <<**: return to setup root menu.
+5. **LiDAR idle timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m`).
+6. **Back <<**: return to setup root menu.
 
 ### System Health screen
 
@@ -224,7 +226,11 @@ Calibration links the lens position sensor to real focus distances, enabling the
 
 For each target distance, set the lens focus to that distance and press **L** to record the sensor reading.
 
-- Distances: **1, 1.2, 1.5, 2, 3, 5, 10 meters**
+- Distance points are lens-specific. The calibration UI shows the exact marker sequence for the selected lens.
+- Default lens sequence: **1, 1.2, 1.5, 2, 3, 5, 10 meters**
+- **150/5.6**: **2, 2.5, 3, 5, 10 meters**
+- **250/5.0**: **2.5, 4, 5, 7, 8, 10, 15, 20, 30, 50 meters**
+- **250/8.0**: **3.5, 4, 5, 7, 10, 15, 20, 30, 50 meters**
 - **L**: store current reading and move to the next distance
 - **R**: cancel and return to Setup
 
@@ -255,6 +261,8 @@ The external display shows:
 
 ## Sleep mode
 
+In Main mode, LiDAR enters low-power standby after the configured **LiDAR idle timeout** period (default **1 minute**) and wakes automatically on user activity. While idle standby is active, the main display shows `Dist: Zzz`.
+
 After the configured **Sleep timeout** period of inactivity (default **1 minute**, set in **Setup > UI Settings >**), the firmware enters sleep mode:
 
 - LiDAR turns off.
@@ -273,11 +281,14 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 - Lens: **65/6.3** (pre-calibrated)
 - Parallax correction: **On**
 - Sleep timeout: **1m**
+- LiDAR idle timeout: **1m**
 
 ## Troubleshooting
 
 - **LiDAR distance shows `...`**
   - Verify LiDAR wiring and power. The UI updates only with valid sensor data.
+- **LiDAR distance shows `Zzz`**
+  - LiDAR is in idle standby. Turn the focus ring or press a button to wake it, or increase/disable **LiDAR idle timeout** in **Setup > UI Settings >**.
 - **LiDAR quality stays at 1 square (Poor)**
   - Check subject reflectivity/angle and ambient interference; low-SNR returns under strong sunlight are deprioritized and may update more slowly.
 - **Shutter speed reads `Bright!` or `Dark!`**

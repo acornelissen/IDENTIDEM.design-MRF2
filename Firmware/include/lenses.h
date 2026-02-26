@@ -3,13 +3,16 @@
 
 #include <Arduino.h> // For String type
 #include <stddef.h> // For size_t
+
+constexpr int LENS_DISTANCE_POINT_COUNT = 10;
+
 struct Lens
 {
   int id;
   String name;
   float focal_mm;
-  int sensor_reading[7];
-  float distance[7];
+  int sensor_reading[LENS_DISTANCE_POINT_COUNT];
+  float distance[LENS_DISTANCE_POINT_COUNT];
   float apertures[9];
   int framelines[4];
   bool calibrated;
@@ -17,5 +20,6 @@ struct Lens
 
 extern Lens lenses[];
 extern const size_t NUM_LENSES; // Declare the size constant
+int getLensDistancePointCount(const Lens &lens);
 
 #endif // LENSES_H

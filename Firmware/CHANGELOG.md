@@ -2,6 +2,28 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.1.2 - 2026-02-26
+- Lens calibration and distance-scale updates:
+  - Added per-lens calibration point-count support (up to `10` markers per lens profile).
+  - Updated `150/5.6` marker set to `2, 2.5, 3, 5, 10`.
+  - Updated `250/5.0` marker set to `2.5, 4, 5, 7, 8, 10, 15, 20, 30, 50`.
+  - Added `250/8.0` profile with marker set `3.5, 4, 5, 7, 10, 15, 20, 30, 50`.
+  - Calibration UI now reads target distances from the selected lens profile.
+  - Lens snap/interpolation now uses active profile markers and ignores trailing unused slots.
+  - Preferences loading now tolerates older saved calibration array sizes during schema evolution.
+- Power and runtime efficiency:
+  - Added awake-idle LiDAR standby that disables LiDAR after inactivity in Main mode and wakes immediately on activity.
+  - LiDAR idle timeout is now user-configurable in `UI Settings` with the same options as sleep timeout (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`) and defaults to `1m`.
+  - Main UI now shows `Dist: Zzz` while LiDAR is in idle standby.
+  - Added state-aware UI redraw caching so displays redraw only when state changes (with bounded periodic refresh for Main/Health screens).
+  - Added adaptive polling intervals for film counter, lens sensor, and light meter (fast when active, slower when stable).
+- Code quality and maintainability:
+  - Refactored loop orchestration from `main.cpp` into `loop_runtime.cpp` to isolate scheduling and sleep/awake task routing.
+  - Decomposed `interface.cpp` into reusable rendering helpers for main/config/external displays.
+- Release metadata/docs:
+  - Consolidated release metadata under `10.1.2`.
+  - Updated firmware README, user manual, and camera UI SVG snapshots.
+
 ## 10.1.1 - 2026-02-25
 - Viewfinder/UI tuning:
   - Removed the boxed portrait-mode `P` indicator from the main display.

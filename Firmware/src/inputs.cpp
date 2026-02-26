@@ -28,6 +28,16 @@ static void resetFrameCounter()
 
 namespace
 {
+int getCalibrationPointCountForLens(const Lens &lens)
+{
+  int pointCount = getLensDistancePointCount(lens);
+  if (pointCount <= 0)
+  {
+    pointCount = CALIB_DISTANCE_COUNT;
+  }
+  return min(pointCount, CALIB_DISTANCE_COUNT);
+}
+
 bool captureStableCalibReading(int &averagedReading)
 {
   int calibSamples[CALIB_SAMPLE_COUNT];
@@ -48,6 +58,12 @@ bool captureStableCalibReading(int &averagedReading)
 
 bool isMonotonicCalibSequenceWithCandidate(int candidateReading)
 {
+  const int calibrationPointCount = getCalibrationPointCountForLens(lenses[calib_lens]);
+  if (current_calib_distance >= calibrationPointCount)
+  {
+    return false;
+  }
+
   int readingCount = current_calib_distance + 1;
   int readings[CALIB_DISTANCE_COUNT];
   for (int i = 0; i < current_calib_distance; i++)
@@ -122,6 +138,7 @@ void checkButtons()
         }
         else if (calib_step == 1)
         {
+          const int calibrationPointCount = getCalibrationPointCountForLens(lenses[calib_lens]);
           int averagedReading = 0;
           if (!captureStableCalibReading(averagedReading))
           {
@@ -136,12 +153,14 @@ void checkButtons()
             calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
             calib_distance_set[current_calib_distance] = averagedReading;
             current_calib_distance++;
-            if (current_calib_distance >= CALIB_DISTANCE_COUNT)
+            if (current_calib_distance >= calibrationPointCount)
             {
               lenses[calib_lens].calibrated = true;
-              for (int i = 0; i < sizeof(calib_distance_set) / sizeof(calib_distance_set[0]); i++)
+              const int sensorPointCount = sizeof(lenses[calib_lens].sensor_reading) /
+                                           sizeof(lenses[calib_lens].sensor_reading[0]);
+              for (int i = 0; i < sensorPointCount; i++)
               {
-                lenses[calib_lens].sensor_reading[i] = calib_distance_set[i];
+                lenses[calib_lens].sensor_reading[i] = (i < calibrationPointCount) ? calib_distance_set[i] : 0;
               }
               selected_lens = calib_lens;
               savePrefs(true);
@@ -294,6 +313,9 @@ void checkButtons()
           }
           else if (config_step == CONFIG_UI_STEP_SLEEP_TIMEOUT) {
             cycleSleepTimeoutMode();
+          }
+          else if (config_step == CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT) {
+            cycleLidarIdleTimeoutMode();
           }
           else if (config_step == CONFIG_UI_STEP_BACK) {
             config_step = CONFIG_ROOT_STEP_UI_MENU;

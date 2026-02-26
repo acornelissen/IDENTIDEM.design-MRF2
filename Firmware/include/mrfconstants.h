@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity and boot behavior
 // ---------------------------------------------------------------------------
-#define FWVERSION "10.1.1"                  // Version shown in UI and release metadata.
+#define FWVERSION "10.1.2"                  // Version shown in UI and release metadata.
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
 // ---------------------------------------------------------------------------
@@ -245,6 +245,7 @@ const int DEFAULT_EXPOSURE_COMP_THIRDS = 0;         // Default EV compensation (
 const int DEFAULT_METER_SMOOTHING_MODE = 2;         // Default light meter smoothing mode.
 const bool DEFAULT_SHOW_EV_READOUT = false;         // EV readout hidden by default.
 const int DEFAULT_SLEEP_TIMEOUT_MODE = SLEEP_TIMEOUT_MODE_1M; // Default auto-sleep mode.
+const int DEFAULT_LIDAR_IDLE_TIMEOUT_MODE = SLEEP_TIMEOUT_MODE_1M; // Default awake-idle LiDAR standby timeout.
 const int DEFAULT_FRAME_ONE_OFFSET = 0;             // Default film frame-1 tuning offset.
 const int DEFAULT_FRAME_SPACING_OFFSET = 0;         // Default film frame-spacing tuning offset.
 const int DEFAULT_LEVEL_TRIM_LANDSCAPE_DECI_DEG = 0;    // Default landscape level trim in 0.1-degree units.
@@ -263,16 +264,25 @@ const int FRAME_TUNING_MAX = 10;  // Maximum frame tuning value.
 // ---------------------------------------------------------------------------
 const unsigned long LOOP_INPUT_INTERVAL_MS = 5;           // Input polling cadence while awake.
 const unsigned long LOOP_FILM_COUNTER_INTERVAL_MS = 5;    // Film counter update cadence.
+const unsigned long LOOP_FILM_COUNTER_IDLE_INTERVAL_MS = 25; // Film counter cadence when advance lever is stable.
+const unsigned long LOOP_FILM_COUNTER_ACTIVE_HOLD_MS = 500;  // Keep fast film polling after recent movement.
 const unsigned long LOOP_SLEEP_CHECK_INTERVAL_MS = 50;    // Sleep-state check cadence.
 const unsigned long LOOP_SLEEP_INPUT_INTERVAL_MS = 25;    // Input polling cadence while asleep.
 const unsigned long LOOP_SLEEP_ENCODER_POLL_INTERVAL_MS = 50; // Encoder wake polling cadence.
 const unsigned long LOOP_SLEEP_LENS_POLL_INTERVAL_MS = 100;   // Lens wake polling cadence.
 const unsigned long LOOP_LIDAR_INTERVAL_MS = 25;          // LiDAR update cadence.
 const unsigned long LOOP_LENS_INTERVAL_MS = 25;           // Lens ADC + mapping cadence.
+const unsigned long LOOP_LENS_IDLE_INTERVAL_MS = 100;     // Lens ADC cadence when focus ring is stable.
+const unsigned long LOOP_LENS_ACTIVE_HOLD_MS = 750;       // Keep fast lens polling after recent focus movement.
 const unsigned long LOOP_LIGHTMETER_INTERVAL_MS = 100;    // Light meter update cadence.
+const unsigned long LOOP_LIGHTMETER_IDLE_INTERVAL_MS = 500; // Light meter cadence when scene/settings are stable.
+const unsigned long LOOP_LIGHTMETER_ACTIVE_HOLD_MS = 1500;  // Keep fast light-meter polling after recent changes.
 const unsigned long LOOP_BATTERY_INTERVAL_MS = 1500;      // Battery gauge update cadence.
 const unsigned long LOOP_UI_INTERVAL_MS = 33;             // UI redraw cadence (~30 FPS).
+const unsigned long LOOP_UI_MAIN_REFRESH_MS = 100;        // Forced redraw cadence in Main mode when state is stable.
+const unsigned long LOOP_UI_HEALTH_REFRESH_MS = 1000;     // Forced redraw cadence for Health idle timer updates.
 const unsigned long LOOP_PREFS_FLUSH_INTERVAL_MS = 200;   // Preferences flush check cadence.
+const float LIGHTMETER_ACTIVITY_DELTA_LUX = 1.0f;         // Lux delta that keeps light-meter polling in fast mode.
 const int SLEEP_WAKE_ENCODER_DELTA = 1;                   // Encoder delta to wake device.
 const int SLEEP_WAKE_LENS_DELTA = 8;                      // Lens ADC delta to wake device.
 
@@ -316,7 +326,8 @@ const int CONFIG_UI_STEP_HORIZON_LANDSCAPE = 0;  // Landscape horizon trim.
 const int CONFIG_UI_STEP_HORIZON_PORTRAIT_POS = 1; // Portrait + horizon trim.
 const int CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG = 2; // Portrait - horizon trim.
 const int CONFIG_UI_STEP_SLEEP_TIMEOUT = 3;       // Sleep timeout selector.
-const int CONFIG_UI_STEP_BACK = 4;                // Back to setup root.
+const int CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT = 4;  // LiDAR idle-timeout selector.
+const int CONFIG_UI_STEP_BACK = 5;                // Back to setup root.
 const int CONFIG_UI_STEP_MAX = CONFIG_UI_STEP_BACK; // Last valid UI settings step.
 
 // ---------------------------------------------------------------------------
@@ -413,8 +424,7 @@ const int EXT_SLEEP_TEXT_Y = 22;            // External sleep text Y.
 // Static option lists and calibration flow thresholds
 // ---------------------------------------------------------------------------
 const int ISOS[] = {50, 80, 100, 125, 200, 400, 500, 640, 800, 1600, 3200, 6400}; // Supported ISO list.
-const float CALIB_DISTANCES[] = {1, 1.2f, 1.5f, 2, 3, 5, 10}; // Lens calibration target distances (meters).
-const int CALIB_DISTANCE_COUNT = sizeof(CALIB_DISTANCES) / sizeof(CALIB_DISTANCES[0]); // Calibration point count.
+const int CALIB_DISTANCE_COUNT = 10;         // Max calibration point count across all lens profiles.
 const int CALIB_SAMPLE_COUNT = 8;            // Samples captured per calibration point.
 const int CALIB_SAMPLE_DELAY_MS = 5;         // Delay between calibration samples.
 const int CALIB_MIN_INLIER_COUNT = 5;        // Minimum inliers for a stable reading.
