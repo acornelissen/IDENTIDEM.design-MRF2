@@ -119,7 +119,7 @@ Firmware/
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
 - In Main mode, LiDAR idle standby timeout is user-configurable (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
 - While LiDAR is in idle standby, the distance readout shows `Zzz`
-- Distance display uses `cm` below `1m`, with `< 5cm` and `> 18m` bounds
+- Distance display uses `cm` below `1m`, with `<15cm` near clamp and `Inf.` above `10.5m`
 - Range: 5cm to 18m
 
 #### Light Metering

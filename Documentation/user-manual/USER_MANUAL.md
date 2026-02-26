@@ -92,7 +92,7 @@ The four tiny squares at the right edge of the top status bar show return qualit
 - **3 squares**: Good
 - **4 squares**: Excellent
 
-When no valid recent LiDAR data is available (`Dist: ...`), the quality indicator clears.
+When no valid recent LiDAR data is available (`Dist: ...`) or LiDAR is in idle standby (`Dist: Zzz`), the quality indicator clears.
 
 ### Light meter / shutter speed
 
