@@ -30,7 +30,7 @@
     - 10.1.2: Added lens-specific calibration distance scales
   </text>
   <text x="230" y="602" font-family="IBM Plex Mono, monospace" font-size="24" fill="#e5e7eb">
-    - 10.1.2: Added LiDAR idle standby + adaptive polling
+    - 10.1.2: Added configurable LiDAR idle timeout + adaptive polling
   </text>
   <text x="230" y="639" font-family="IBM Plex Mono, monospace" font-size="24" fill="#9ca3af">
     - 10.1.2: Added state-aware UI redraw caching

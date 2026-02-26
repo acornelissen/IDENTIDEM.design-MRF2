@@ -23,6 +23,7 @@ int exposure_comp_thirds = DEFAULT_EXPOSURE_COMP_THIRDS;
 int meter_smoothing_mode = DEFAULT_METER_SMOOTHING_MODE;
 bool show_ev_readout = DEFAULT_SHOW_EV_READOUT;
 int sleep_timeout_mode = DEFAULT_SLEEP_TIMEOUT_MODE;
+int lidar_idle_timeout_mode = DEFAULT_LIDAR_IDLE_TIMEOUT_MODE;
 int level_trim_landscape_deci_deg = DEFAULT_LEVEL_TRIM_LANDSCAPE_DECI_DEG;
 int level_trim_portrait_pos_deci_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DECI_DEG;
 int level_trim_portrait_neg_deci_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DECI_DEG;

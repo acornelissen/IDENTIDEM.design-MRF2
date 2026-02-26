@@ -817,6 +817,11 @@ void drawUiConfigUI()
   u8g2.print(getSleepTimeoutModeLabel(sleep_timeout_mode));
   u8g2.print(F(" "));
 
+  selectConfigMenuRow(CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT, config_step == CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT);
+  u8g2.print(F(" LiDAR idle: "));
+  u8g2.print(getSleepTimeoutModeLabel(lidar_idle_timeout_mode));
+  u8g2.print(F(" "));
+
   selectConfigMenuRow(CONFIG_UI_STEP_BACK, config_step == CONFIG_UI_STEP_BACK);
   u8g2.print(F(" Back << "));
 

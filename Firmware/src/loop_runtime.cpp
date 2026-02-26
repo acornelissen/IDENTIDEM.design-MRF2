@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "activity.h"
+#include "cyclefuncs.h"
 #include "globals.h"
 #include "hardware.h"
 #include "helpers.h"
@@ -135,6 +136,7 @@ uint32_t buildMenuUiSignature()
   hash = hashBool(hash, show_ev_readout);
   hash = hashBool(hash, parallaxEnabled);
   hash = hashInt(hash, sleep_timeout_mode);
+  hash = hashInt(hash, lidar_idle_timeout_mode);
   hash = hashInt(hash, level_trim_landscape_deci_deg);
   hash = hashInt(hash, level_trim_portrait_pos_deci_deg);
   hash = hashInt(hash, level_trim_portrait_neg_deci_deg);
@@ -376,7 +378,7 @@ void exitSleepServices()
 
 void clearLidarUiForStandby()
 {
-  distance_cm = "...";
+  distance_cm = "Zzz";
   lidar_quality_level = 0;
 }
 
@@ -385,10 +387,25 @@ void updateLidarIdleStandby(unsigned long nowMs)
   // Keep LiDAR active when not in Main UI; wake immediately on any activity.
   bool canStandby = (ui_mode == UiMode::Main);
   unsigned long idleDurationMs = getIdleDurationMs(nowMs);
+  unsigned long idleStandbyTimeoutMs = getSleepTimeoutModeMs(lidar_idle_timeout_mode);
+
+  if (idleStandbyTimeoutMs == 0)
+  {
+    if (loopState.lidarIdleStandbyActive)
+    {
+      toggleLidar(true);
+      loopState.lidarIdleStandbyActive = !lidarEnabled;
+      if (!loopState.lidarIdleStandbyActive)
+      {
+        loopState.scheduler.lastLidarMs = 0; // Force immediate re-acquisition after wake.
+      }
+    }
+    return;
+  }
 
   if (!loopState.lidarIdleStandbyActive)
   {
-    if (canStandby && lidarEnabled && idleDurationMs >= LIDAR_IDLE_STANDBY_TIMEOUT_MS)
+    if (canStandby && lidarEnabled && idleDurationMs >= idleStandbyTimeoutMs)
     {
       toggleLidar(false);
       loopState.lidarIdleStandbyActive = !lidarEnabled;
@@ -400,7 +417,7 @@ void updateLidarIdleStandby(unsigned long nowMs)
     return;
   }
 
-  if (!canStandby || idleDurationMs < LIDAR_IDLE_STANDBY_TIMEOUT_MS)
+  if (!canStandby || idleDurationMs < idleStandbyTimeoutMs)
   {
     toggleLidar(true);
     loopState.lidarIdleStandbyActive = !lidarEnabled;

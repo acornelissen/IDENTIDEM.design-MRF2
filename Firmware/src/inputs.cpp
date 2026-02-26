@@ -314,6 +314,9 @@ void checkButtons()
           else if (config_step == CONFIG_UI_STEP_SLEEP_TIMEOUT) {
             cycleSleepTimeoutMode();
           }
+          else if (config_step == CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT) {
+            cycleLidarIdleTimeoutMode();
+          }
           else if (config_step == CONFIG_UI_STEP_BACK) {
             config_step = CONFIG_ROOT_STEP_UI_MENU;
             ui_mode = UiMode::Config;

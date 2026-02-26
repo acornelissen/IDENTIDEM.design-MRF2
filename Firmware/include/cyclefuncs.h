@@ -21,6 +21,7 @@ void cycleExposureCompensation(CycleDirection direction);
 void cycleMeterSmoothing();
 void toggleEvReadout();
 void cycleSleepTimeoutMode();
+void cycleLidarIdleTimeoutMode();
 void cycleLevelTrimLandscape();
 void cycleLevelTrimPortraitPos();
 void cycleLevelTrimPortraitNeg();

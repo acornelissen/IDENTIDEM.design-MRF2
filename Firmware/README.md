@@ -105,7 +105,7 @@ Firmware/
 - **Film Submenu**: format selection, frame-1 offset, and frame-spacing offset
 - **Lens Submenu**: Lens profile, parallax correction toggle, and lens calibration entry
 - **Light Meter Submenu**: ISO, EV compensation, smoothing strength, EV readout toggle
-- **UI Settings Submenu**: landscape/portrait horizon trims and sleep timeout
+- **UI Settings Submenu**: landscape/portrait horizon trims, sleep timeout, and LiDAR idle timeout
 - **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, and idle timer
 - **Calibration Mode**: Lens calibration interface
 - **Sleep Mode**: Low-power state with minimal display
@@ -117,7 +117,8 @@ Firmware/
 - Confidence scoring combines data quality, intensity, ambient sunlight ratio (SNR), temporal consistency, and lens-position prior
 - Two-stage correction: library scale/offset in mm, then curve/residual correction in cm
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
-- In Main mode, LiDAR enters idle standby after inactivity and wakes immediately on activity
+- In Main mode, LiDAR idle standby timeout is user-configurable (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
+- While LiDAR is in idle standby, the distance readout shows `Zzz`
 - Distance display uses `cm` below `1m`, with `< 5cm` and `> 18m` bounds
 - Range: 5cm to 18m
 
@@ -176,6 +177,7 @@ pio test -e native_core_tests
 
 - `FWVERSION`: Firmware version string
 - `DEFAULT_SLEEP_TIMEOUT_MODE` / `SLEEP_TIMEOUT_MODE_*`: Auto-sleep options (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`)
+- `DEFAULT_LIDAR_IDLE_TIMEOUT_MODE`: Awake-main LiDAR standby timeout default (`1m`)
 - `SMOOTHING_WINDOW_SIZE`: Filter window (13 samples)
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
 - `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor
@@ -198,6 +200,7 @@ The system saves:
 - Film counter and encoder position
 - Parallax correction toggle state
 - Sleep timeout mode
+- LiDAR idle timeout mode
 - UI horizon trim offsets (landscape, portrait `P+`, portrait `P-`)
 - Light-meter EV/smoothing/readout settings
 - Lens calibration data

@@ -12,7 +12,9 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
   - Lens snap/interpolation now uses active profile markers and ignores trailing unused slots.
   - Preferences loading now tolerates older saved calibration array sizes during schema evolution.
 - Power and runtime efficiency:
-  - Added awake-idle LiDAR standby that disables LiDAR after short inactivity in Main mode and wakes immediately on activity.
+  - Added awake-idle LiDAR standby that disables LiDAR after inactivity in Main mode and wakes immediately on activity.
+  - LiDAR idle timeout is now user-configurable in `UI Settings` with the same options as sleep timeout (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`) and defaults to `1m`.
+  - Main UI now shows `Dist: Zzz` while LiDAR is in idle standby.
   - Added state-aware UI redraw caching so displays redraw only when state changes (with bounded periodic refresh for Main/Health screens).
   - Added adaptive polling intervals for film counter, lens sensor, and light meter (fast when active, slower when stable).
 - Code quality and maintainability:

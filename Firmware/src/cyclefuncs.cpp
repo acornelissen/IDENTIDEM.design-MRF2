@@ -32,6 +32,16 @@ int clampSleepTimeoutMode(int timeout_mode)
   return constrain(timeout_mode, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);
 }
 
+int cycleSleepTimeoutModeValue(int timeout_mode)
+{
+  timeout_mode++;
+  if (timeout_mode > SLEEP_TIMEOUT_MODE_MAX)
+  {
+    timeout_mode = SLEEP_TIMEOUT_MODE_MIN;
+  }
+  return timeout_mode;
+}
+
 int cycleFrameTuningValue(int current)
 {
   current++;
@@ -266,11 +276,13 @@ void cycleLevelTrimPortraitNeg()
 
 void cycleSleepTimeoutMode()
 {
-  sleep_timeout_mode++;
-  if (sleep_timeout_mode > SLEEP_TIMEOUT_MODE_MAX)
-  {
-    sleep_timeout_mode = SLEEP_TIMEOUT_MODE_MIN;
-  }
+  sleep_timeout_mode = cycleSleepTimeoutModeValue(sleep_timeout_mode);
+  savePrefs();
+}
+
+void cycleLidarIdleTimeoutMode()
+{
+  lidar_idle_timeout_mode = cycleSleepTimeoutModeValue(lidar_idle_timeout_mode);
   savePrefs();
 }
 

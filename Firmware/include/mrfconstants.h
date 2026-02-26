@@ -245,6 +245,7 @@ const int DEFAULT_EXPOSURE_COMP_THIRDS = 0;         // Default EV compensation (
 const int DEFAULT_METER_SMOOTHING_MODE = 2;         // Default light meter smoothing mode.
 const bool DEFAULT_SHOW_EV_READOUT = false;         // EV readout hidden by default.
 const int DEFAULT_SLEEP_TIMEOUT_MODE = SLEEP_TIMEOUT_MODE_1M; // Default auto-sleep mode.
+const int DEFAULT_LIDAR_IDLE_TIMEOUT_MODE = SLEEP_TIMEOUT_MODE_1M; // Default awake-idle LiDAR standby timeout.
 const int DEFAULT_FRAME_ONE_OFFSET = 0;             // Default film frame-1 tuning offset.
 const int DEFAULT_FRAME_SPACING_OFFSET = 0;         // Default film frame-spacing tuning offset.
 const int DEFAULT_LEVEL_TRIM_LANDSCAPE_DECI_DEG = 0;    // Default landscape level trim in 0.1-degree units.
@@ -281,7 +282,6 @@ const unsigned long LOOP_UI_INTERVAL_MS = 33;             // UI redraw cadence (
 const unsigned long LOOP_UI_MAIN_REFRESH_MS = 100;        // Forced redraw cadence in Main mode when state is stable.
 const unsigned long LOOP_UI_HEALTH_REFRESH_MS = 1000;     // Forced redraw cadence for Health idle timer updates.
 const unsigned long LOOP_PREFS_FLUSH_INTERVAL_MS = 200;   // Preferences flush check cadence.
-const unsigned long LIDAR_IDLE_STANDBY_TIMEOUT_MS = 5000; // Awake-main idle time before LiDAR enters standby.
 const float LIGHTMETER_ACTIVITY_DELTA_LUX = 1.0f;         // Lux delta that keeps light-meter polling in fast mode.
 const int SLEEP_WAKE_ENCODER_DELTA = 1;                   // Encoder delta to wake device.
 const int SLEEP_WAKE_LENS_DELTA = 8;                      // Lens ADC delta to wake device.
@@ -326,7 +326,8 @@ const int CONFIG_UI_STEP_HORIZON_LANDSCAPE = 0;  // Landscape horizon trim.
 const int CONFIG_UI_STEP_HORIZON_PORTRAIT_POS = 1; // Portrait + horizon trim.
 const int CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG = 2; // Portrait - horizon trim.
 const int CONFIG_UI_STEP_SLEEP_TIMEOUT = 3;       // Sleep timeout selector.
-const int CONFIG_UI_STEP_BACK = 4;                // Back to setup root.
+const int CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT = 4;  // LiDAR idle-timeout selector.
+const int CONFIG_UI_STEP_BACK = 5;                // Back to setup root.
 const int CONFIG_UI_STEP_MAX = CONFIG_UI_STEP_BACK; // Last valid UI settings step.
 
 // ---------------------------------------------------------------------------
