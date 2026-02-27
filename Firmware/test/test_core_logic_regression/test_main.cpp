@@ -44,7 +44,7 @@ const FilmFormat *findFormatByName(const char *formatName)
 {
   for (size_t i = 0; i < NUM_FILM_FORMATS; i++)
   {
-    if (film_formats[i].name == String(formatName))
+    if (strcmp(film_formats[i].name, formatName) == 0)
     {
       return &film_formats[i];
     }
@@ -286,12 +286,20 @@ void test_lidar_invalid_and_display_formatting()
   LidarCandidate candidate = chooseBestLidarCandidate(measurement, 0, false, 0);
   TEST_ASSERT_FALSE(candidate.valid);
 
-  TEST_ASSERT_EQUAL_STRING("<15cm", formatDistanceDisplay(4).c_str());
-  TEST_ASSERT_EQUAL_STRING("75cm", formatDistanceDisplay(75).c_str());
-  TEST_ASSERT_EQUAL_STRING("10.5m", formatDistanceDisplay(1050).c_str());
-  TEST_ASSERT_EQUAL_STRING("Inf.", formatDistanceDisplay(1051).c_str());
-  TEST_ASSERT_EQUAL_STRING("Inf.", formatDistanceDisplay(1900).c_str());
-  TEST_ASSERT_EQUAL_STRING("1.5m", formatDistanceDisplay(150).c_str());
+  char formattedDistance[16] = {0};
+
+  formatDistanceDisplay(4, formattedDistance, sizeof(formattedDistance));
+  TEST_ASSERT_EQUAL_STRING("<15cm", formattedDistance);
+  formatDistanceDisplay(75, formattedDistance, sizeof(formattedDistance));
+  TEST_ASSERT_EQUAL_STRING("75cm", formattedDistance);
+  formatDistanceDisplay(1050, formattedDistance, sizeof(formattedDistance));
+  TEST_ASSERT_EQUAL_STRING("10.5m", formattedDistance);
+  formatDistanceDisplay(1051, formattedDistance, sizeof(formattedDistance));
+  TEST_ASSERT_EQUAL_STRING("Inf.", formattedDistance);
+  formatDistanceDisplay(1900, formattedDistance, sizeof(formattedDistance));
+  TEST_ASSERT_EQUAL_STRING("Inf.", formattedDistance);
+  formatDistanceDisplay(150, formattedDistance, sizeof(formattedDistance));
+  TEST_ASSERT_EQUAL_STRING("1.5m", formattedDistance);
 }
 
 void test_lidar_low_confidence_tracks_beyond_previous_distance()
@@ -540,10 +548,15 @@ void test_250mm_profiles_use_custom_distance_scales()
 
 void test_lightmeter_dark_bright_fraction_and_seconds()
 {
-  TEST_ASSERT_EQUAL_STRING("Dark!", formatShutterSpeed(0.0f, 8.0f, 400).c_str());
-  TEST_ASSERT_EQUAL_STRING("Bright!", formatShutterSpeed(50000.0f, 2.0f, 100).c_str());
-  TEST_ASSERT_EQUAL_STRING("1/125 sec.", formatShutterSpeed(320.0f, 8.0f, 400).c_str());
-  TEST_ASSERT_EQUAL_STRING("3.20 sec.", formatShutterSpeed(0.5f, 2.0f, 50).c_str());
+  char formattedShutter[16] = {0};
+  formatShutterSpeed(0.0f, 8.0f, 400, formattedShutter, sizeof(formattedShutter));
+  TEST_ASSERT_EQUAL_STRING("Dark!", formattedShutter);
+  formatShutterSpeed(50000.0f, 2.0f, 100, formattedShutter, sizeof(formattedShutter));
+  TEST_ASSERT_EQUAL_STRING("Bright!", formattedShutter);
+  formatShutterSpeed(320.0f, 8.0f, 400, formattedShutter, sizeof(formattedShutter));
+  TEST_ASSERT_EQUAL_STRING("1/125 sec.", formattedShutter);
+  formatShutterSpeed(0.5f, 2.0f, 50, formattedShutter, sizeof(formattedShutter));
+  TEST_ASSERT_EQUAL_STRING("3.20 sec.", formattedShutter);
 }
 
 int main(int, char **)
