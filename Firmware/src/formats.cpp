@@ -1,6 +1,5 @@
 #include "formats.h"
 #include <stddef.h>  // For size_t
-#include <Arduino.h> // For String type
 #include "mrfconstants.h"
 FilmFormat film_formats[] = {
     {35, "PANO", {0, 37, 73, 108, 142, 175, 207, 238, 268, 297, 325, 352, 378, 403, 427, 450, 472, 493, 513, 532, 550, 800}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 99}, 65.0f, 24.0f},

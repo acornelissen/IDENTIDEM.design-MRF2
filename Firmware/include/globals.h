@@ -2,7 +2,7 @@
 #define GLOBALS_H
 
 #include <Preferences.h> // For Preferences object type
-#include <Arduino.h>     // For String type and int16_t
+#include <stdint.h>
 #include "mrfconstants.h" // For SMOOTHING_WINDOW_SIZE
 
 enum class UiMode : uint8_t
@@ -32,7 +32,7 @@ extern float aperture;
 extern float prev_lux;
 extern float lux;
 extern float ev_readout;
-extern String shutter_speed;
+extern char shutter_speed[16];
 extern int iso_index;
 extern int aperture_index;
 extern int exposure_comp_thirds;
@@ -54,12 +54,12 @@ extern int sampleAvg;
 extern int prev_lens_sensor_reading;
 extern int lens_sensor_reading;
 extern int lens_distance_raw;
-extern String lens_distance_cm;
+extern char lens_distance_cm[16];
 
 // LiDAR distance
 extern int prev_distance;
 extern int16_t distance;    // Distance to object in centimeters
-extern String distance_cm;
+extern char distance_cm[16];
 extern int lidar_quality_level; // 0..4 (none, poor..excellent)
 extern bool lidarEnabled;
 
@@ -97,6 +97,15 @@ extern bool prefsLoadedLegacy;
 extern uint16_t prefsSchemaVersionLoaded;
 extern int last_lidar_error_code;
 extern int lidar_recovery_count;
+extern bool adsReady;
+extern bool mpuReady;
+extern bool mainDisplayReady;
+extern bool externalDisplayReady;
+extern bool batteryGaugeReady;
+extern bool lightMeterReady;
+extern bool statusPixelReady;
+extern bool encoderReady;
+extern bool lidarSensorReady;
 // ---------------------
 
 #endif // GLOBALS_H

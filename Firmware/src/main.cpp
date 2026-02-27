@@ -15,6 +15,13 @@
 
 namespace
 {
+void logPeripheralInitStatus(const __FlashStringHelper *name, bool ok)
+{
+  Serial.print(name);
+  Serial.print(F(": "));
+  Serial.println(ok ? F("OK") : F("FAILED"));
+}
+
 void disableWirelessRadios()
 {
   esp_wifi_stop();            // Stop WiFi to save power.
@@ -30,11 +37,16 @@ void configureButton(Bounce2::Button &button, int pin)
 
 void initializeInputHardware()
 {
-  theads.begin();
-  mpu.begin();
+  adsReady = theads.begin();
+  logPeripheralInitStatus(F("ADS1015"), adsReady);
+  mpuReady = mpu.begin();
+  logPeripheralInitStatus(F("MPU6050"), mpuReady);
 
-  theads.setDataRate(RATE_ADS1015_128SPS);
-  theads.setGain(GAIN_TWOTHIRDS);
+  if (adsReady)
+  {
+    theads.setDataRate(RATE_ADS1015_128SPS);
+    theads.setGain(GAIN_TWOTHIRDS);
+  }
 
   configureButton(lbutton, BUTTON_LEFT_PIN);
   configureButton(rbutton, BUTTON_RIGHT_PIN);
@@ -44,19 +56,29 @@ void initializeMainDisplay()
 {
   delay(DISPLAY_INIT_DELAY_MS); // Slight delay or the displays won't work.
 
-  display.begin(SCREEN_ADDRESS, true);
-  display.oled_command(DISPLAY_COMMAND_FLIP);
-  display.setRotation(DISPLAY_ROTATION);
-  u8g2.begin(display);
-  display.clearDisplay();
-  display.display();
+  mainDisplayReady = display.begin(SCREEN_ADDRESS, true);
+  logPeripheralInitStatus(F("Main OLED"), mainDisplayReady);
+  if (mainDisplayReady)
+  {
+    display.oled_command(DISPLAY_COMMAND_FLIP);
+    display.setRotation(DISPLAY_ROTATION);
+    u8g2.begin(display);
+    display.clearDisplay();
+    display.display();
+  }
 
   delay(DISPLAY_EXT_INIT_DELAY_MS); // Slight delay or the displays won't work.
-  display_ext.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS_EXT);
+  externalDisplayReady = display_ext.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS_EXT);
+  logPeripheralInitStatus(F("Ext OLED"), externalDisplayReady);
 }
 
 void showBootScreenOnExternalDisplay()
 {
+  if (!externalDisplayReady)
+  {
+    return;
+  }
+
   display_ext.clearDisplay();
   display_ext.setTextSize(DISPLAY_BOOT_TEXT_SIZE);
   display_ext.setTextColor(SSD1306_WHITE);
@@ -89,12 +111,15 @@ void initializeLidarSensor()
   DTSResult lidarInit = lidar.begin(LIDAR_BAUD_RATE, RXD2, TXD2);
   if (lidarInit != DTSError::NONE)
   {
+    lidarSensorReady = false;
     lidarEnabled = false;
     Serial.print(F("LiDAR init error: "));
     Serial.println(static_cast<int>(static_cast<DTSError>(lidarInit)));
   }
   else
   {
+    lidarSensorReady = true;
+    lidarEnabled = true;
     // Stage 1 correction: global linear scale/offset in library space (mm).
     lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
     lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
@@ -116,17 +141,24 @@ void resetLensMovingAverageState()
 
 void initializePowerAndInputPeripherals()
 {
-  maxlipo.begin();
-  lightMeter.begin();
+  batteryGaugeReady = maxlipo.begin();
+  logPeripheralInitStatus(F("MAX17048"), batteryGaugeReady);
 
-  if (sspixel.begin(SEESAW_ADDR))
+  lightMeterReady = lightMeter.begin();
+  logPeripheralInitStatus(F("BH1750"), lightMeterReady);
+
+  statusPixelReady = sspixel.begin(SEESAW_ADDR);
+  logPeripheralInitStatus(F("Seesaw Pixel"), statusPixelReady);
+  if (statusPixelReady)
   {
     delay(SEESAW_INIT_DELAY_MS);
     sspixel.setBrightness(SEESAW_NEOPIXEL_BRIGHTNESS);
     sspixel.show();
   }
 
-  if (encoder.begin(SEESAW_ADDR))
+  encoderReady = encoder.begin(SEESAW_ADDR);
+  logPeripheralInitStatus(F("Seesaw Encoder"), encoderReady);
+  if (encoderReady)
   {
     delay(SEESAW_INIT_DELAY_MS);
     encoder.setEncoderPosition(encoder_value);

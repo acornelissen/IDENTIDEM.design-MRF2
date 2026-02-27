@@ -1,6 +1,8 @@
 #include "setfuncs.h"
 
 #include <Arduino.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "activity.h"
 #include "cyclefuncs.h"
@@ -44,12 +46,12 @@ bool getLensPriorCm(int &lens_prior_cm)
 void setLensDistanceFromCm(int distance_cm)
 {
   lens_distance_raw = distance_cm;
-  lens_distance_cm = cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES);
+  cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES, lens_distance_cm, sizeof(lens_distance_cm));
 }
 
 void clearLidarDisplay()
 {
-  distance_cm = "...";
+  snprintf(distance_cm, sizeof(distance_cm), "...");
   lidar_quality_level = 0;
 }
 } // namespace
@@ -60,7 +62,7 @@ void setDistance()
 {
   static LidarRecoveryState recoveryState = {false, false, 0, 0, 0};
 
-  if (!lidarEnabled)
+  if (!lidarSensorReady || !lidarEnabled)
   {
     recoveryState = {false, false, 0, 0, 0};
     return;
@@ -92,9 +94,9 @@ void setDistance()
     lidar_quality_level = chosen.quality_level;
 
     distance = static_cast<int16_t>(blendLidarDistance(prev_distance, chosen.distance_cm, chosen.confidence));
-    if (distance != prev_distance || distance_cm == "..." || distance_cm == "Zzz")
+    if (distance != prev_distance || strcmp(distance_cm, "...") == 0 || strcmp(distance_cm, "Zzz") == 0)
     {
-      distance_cm = formatDistanceDisplay(distance);
+      formatDistanceDisplay(distance, distance_cm, sizeof(distance_cm));
       prev_distance = distance;
     }
     return;
@@ -135,6 +137,11 @@ int getLensSensorReading()
   static int stableReading = 0;
   static int pendingReading = 0;
   static uint8_t pendingCount = 0;
+
+  if (!adsReady)
+  {
+    return stableReading;
+  }
 
   if (LENS_ADC_QUIET_DELAY_MS > 0)
   {
@@ -249,7 +256,7 @@ void setLensDistance()
   if (estimate.is_infinity)
   {
     lens_distance_raw = LENS_INFINITY_RAW;
-    lens_distance_cm = "Inf.";
+    snprintf(lens_distance_cm, sizeof(lens_distance_cm), "Inf.");
     return;
   }
 
@@ -261,8 +268,13 @@ void setFilmCounter()
   static EncoderFilterState encoderFilterState = {};
   static bool rawPositionInitialized = false;
   static int lastRawEncoderPosition = 0;
-  static unsigned long lastRawEncoderActivityMs = 0;
   const unsigned long now = millis();
+
+  if (!encoderReady)
+  {
+    return;
+  }
+
   if (!encoderFilterState.initialized || encoderFilterState.stable_position != prev_encoder_value)
   {
     resetEncoderFilterState(encoderFilterState, prev_encoder_value, now);
@@ -275,7 +287,6 @@ void setFilmCounter()
   {
     rawPositionInitialized = true;
     lastRawEncoderPosition = encoder_position;
-    lastRawEncoderActivityMs = now;
   }
   else
   {
@@ -283,7 +294,6 @@ void setFilmCounter()
     if (abs(rawDelta) >= FILM_COUNTER_ACTIVITY_MIN_DELTA)
     {
       registerActivity();
-      lastRawEncoderActivityMs = now;
       lastRawEncoderPosition = encoder_position;
     }
   }
@@ -312,11 +322,16 @@ void setFilmCounter()
 
   film_counter = estimate.frame;
   frame_progress = estimate.progress;
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_FILM);
 }
 
 void setVoltage()
 {
+  if (!batteryGaugeReady)
+  {
+    return;
+  }
+
   bat_per = maxlipo.cellPercent();
   if (bat_per > BATTERY_PERCENT_MAX)
   {
@@ -333,6 +348,14 @@ void setLightMeter()
 {
   static bool smoothingInitialized = false;
   static float smoothedLux = 0.0f;
+
+  if (!lightMeterReady)
+  {
+    lux = 0.0f;
+    ev_readout = NAN;
+    snprintf(shutter_speed, sizeof(shutter_speed), "No meter");
+    return;
+  }
 
   float rawLux = lightMeter.readLightLevel();
   if (rawLux < 0.0f)
@@ -360,7 +383,7 @@ void setLightMeter()
     cycleApertures(CycleDirection::Up);
   }
 
-  shutter_speed = formatShutterSpeed(lux, aperture, iso);
+  formatShutterSpeed(lux, aperture, iso, shutter_speed, sizeof(shutter_speed));
   prev_lux = lux;
   prev_iso = iso;
   prev_aperture = aperture;
@@ -368,6 +391,12 @@ void setLightMeter()
 
 void toggleLidar(bool lidarStatusParam)
 {
+  if (!lidarSensorReady)
+  {
+    lidarEnabled = false;
+    return;
+  }
+
   if (lidarStatusParam == lidarEnabled)
   {
     return;

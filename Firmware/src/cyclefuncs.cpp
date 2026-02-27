@@ -203,26 +203,29 @@ void cycleCurrentFrame()
 
   int nextEncoderPosition =
       getAdjustedSensorPointForFrame(selectedFilmFormat, nextFrame, encoder_value);
-  encoder.setEncoderPosition(nextEncoderPosition);
+  if (encoderReady)
+  {
+    encoder.setEncoderPosition(nextEncoderPosition);
+  }
 
   encoder_value = nextEncoderPosition;
   prev_encoder_value = nextEncoderPosition;
   film_counter = nextFrame;
   frame_progress = 0.0f;
   prev_frame_progress = 0.0f;
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_FILM);
 }
 
 void cycleFrameOneOffset()
 {
   frame_one_offset = cycleFrameTuningValue(frame_one_offset);
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_FILM);
 }
 
 void cycleFrameSpacingOffset()
 {
   frame_spacing_offset = cycleFrameTuningValue(frame_spacing_offset);
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_FILM);
 }
 
 void cycleExposureCompensation(CycleDirection direction)

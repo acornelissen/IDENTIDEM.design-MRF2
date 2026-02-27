@@ -1,5 +1,5 @@
 #include "globals.h"
-#include <Arduino.h>     // For String, millis()
+#include <Arduino.h>
 #include <Preferences.h> // For Preferences object type
 #include "mrfconstants.h" // For SMOOTHING_WINDOW_SIZE
 
@@ -16,7 +16,7 @@ float aperture;
 float prev_lux = 0;
 float lux = 0;
 float ev_readout = 0;
-String shutter_speed = "...";
+char shutter_speed[16] = "...";
 int iso_index = DEFAULT_ISO_INDEX;
 int aperture_index;
 int exposure_comp_thirds = DEFAULT_EXPOSURE_COMP_THIRDS;
@@ -38,12 +38,12 @@ int sampleAvg = 0;
 int prev_lens_sensor_reading = 0;
 int lens_sensor_reading = 0;
 int lens_distance_raw = 0;
-String lens_distance_cm = "...";
+char lens_distance_cm[16] = "...";
 
 // LiDAR distance
 int prev_distance = 0;
 int16_t distance = 0;    // Distance to object in centimeters
-String distance_cm = "...";
+char distance_cm[16] = "...";
 int lidar_quality_level = 0;
 bool lidarEnabled = true;
 
@@ -81,4 +81,13 @@ bool prefsLoadedLegacy = false;
 uint16_t prefsSchemaVersionLoaded = 0;
 int last_lidar_error_code = 0;
 int lidar_recovery_count = 0;
+bool adsReady = false;
+bool mpuReady = false;
+bool mainDisplayReady = false;
+bool externalDisplayReady = false;
+bool batteryGaugeReady = false;
+bool lightMeterReady = false;
+bool statusPixelReady = false;
+bool encoderReady = false;
+bool lidarSensorReady = false;
 // ---------------------

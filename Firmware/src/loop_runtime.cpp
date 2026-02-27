@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "activity.h"
@@ -85,9 +86,9 @@ uint32_t hashFloat(uint32_t hash, float value)
   return hashUint32(hash, bits);
 }
 
-uint32_t hashString(uint32_t hash, const String &value)
+uint32_t hashCString(uint32_t hash, const char *value)
 {
-  const char *raw = value.c_str();
+  const char *raw = value ? value : "";
   size_t len = strlen(raw);
   hash = hashUint32(hash, static_cast<uint32_t>(len));
   for (size_t i = 0; i < len; i++)
@@ -107,9 +108,9 @@ uint32_t buildMainUiSignature()
   hash = hashFloat(hash, aperture);
   hash = hashBool(hash, show_ev_readout);
   hash = hashFloat(hash, ev_readout);
-  hash = hashString(hash, shutter_speed);
-  hash = hashString(hash, distance_cm);
-  hash = hashString(hash, lens_distance_cm);
+  hash = hashCString(hash, shutter_speed);
+  hash = hashCString(hash, distance_cm);
+  hash = hashCString(hash, lens_distance_cm);
   hash = hashInt(hash, distance);
   hash = hashInt(hash, lens_distance_raw);
   hash = hashInt(hash, lidar_quality_level);
@@ -146,6 +147,15 @@ uint32_t buildMenuUiSignature()
   hash = hashInt(hash, last_lidar_error_code);
   hash = hashInt(hash, lidar_recovery_count);
   hash = hashBool(hash, lidarEnabled);
+  hash = hashBool(hash, adsReady);
+  hash = hashBool(hash, mpuReady);
+  hash = hashBool(hash, mainDisplayReady);
+  hash = hashBool(hash, externalDisplayReady);
+  hash = hashBool(hash, batteryGaugeReady);
+  hash = hashBool(hash, lightMeterReady);
+  hash = hashBool(hash, statusPixelReady);
+  hash = hashBool(hash, encoderReady);
+  hash = hashBool(hash, lidarSensorReady);
   hash = hashBool(hash, prefsSchemaValid);
   hash = hashBool(hash, prefsLoadedLegacy);
   hash = hashInt(hash, prefsSchemaVersionLoaded);
@@ -268,6 +278,11 @@ unsigned long getLightMeterIntervalMs(unsigned long nowMs)
 
 bool sendLightMeterCommand(uint8_t command)
 {
+  if (!lightMeterReady)
+  {
+    return false;
+  }
+
   Wire.beginTransmission(LIGHTMETER_I2C_ADDR);
   Wire.write(command);
   return Wire.endTransmission() == 0;
@@ -279,8 +294,15 @@ void powerDownLightMeterForSleep()
   {
     return;
   }
-  sendLightMeterCommand(LIGHTMETER_CMD_POWER_DOWN);
-  loopState.lightMeterSleeping = true;
+
+  if (sendLightMeterCommand(LIGHTMETER_CMD_POWER_DOWN))
+  {
+    loopState.lightMeterSleeping = true;
+    return;
+  }
+
+  lightMeterReady = false;
+  loopState.lightMeterSleeping = false;
 }
 
 void wakeLightMeterFromSleep()
@@ -290,23 +312,45 @@ void wakeLightMeterFromSleep()
     return;
   }
 
-  sendLightMeterCommand(LIGHTMETER_CMD_POWER_ON);
-  if (!lightMeter.configure(BH1750::CONTINUOUS_HIGH_RES_MODE))
+  bool poweredOn = sendLightMeterCommand(LIGHTMETER_CMD_POWER_ON);
+  if (!poweredOn)
   {
-    lightMeter.begin();
+    lightMeterReady = false;
+    loopState.lightMeterSleeping = false;
+    return;
   }
+
+  bool configured = lightMeter.configure(BH1750::CONTINUOUS_HIGH_RES_MODE);
+  if (!configured)
+  {
+    configured = lightMeter.begin();
+  }
+
+  if (!configured)
+  {
+    lightMeterReady = false;
+    loopState.lightMeterSleeping = false;
+    return;
+  }
+
+  lightMeterReady = true;
   loopState.lightMeterSleeping = false;
 }
 
 void initializeSleepWakeBaselines()
 {
-  loopState.sleepWakeEncoderBaseline = encoder.getEncoderPosition();
-  loopState.sleepWakeLensBaseline = theads.readADC_SingleEnded(LENS_ADC_PIN);
+  loopState.sleepWakeEncoderBaseline = encoderReady ? encoder.getEncoderPosition() : 0;
+  loopState.sleepWakeLensBaseline = adsReady ? theads.readADC_SingleEnded(LENS_ADC_PIN) : 0;
   loopState.sleepWakeBaselinesInitialized = true;
 }
 
 void pollSleepWakeEncoder()
 {
+  if (!encoderReady)
+  {
+    return;
+  }
+
   if (!loopState.sleepWakeBaselinesInitialized)
   {
     initializeSleepWakeBaselines();
@@ -322,6 +366,11 @@ void pollSleepWakeEncoder()
 
 void pollSleepWakeLens()
 {
+  if (!adsReady)
+  {
+    return;
+  }
+
   if (!loopState.sleepWakeBaselinesInitialized)
   {
     initializeSleepWakeBaselines();
@@ -357,17 +406,26 @@ void enterSleepServices()
   drawSleepUI();
 
   // Keep external sleep text visible while turning the main display fully off.
-  display.oled_command(0xAE);
+  if (mainDisplayReady)
+  {
+    display.oled_command(0xAE);
+  }
 
-  sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
-  sspixel.show();
+  if (statusPixelReady)
+  {
+    sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
+    sspixel.show();
+  }
 
   initializeSleepWakeBaselines();
 }
 
 void exitSleepServices()
 {
-  display.oled_command(0xAF);
+  if (mainDisplayReady)
+  {
+    display.oled_command(0xAF);
+  }
   wakeLightMeterFromSleep();
   toggleLidar(true);
   loopState.lidarIdleStandbyActive = false;
@@ -378,12 +436,18 @@ void exitSleepServices()
 
 void clearLidarUiForStandby()
 {
-  distance_cm = "Zzz";
+  snprintf(distance_cm, sizeof(distance_cm), "Zzz");
   lidar_quality_level = 0;
 }
 
 void updateLidarIdleStandby(unsigned long nowMs)
 {
+  if (!lidarSensorReady)
+  {
+    loopState.lidarIdleStandbyActive = false;
+    return;
+  }
+
   // Keep LiDAR active when not in Main UI; wake immediately on any activity.
   bool canStandby = (ui_mode == UiMode::Main);
   unsigned long idleDurationMs = getIdleDurationMs(nowMs);
@@ -546,6 +610,11 @@ void updateLidarTask(unsigned long nowMs)
 
 void updateLensTask(unsigned long nowMs)
 {
+  if (!adsReady)
+  {
+    return;
+  }
+
   unsigned long lensIntervalMs = getLensIntervalMs(nowMs);
   if (!shouldRunTask(nowMs, loopState.scheduler.lastLensMs, lensIntervalMs))
   {
@@ -572,13 +641,14 @@ void updateLightMeterTask(unsigned long nowMs)
   float previousLux = lux;
   float previousAperture = aperture;
   int previousIso = iso;
-  String previousShutter = shutter_speed;
+  char previousShutter[sizeof(shutter_speed)] = {0};
+  strncpy(previousShutter, shutter_speed, sizeof(previousShutter) - 1);
   setLightMeter();
 
   bool meterChanged = fabsf(lux - previousLux) >= LIGHTMETER_ACTIVITY_DELTA_LUX ||
                       aperture != previousAperture ||
                       iso != previousIso ||
-                      shutter_speed != previousShutter;
+                      strcmp(shutter_speed, previousShutter) != 0;
   if (meterChanged)
   {
     loopState.lastMeterChangeMs = nowMs;
@@ -601,13 +671,13 @@ void updateUiTask(unsigned long nowMs)
   }
 
   bool drewPrimaryUi = false;
-  if (shouldDrawPrimaryUi(nowMs))
+  if (mainDisplayReady && shouldDrawPrimaryUi(nowMs))
   {
     drewPrimaryUi = true;
     drawPrimaryUiForCurrentMode();
   }
 
-  if (drewPrimaryUi || shouldDrawExternalUi())
+  if (externalDisplayReady && (drewPrimaryUi || shouldDrawExternalUi()))
   {
     drawExternalUI();
   }

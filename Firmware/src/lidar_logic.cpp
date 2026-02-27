@@ -1,6 +1,8 @@
 #include "lidar_logic.h"
 
+#include <Arduino.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "mrfconstants.h"
 
@@ -480,23 +482,36 @@ int blendLidarDistance(int previous_distance_cm, int next_distance_cm, int confi
   return constrain(blended_cm, lower_bound, upper_bound);
 }
 
-String formatDistanceDisplay(int corrected_cm)
+void formatDistanceDisplay(int corrected_cm, char *buffer, size_t bufferSize)
 {
+  if (!buffer || bufferSize == 0)
+  {
+    return;
+  }
+
   if (corrected_cm <= 0)
   {
-    return "<" + String(LIDAR_DISPLAY_MIN_CM) + "cm";
+    snprintf(buffer, bufferSize, "<%dcm", LIDAR_DISPLAY_MIN_CM);
+    return;
   }
   if (corrected_cm > LIDAR_DISPLAY_INF_THRESHOLD_CM)
   {
-    return "Inf.";
+    snprintf(buffer, bufferSize, "Inf.");
+    return;
   }
   if (corrected_cm < LIDAR_DISPLAY_MIN_CM)
   {
-    return "<" + String(LIDAR_DISPLAY_MIN_CM) + "cm";
+    snprintf(buffer, bufferSize, "<%dcm", LIDAR_DISPLAY_MIN_CM);
+    return;
   }
   if (corrected_cm < CM_PER_METER)
   {
-    return String(corrected_cm) + "cm";
+    snprintf(buffer, bufferSize, "%dcm", corrected_cm);
+    return;
   }
-  return String(static_cast<float>(corrected_cm) / CM_PER_METER, DISTANCE_DECIMAL_PLACES) + "m";
+  snprintf(buffer,
+           bufferSize,
+           "%.*fm",
+           DISTANCE_DECIMAL_PLACES,
+           static_cast<float>(corrected_cm) / static_cast<float>(CM_PER_METER));
 }

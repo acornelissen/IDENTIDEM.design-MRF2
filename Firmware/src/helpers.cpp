@@ -23,6 +23,7 @@ const char *PREFS_KEY_LENS_COUNT = "lc_count";
 const unsigned long PREFS_FLUSH_DELAY_MS = 2000;
 
 bool prefsDirty = false;
+uint8_t prefsDirtyMask = 0;
 unsigned long prefsLastDirtyMs = 0;
 
 void getLensReadingsKey(size_t lensIndex, char *buffer, size_t bufferSize)
@@ -51,9 +52,8 @@ void writeLensCalibrationPrefs()
   }
 }
 
-void writePrefsToOpenNamespace()
+void writeSettingsPrefs()
 {
-  prefs.putUShort(PREFS_KEY_SCHEMA, PREFS_SCHEMA_VERSION);
   prefs.putInt("iso", iso);
   prefs.putInt("iso_index", iso_index);
   prefs.putFloat("aperture", aperture);
@@ -69,18 +69,43 @@ void writePrefsToOpenNamespace()
   prefs.putInt("lvl_trim_l10", level_trim_landscape_deci_deg);
   prefs.putInt("lvl_trim_pp10", level_trim_portrait_pos_deci_deg);
   prefs.putInt("lvl_trim_pn10", level_trim_portrait_neg_deci_deg);
+}
+
+void writeFilmPrefs()
+{
   prefs.putInt("film_counter", film_counter);
   prefs.putInt("encoder_value", encoder_value);
   prefs.putInt("prev_encoder_value", prev_encoder_value);
   prefs.putInt("frame1_offset", frame_one_offset);
   prefs.putInt("frame_spacing", frame_spacing_offset);
-  writeLensCalibrationPrefs();
 }
 
-void writePrefsNow()
+void writePrefsToOpenNamespace(uint8_t dirtyMask)
 {
+  prefs.putUShort(PREFS_KEY_SCHEMA, PREFS_SCHEMA_VERSION);
+  if ((dirtyMask & PREFS_DIRTY_SETTINGS) != 0)
+  {
+    writeSettingsPrefs();
+  }
+  if ((dirtyMask & PREFS_DIRTY_FILM) != 0)
+  {
+    writeFilmPrefs();
+  }
+  if ((dirtyMask & PREFS_DIRTY_LENS_CAL) != 0)
+  {
+    writeLensCalibrationPrefs();
+  }
+}
+
+void writePrefsNow(uint8_t dirtyMask)
+{
+  if (dirtyMask == 0)
+  {
+    return;
+  }
+
   prefs.begin(PREFS_NAMESPACE, false);
-  writePrefsToOpenNamespace();
+  writePrefsToOpenNamespace(dirtyMask);
   prefs.end();
 }
 
@@ -293,7 +318,7 @@ void loadPrefs()
 
   if (migratedLegacy)
   {
-    writePrefsToOpenNamespace();
+    writePrefsToOpenNamespace(PREFS_DIRTY_ALL);
     prefs.remove(PREFS_KEY_LEGACY_LENSES);
     prefsSchemaVersionLoaded = PREFS_SCHEMA_VERSION;
     prefsSchemaValid = true;
@@ -302,17 +327,25 @@ void loadPrefs()
 
   prefs.end();
   prefsDirty = false;
+  prefsDirtyMask = 0;
 }
 
-void savePrefs(bool force)
+void savePrefs(bool force, uint8_t dirtyMask)
 {
+  if (dirtyMask == 0)
+  {
+    return;
+  }
+
   prefsDirty = true;
+  prefsDirtyMask |= dirtyMask;
   prefsLastDirtyMs = millis();
 
   if (force)
   {
-    writePrefsNow();
+    writePrefsNow(prefsDirtyMask);
     prefsDirty = false;
+    prefsDirtyMask = 0;
     prefsSchemaVersionLoaded = PREFS_SCHEMA_VERSION;
     prefsSchemaValid = true;
     prefsLoadedLegacy = false;
@@ -332,22 +365,28 @@ void flushPrefsIfDirty()
     return;
   }
 
-  writePrefsNow();
+  writePrefsNow(prefsDirtyMask);
   prefsDirty = false;
+  prefsDirtyMask = 0;
   prefsSchemaVersionLoaded = PREFS_SCHEMA_VERSION;
   prefsSchemaValid = true;
   prefsLoadedLegacy = false;
 }
 
-String cmToReadable(int cm, int places)
+void cmToReadable(int cm, int places, char *buffer, size_t bufferSize)
 {
+  if (!buffer || bufferSize == 0)
+  {
+    return;
+  }
+
   if (cm < CM_PER_METER)
   {
-    return String(cm) + "cm";
+    snprintf(buffer, bufferSize, "%dcm", cm);
   }
   else
   {
-    return String(float(cm) / CM_PER_METER, places) + "m";
+    snprintf(buffer, bufferSize, "%.*fm", places, static_cast<float>(cm) / static_cast<float>(CM_PER_METER));
   }
 }
 
