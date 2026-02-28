@@ -418,14 +418,31 @@ void enterSleepServices()
   }
 
   initializeSleepWakeBaselines();
+
+  if (mpuReady)
+  {
+    mpu.enableSleep(true);
+  }
+
+  // Scale CPU down after all I2C work is complete.
+  setCpuFrequencyMhz(CPU_FREQ_SLEEP_MHZ);
 }
 
 void exitSleepServices()
 {
+  // Restore full CPU speed before any I2C communications.
+  setCpuFrequencyMhz(CPU_FREQ_ACTIVE_MHZ);
+
   if (mainDisplayReady)
   {
     display.oled_command(0xAF);
   }
+
+  if (mpuReady)
+  {
+    mpu.enableSleep(false);
+  }
+
   wakeLightMeterFromSleep();
   toggleLidar(true);
   loopState.lidarIdleStandbyActive = false;

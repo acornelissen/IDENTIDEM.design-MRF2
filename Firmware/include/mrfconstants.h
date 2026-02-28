@@ -282,6 +282,8 @@ const unsigned long LOOP_UI_INTERVAL_MS = 33;             // UI redraw cadence (
 const unsigned long LOOP_UI_MAIN_REFRESH_MS = 100;        // Forced redraw cadence in Main mode when state is stable.
 const unsigned long LOOP_UI_HEALTH_REFRESH_MS = 1000;     // Forced redraw cadence for Health idle timer updates.
 const unsigned long LOOP_PREFS_FLUSH_INTERVAL_MS = 200;   // Preferences flush check cadence.
+const int CPU_FREQ_ACTIVE_MHZ = 240;                      // CPU frequency while device is awake.
+const int CPU_FREQ_SLEEP_MHZ  = 80;                       // CPU frequency while device is sleeping.
 const float LIGHTMETER_ACTIVITY_DELTA_LUX = 1.0f;         // Lux delta that keeps light-meter polling in fast mode.
 const int SLEEP_WAKE_ENCODER_DELTA = 1;                   // Encoder delta to wake device.
 const int SLEEP_WAKE_LENS_DELTA = 8;                      // Lens ADC delta to wake device.
@@ -417,8 +419,11 @@ const int EXT_COUNTER_TEXT_Y = 30;          // Counter text baseline Y.
 const int EXT_COUNTER_MESSAGE_X = 8;        // "Load film"/"Roll end" message X.
 const int EXT_COUNTER_VALUE_X_WITH_PROGRESS = 8; // Counter X when progress bar is visible.
 const int EXT_COUNTER_VALUE_X_NO_PROGRESS = 60;  // Counter X when no progress bar is visible.
-const int EXT_SLEEP_TEXT_X = 8;             // External sleep text X.
-const int EXT_SLEEP_TEXT_Y = 22;            // External sleep text Y.
+const int EXT_SLEEP_FACE_CX     = 52;       // Sleep indicator face centre X.
+const int EXT_SLEEP_FACE_CY     = 16;       // Sleep indicator face centre Y.
+const int EXT_SLEEP_FACE_RADIUS = 12;       // Sleep indicator face radius (px).
+const int EXT_SLEEP_ZZZ_X       = 70;       // Sleep indicator "Zzz" text cursor X.
+const int EXT_SLEEP_ZZZ_Y       = 22;       // Sleep indicator "Zzz" text cursor Y.
 
 // ---------------------------------------------------------------------------
 // Static option lists and calibration flow thresholds

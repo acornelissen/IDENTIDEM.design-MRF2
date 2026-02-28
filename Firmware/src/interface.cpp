@@ -1021,13 +1021,24 @@ void drawSleepUI()
   if (externalDisplayReady)
   {
     display_ext.clearDisplay();
+    // Face outline
+    display_ext.drawCircle(EXT_SLEEP_FACE_CX, EXT_SLEEP_FACE_CY, EXT_SLEEP_FACE_RADIUS, WHITE);
+    // Closed eyes
+    display_ext.drawLine(EXT_SLEEP_FACE_CX - 8, EXT_SLEEP_FACE_CY - 3,
+                         EXT_SLEEP_FACE_CX - 4, EXT_SLEEP_FACE_CY - 3, WHITE);
+    display_ext.drawLine(EXT_SLEEP_FACE_CX + 4, EXT_SLEEP_FACE_CY - 3,
+                         EXT_SLEEP_FACE_CX + 8, EXT_SLEEP_FACE_CY - 3, WHITE);
+    // Mouth
+    display_ext.drawLine(EXT_SLEEP_FACE_CX - 4, EXT_SLEEP_FACE_CY + 5,
+                         EXT_SLEEP_FACE_CX + 4, EXT_SLEEP_FACE_CY + 5, WHITE);
+    // "Zzz" tag
     u8g2_ext.setFontMode(1);
     u8g2_ext.setFontDirection(0);
     u8g2_ext.setForegroundColor(WHITE);
     u8g2_ext.setBackgroundColor(BLACK);
-    u8g2_ext.setFont(u8g2_font_10x20_mf);
-    u8g2_ext.setCursor(EXT_SLEEP_TEXT_X, EXT_SLEEP_TEXT_Y);
-    u8g2_ext.print(F("ZzzZzzZZz..."));
+    u8g2_ext.setFont(u8g2_font_6x10_mf);
+    u8g2_ext.setCursor(EXT_SLEEP_ZZZ_X, EXT_SLEEP_ZZZ_Y);
+    u8g2_ext.print(F("Zzz"));
     display_ext.display();
   }
 }
