@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.1.2  
+**Version**: 10.2.0  
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 

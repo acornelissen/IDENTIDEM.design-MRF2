@@ -2,6 +2,25 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.2.0 - 2026-02-28
+
+- Power and runtime efficiency:
+  - Replaced busy-polling in sleep mode with `esp_light_sleep_start()`, cutting CPU current between poll cycles from ~20–30 mA to ~0.8 mA.
+  - Button GPIOs (`BUTTON_LEFT_PIN`, `BUTTON_RIGHT_PIN`) now configured as GPIO hardware wakeup sources during device sleep for immediate response.
+  - Encoder and lens ADC polls unified on a 100 ms timer wakeup during device sleep (encoder previously polled at 50 ms).
+  - MPU6050 now placed into hardware sleep on device sleep entry and woken on exit.
+  - CPU frequency scaled down to 80 MHz during device sleep and restored to 240 MHz on wake.
+  - Film counter idle polling interval increased 25 ms → 75 ms to reduce unnecessary ADC reads.
+  - Battery gauge polling interval increased 1.5 s → 5 s (battery state changes slowly).
+  - UI redraw tick slowed from ~30 Hz (33 ms) to 20 Hz (50 ms).
+- Sleep indicator:
+  - External OLED sleep indicator replaced: `ZzzZzzZZz...` text replaced with a minimal circle-face graphic plus `Zzz` label.
+- Testing:
+  - Extended runtime state machine test suite: boundary tests for all five sleep timeout modes, `MODE_OFF` coverage, and constant-value guards for `LOOP_SLEEP_LIGHT_SLEEP_US`, `SLEEP_WAKE_ENCODER_DELTA`, and `SLEEP_WAKE_LENS_DELTA`.
+- Release metadata/docs:
+  - Bumped `FWVERSION` to `10.2.0`.
+  - Updated firmware README, user manual, and camera UI SVG snapshots.
+
 ## 10.1.2 - 2026-02-26
 - Lens calibration and distance-scale updates:
   - Added per-lens calibration point-count support (up to `10` markers per lens profile).
