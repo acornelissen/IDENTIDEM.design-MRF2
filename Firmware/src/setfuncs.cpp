@@ -34,8 +34,16 @@ struct LensSnapState
   int prevLens = -1;
 };
 
+struct LightMeterSmoothingState
+{
+  bool initialized = false;
+  float smoothedLux = 0.0f;
+};
+
 LensSpikeFilterState lensSpikeFilter;
 LensSnapState lensSnap;
+LightMeterSmoothingState lightMeterSmoothing;
+LidarRecoveryState lidarRecoveryState = {};
 
 void applyLidarCalibrationProfile()
 {
@@ -77,11 +85,9 @@ void clearLidarDisplay()
 // ---------------------
 void setDistance()
 {
-  static LidarRecoveryState recoveryState = {false, false, 0, 0, 0};
-
   if (!lidarSensorReady || !lidarEnabled)
   {
-    recoveryState = {false, false, 0, 0, 0};
+    lidarRecoveryState = {};
     return;
   }
 
@@ -100,14 +106,14 @@ void setDistance()
     if (!chosen.valid)
     {
       // Keep main-branch behavior: do not force recovery on filtered/noisy frames.
-      if ((now - recoveryState.last_valid_measurement_ms) > LIDAR_NO_DATA_TIMEOUT_MS)
+      if ((now - lidarRecoveryState.last_valid_measurement_ms) > LIDAR_NO_DATA_TIMEOUT_MS)
       {
         clearLidarDisplay();
       }
       return;
     }
 
-    updateLidarRecoveryState(recoveryState, LidarRecoveryEvent::VALID_MEASUREMENT, now);
+    updateLidarRecoveryState(lidarRecoveryState, LidarRecoveryEvent::VALID_MEASUREMENT, now);
     lidar_quality_level = chosen.quality_level;
 
     distance = static_cast<int16_t>(blendLidarDistance(prev_distance, chosen.distance_cm, chosen.confidence));
@@ -122,7 +128,7 @@ void setDistance()
   LidarRecoveryEvent event = (lidarUpdateError == DTSError::TIMEOUT)
                                  ? LidarRecoveryEvent::TIMEOUT
                                  : LidarRecoveryEvent::ERROR;
-  LidarRecoveryDecision recoveryDecision = updateLidarRecoveryState(recoveryState, event, now);
+  LidarRecoveryDecision recoveryDecision = updateLidarRecoveryState(lidarRecoveryState, event, now);
 
   if (recoveryDecision.clear_display)
   {
@@ -143,7 +149,7 @@ void setDistance()
   {
     applyLidarCalibrationProfile();
   }
-  noteLidarRecoveryAttemptResult(recoveryState, recovered, now);
+  noteLidarRecoveryAttemptResult(lidarRecoveryState, recovered, now);
 }
 
 // Borrows moving average code from
@@ -356,9 +362,6 @@ void setVoltage()
 
 void setLightMeter()
 {
-  static bool smoothingInitialized = false;
-  static float smoothedLux = 0.0f;
-
   if (!lightMeterReady)
   {
     lux = 0.0f;
@@ -374,19 +377,20 @@ void setLightMeter()
   }
 
   float alpha = getMeterSmoothingAlpha(meter_smoothing_mode);
-  if (!smoothingInitialized || alpha >= 1.0f)
+  if (!lightMeterSmoothing.initialized || alpha >= 1.0f)
   {
-    smoothedLux = rawLux;
-    smoothingInitialized = true;
+    lightMeterSmoothing.smoothedLux = rawLux;
+    lightMeterSmoothing.initialized = true;
   }
   else
   {
-    smoothedLux = (rawLux * alpha) + (smoothedLux * (1.0f - alpha));
+    lightMeterSmoothing.smoothedLux =
+        (rawLux * alpha) + (lightMeterSmoothing.smoothedLux * (1.0f - alpha));
   }
 
   float exposureCompEv = static_cast<float>(exposure_comp_thirds) / 3.0f;
-  lux = applyExposureCompensationToLux(smoothedLux, exposureCompEv);
-  ev_readout = calculateEV100(smoothedLux);
+  lux = applyExposureCompensationToLux(lightMeterSmoothing.smoothedLux, exposureCompEv);
+  ev_readout = calculateEV100(lightMeterSmoothing.smoothedLux);
 
   if (aperture == 0 && lux > 0)
   {
