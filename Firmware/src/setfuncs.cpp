@@ -20,6 +20,23 @@
 
 namespace
 {
+struct LensSpikeFilterState
+{
+  bool initialized = false;
+  int stableReading = 0;
+  int pendingReading = 0;
+  uint8_t pendingCount = 0;
+};
+
+struct LensSnapState
+{
+  int prevIndex = -1;
+  int prevLens = -1;
+};
+
+LensSpikeFilterState lensSpikeFilter;
+LensSnapState lensSnap;
+
 void applyLidarCalibrationProfile()
 {
   // Re-apply library-side distance correction after sensor state changes.
@@ -133,14 +150,9 @@ void setDistance()
 // https://github.com/makeabilitylab/arduino/blob/master/Filters/MovingAverageFilter/MovingAverageFilter.ino
 int getLensSensorReading()
 {
-  static bool spikeFilterInitialized = false;
-  static int stableReading = 0;
-  static int pendingReading = 0;
-  static uint8_t pendingCount = 0;
-
   if (!adsReady)
   {
-    return stableReading;
+    return lensSpikeFilter.stableReading;
   }
 
   if (LENS_ADC_QUIET_DELAY_MS > 0)
@@ -165,50 +177,48 @@ int getLensSensorReading()
   }
 
   int smoothedReading = calcMovingAvg(sensorVal);
-  if (!spikeFilterInitialized)
+  if (!lensSpikeFilter.initialized)
   {
-    spikeFilterInitialized = true;
-    stableReading = smoothedReading;
-    pendingReading = smoothedReading;
-    pendingCount = 0;
-    return stableReading;
+    lensSpikeFilter.initialized = true;
+    lensSpikeFilter.stableReading = smoothedReading;
+    lensSpikeFilter.pendingReading = smoothedReading;
+    lensSpikeFilter.pendingCount = 0;
+    return lensSpikeFilter.stableReading;
   }
 
-  if (abs(smoothedReading - stableReading) <= LENS_SPIKE_DELTA_THRESHOLD)
+  if (abs(smoothedReading - lensSpikeFilter.stableReading) <= LENS_SPIKE_DELTA_THRESHOLD)
   {
-    stableReading = smoothedReading;
-    pendingCount = 0;
-    return stableReading;
+    lensSpikeFilter.stableReading = smoothedReading;
+    lensSpikeFilter.pendingCount = 0;
+    return lensSpikeFilter.stableReading;
   }
 
-  if (pendingCount == 0 || abs(smoothedReading - pendingReading) > LENS_SPIKE_DELTA_THRESHOLD)
+  if (lensSpikeFilter.pendingCount == 0 ||
+      abs(smoothedReading - lensSpikeFilter.pendingReading) > LENS_SPIKE_DELTA_THRESHOLD)
   {
-    pendingReading = smoothedReading;
-    pendingCount = 1;
-    return stableReading;
+    lensSpikeFilter.pendingReading = smoothedReading;
+    lensSpikeFilter.pendingCount = 1;
+    return lensSpikeFilter.stableReading;
   }
 
-  pendingCount++;
-  if (pendingCount >= LENS_SPIKE_CONFIRMATION_COUNT)
+  lensSpikeFilter.pendingCount++;
+  if (lensSpikeFilter.pendingCount >= LENS_SPIKE_CONFIRMATION_COUNT)
   {
-    stableReading = smoothedReading;
-    pendingCount = 0;
+    lensSpikeFilter.stableReading = smoothedReading;
+    lensSpikeFilter.pendingCount = 0;
   }
 
-  return stableReading;
+  return lensSpikeFilter.stableReading;
 }
 
 void setLensDistance()
 {
-  static int prevSnapIndex = -1;
-  static int prevSnapLens = -1;
-
   const Lens &lens = lenses[selected_lens];
 
-  if (selected_lens != prevSnapLens)
+  if (selected_lens != lensSnap.prevLens)
   {
-    prevSnapLens = selected_lens;
-    prevSnapIndex = -1;
+    lensSnap.prevLens = selected_lens;
+    lensSnap.prevIndex = -1;
   }
 
   if (lens_sensor_reading == prev_lens_sensor_reading)
@@ -225,15 +235,15 @@ void setLensDistance()
   if (lens.calibrated)
   {
     snapIndex = findLensSnapIndex(lens, lens_sensor_reading);
-    if (snapIndex >= 0 && snapIndex != prevSnapIndex)
+    if (snapIndex >= 0 && snapIndex != lensSnap.prevIndex)
     {
       activityDetected = true;
     }
-    prevSnapIndex = snapIndex;
+    lensSnap.prevIndex = snapIndex;
   }
   else
   {
-    prevSnapIndex = -1;
+    lensSnap.prevIndex = -1;
   }
 
   if (activityDetected)
