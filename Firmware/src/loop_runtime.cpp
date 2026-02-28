@@ -590,7 +590,7 @@ void initializeSchedulerIfNeeded(unsigned long nowMs)
   loopState.lastMeterChangeMs = nowMs;
 }
 
-void runSleepTasks(unsigned long nowMs)
+void runSleepTasks([[maybe_unused]] unsigned long nowMs)
 {
   if (!loopState.sleepServicesActive)
   {
@@ -598,17 +598,23 @@ void runSleepTasks(unsigned long nowMs)
     loopState.sleepServicesActive = true;
   }
 
-  if (shouldRunTask(nowMs, loopState.scheduler.lastInputMs, LOOP_SLEEP_INPUT_INTERVAL_MS))
+  // Sleep the CPU until a button GPIO fires or the sensor-poll timer expires.
+  esp_sleep_enable_timer_wakeup(LOOP_SLEEP_LIGHT_SLEEP_US);
+  esp_light_sleep_start();
+
+  switch (esp_sleep_get_wakeup_cause())
   {
-    checkButtons();
-  }
-  if (shouldRunTask(nowMs, loopState.scheduler.lastFilmCounterMs, LOOP_SLEEP_ENCODER_POLL_INTERVAL_MS))
-  {
-    pollSleepWakeEncoder();
-  }
-  if (shouldRunTask(nowMs, loopState.scheduler.lastLensMs, LOOP_SLEEP_LENS_POLL_INTERVAL_MS))
-  {
-    pollSleepWakeLens();
+    case ESP_SLEEP_WAKEUP_GPIO:
+      // Button pressed — let Bounce2 confirm and register activity.
+      checkButtons();
+      break;
+
+    case ESP_SLEEP_WAKEUP_TIMER:
+    default:
+      // Timer elapsed (or undefined wakeup) — poll I2C sensors for activity.
+      pollSleepWakeEncoder();
+      pollSleepWakeLens();
+      break;
   }
 }
 
