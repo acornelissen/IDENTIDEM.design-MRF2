@@ -1,7 +1,7 @@
 #ifndef LIDAR_LOGIC_H
 #define LIDAR_LOGIC_H
 
-#include <Arduino.h>
+#include <stddef.h>
 #include <DTS6012M_UART.h>
 
 struct LidarCandidate
@@ -19,6 +19,6 @@ LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,
 
 int blendLidarDistance(int previous_distance_cm, int next_distance_cm, int confidence);
 
-String formatDistanceDisplay(int corrected_cm);
+void formatDistanceDisplay(int corrected_cm, char *buffer, size_t bufferSize);
 
 #endif // LIDAR_LOGIC_H

@@ -17,7 +17,10 @@
 // ---------------------
 static void resetFrameCounter()
 {
-  encoder.setEncoderPosition(0); // Reset encoder related values
+  if (encoderReady)
+  {
+    encoder.setEncoderPosition(0); // Reset encoder related values
+  }
   encoder_value = 0;
   prev_encoder_value = 0;
   film_counter = 0;

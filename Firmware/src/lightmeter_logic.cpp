@@ -1,6 +1,8 @@
 #include "lightmeter_logic.h"
 
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "mrfconstants.h"
 
@@ -51,6 +53,20 @@ const char *getShutterFractionLabel(float speed)
   }
   return nullptr;
 }
+
+void trimLeadingSpaces(char *text)
+{
+  if (!text)
+  {
+    return;
+  }
+
+  while (*text == ' ')
+  {
+    size_t length = strlen(text);
+    memmove(text, text + 1, length);
+  }
+}
 } // namespace
 
 float applyExposureCompensationToLux(float lux, float exposure_comp_ev)
@@ -97,11 +113,17 @@ float calculateEV100(float lux)
   return log2f((lux * 100.0f) / static_cast<float>(K));
 }
 
-String formatShutterSpeed(float lux, float aperture, int iso)
+void formatShutterSpeed(float lux, float aperture, int iso, char *buffer, size_t bufferSize)
 {
+  if (!buffer || bufferSize == 0)
+  {
+    return;
+  }
+
   if (lux <= 0)
   {
-    return "Dark!";
+    snprintf(buffer, bufferSize, "Dark!");
+    return;
   }
 
   float speed = roundf(((aperture * aperture) * K) / (lux * static_cast<float>(iso)) * LIGHTMETER_SPEED_ROUND_SCALE) /
@@ -109,23 +131,28 @@ String formatShutterSpeed(float lux, float aperture, int iso)
 
   if (speed < SPEED_TOO_FAST_THRESHOLD)
   {
-    return "Bright!";
+    snprintf(buffer, bufferSize, "Bright!");
+    return;
   }
 
   if (speed >= SPEED_SECONDS_THRESHOLD)
   {
     char speed_raw[SPEED_TEXT_BUFFER_LEN];
     dtostrf(speed, SPEED_TEXT_WIDTH, SPEED_TEXT_DECIMALS_LONG, speed_raw);
-    return String(speed_raw) + " sec.";
+    trimLeadingSpaces(speed_raw);
+    snprintf(buffer, bufferSize, "%s sec.", speed_raw);
+    return;
   }
 
   const char *fraction_label = getShutterFractionLabel(speed);
   if (fraction_label != nullptr)
   {
-    return String(fraction_label) + " sec.";
+    snprintf(buffer, bufferSize, "%s sec.", fraction_label);
+    return;
   }
 
   char speed_raw[SPEED_TEXT_BUFFER_LEN];
   dtostrf(speed, SPEED_TEXT_WIDTH, SPEED_TEXT_DECIMALS_SHORT, speed_raw);
-  return String(speed_raw) + " sec.";
+  trimLeadingSpaces(speed_raw);
+  snprintf(buffer, bufferSize, "%s sec.", speed_raw);
 }

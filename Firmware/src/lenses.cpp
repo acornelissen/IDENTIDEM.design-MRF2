@@ -1,6 +1,5 @@
 #include "lenses.h"
 #include <stddef.h> // For size_t
-#include <Arduino.h> // For String type if used by Lens struct members implicitly
 
 // Lens and film format definitions
 Lens lenses[] = {

@@ -52,22 +52,28 @@ struct MainFramelineLayout
 
 constexpr int LIDAR_QUALITY_BLOCK_COUNT = 4;
 
-String getCompactShutterDisplay(const String &fullShutter)
+void getCompactShutterDisplay(const char *fullShutter, char *buffer, size_t bufferSize)
 {
+  if (!buffer || bufferSize == 0)
+  {
+    return;
+  }
+
   const char *suffix = " sec.";
   const size_t suffixLen = 5;
-  const char *raw = fullShutter.c_str();
+  const char *raw = fullShutter ? fullShutter : "";
   size_t rawLen = strlen(raw);
 
   if (rawLen > suffixLen && strcmp(raw + (rawLen - suffixLen), suffix) == 0)
   {
-    char compact[16] = {0};
-    size_t copyLen = min(rawLen - suffixLen, sizeof(compact) - 1);
-    memcpy(compact, raw, copyLen);
-    return String(compact);
+    size_t copyLen = min(rawLen - suffixLen, bufferSize - 1);
+    memcpy(buffer, raw, copyLen);
+    buffer[copyLen] = '\0';
+    return;
   }
 
-  return fullShutter;
+  strncpy(buffer, raw, bufferSize - 1);
+  buffer[bufferSize - 1] = '\0';
 }
 
 void getFormatWidthHeightMm(const FilmFormat &format, float &widthMm, float &heightMm)
@@ -278,7 +284,8 @@ void drawMainHeader()
   u8g2.setCursor(MAIN_SHUTTER_X, MAIN_SHUTTER_Y);
   if (show_ev_readout)
   {
-    String compactShutter = getCompactShutterDisplay(shutter_speed);
+    char compactShutter[16] = {0};
+    getCompactShutterDisplay(shutter_speed, compactShutter, sizeof(compactShutter));
     u8g2.print(compactShutter);
     u8g2.print(F(" EV"));
     if (ev_readout == ev_readout)
@@ -451,6 +458,11 @@ void drawReticleAndFocusRing(const MainFramelineLayout &layout)
 
 void drawLevelIndicator(int centerX, int centerY)
 {
+  if (!mpuReady)
+  {
+    return;
+  }
+
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
 
@@ -911,9 +923,6 @@ void drawResetConfirmUI()
 
 void drawHealthUI()
 {
-  const unsigned long now = millis();
-  const unsigned long idleMs = getIdleDurationMs(now);
-
   preparePrimaryDisplayTextMode();
 
   u8g2.setFont(u8g2_font_6x10_mf);
@@ -945,6 +954,7 @@ void drawHealthUI()
 
   u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 2));
   u8g2.print(F("LiDAR: "));
+  u8g2.print(lidarSensorReady ? F("OK ") : F("InitErr "));
   u8g2.print(lidarEnabled ? F("On") : F("Off"));
   u8g2.print(F(" err:"));
   u8g2.print(last_lidar_error_code);
@@ -954,9 +964,24 @@ void drawHealthUI()
   u8g2.print(lidar_recovery_count);
 
   u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 4));
-  u8g2.print(F("Idle: "));
-  u8g2.print(idleMs / 1000);
-  u8g2.print(F("s"));
+  u8g2.print(F("HW D"));
+  u8g2.print(mainDisplayReady ? 1 : 0);
+  u8g2.print(F(" X"));
+  u8g2.print(externalDisplayReady ? 1 : 0);
+  u8g2.print(F(" A"));
+  u8g2.print(adsReady ? 1 : 0);
+  u8g2.print(F(" M"));
+  u8g2.print(mpuReady ? 1 : 0);
+
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 5));
+  u8g2.print(F("HW L"));
+  u8g2.print(lightMeterReady ? 1 : 0);
+  u8g2.print(F(" B"));
+  u8g2.print(batteryGaugeReady ? 1 : 0);
+  u8g2.print(F(" E"));
+  u8g2.print(encoderReady ? 1 : 0);
+  u8g2.print(F(" P"));
+  u8g2.print(statusPixelReady ? 1 : 0);
 
   u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y);
   u8g2.print(F(" (L/R) Back"));
@@ -966,6 +991,11 @@ void drawHealthUI()
 
 void drawExternalUI()
 {
+  if (!externalDisplayReady)
+  {
+    return;
+  }
+
   prepareExternalDisplayTextMode();
   drawExternalHeader();
   drawExternalBatteryReadout();
@@ -973,25 +1003,32 @@ void drawExternalUI()
   bool progressVisible = drawExternalProgressBarAndLed();
   drawExternalCounterText(progressVisible);
 
-  sspixel.show();
+  if (statusPixelReady)
+  {
+    sspixel.show();
+  }
   display_ext.display();
 }
 
 void drawSleepUI()
 {
-  display.clearDisplay();
-  display_ext.clearDisplay();
+  if (mainDisplayReady)
+  {
+    display.clearDisplay();
+    display.display();
+  }
 
-  u8g2_ext.setFontMode(1);
-  u8g2_ext.setFontDirection(0);
-  u8g2_ext.setForegroundColor(WHITE);
-  u8g2_ext.setBackgroundColor(BLACK);
-  u8g2_ext.setFont(u8g2_font_10x20_mf);
-
-  u8g2_ext.setCursor(EXT_SLEEP_TEXT_X, EXT_SLEEP_TEXT_Y);
-  u8g2_ext.print(F("ZzzZzzZZz..."));
-
-  display.display();
-  display_ext.display();
+  if (externalDisplayReady)
+  {
+    display_ext.clearDisplay();
+    u8g2_ext.setFontMode(1);
+    u8g2_ext.setFontDirection(0);
+    u8g2_ext.setForegroundColor(WHITE);
+    u8g2_ext.setBackgroundColor(BLACK);
+    u8g2_ext.setFont(u8g2_font_10x20_mf);
+    u8g2_ext.setCursor(EXT_SLEEP_TEXT_X, EXT_SLEEP_TEXT_Y);
+    u8g2_ext.print(F("ZzzZzzZZz..."));
+    display_ext.display();
+  }
 }
 // ---------------------
