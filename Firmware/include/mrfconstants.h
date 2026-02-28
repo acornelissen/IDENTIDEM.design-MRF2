@@ -75,6 +75,8 @@ const int DISPLAY_ROTATION = 3;                        // Main display rotation 
 const int DISPLAY_BOOT_TEXT_SIZE = 2;                  // Boot text scale on external display.
 const int DISPLAY_I2C_FREQUENCY_HZ = 1000000;          // Fast I2C bus frequency.
 const int DISPLAY_COMMAND_FLIP = 0xC8;                 // SH1107 vertical flip command.
+const uint8_t OLED_CMD_DISPLAY_OFF = 0xAE;             // SH1107 command to blank the display.
+const uint8_t OLED_CMD_DISPLAY_ON  = 0xAF;             // SH1107 command to enable the display.
 
 // ---------------------------------------------------------------------------
 // Lens ADC filtering, snap logic, and focus-ring rendering

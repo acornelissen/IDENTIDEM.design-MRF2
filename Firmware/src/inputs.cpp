@@ -59,6 +59,14 @@ bool captureStableCalibReading(int &averagedReading)
       averagedReading);
 }
 
+void advanceMenuStep(int maxStep)
+{
+  if (++config_step > maxStep)
+  {
+    config_step = 0;
+  }
+}
+
 bool isMonotonicCalibSequenceWithCandidate(int candidateReading)
 {
   const int calibrationPointCount = getCalibrationPointCountForLens(lenses[calib_lens]);
@@ -94,43 +102,23 @@ void checkButtons()
       }
       else if (ui_mode == UiMode::Config)
       {
-        config_step++;
-        if (config_step > CONFIG_ROOT_STEP_MAX)
-        {
-          config_step = 0;
-        }
+        advanceMenuStep(CONFIG_ROOT_STEP_MAX);
       }
       else if (ui_mode == UiMode::ConfigFilm)
       {
-        config_step++;
-        if (config_step > CONFIG_FILM_STEP_MAX)
-        {
-          config_step = 0;
-        }
+        advanceMenuStep(CONFIG_FILM_STEP_MAX);
       }
       else if (ui_mode == UiMode::ConfigLens)
       {
-        config_step++;
-        if (config_step > CONFIG_LENS_STEP_MAX)
-        {
-          config_step = 0;
-        }
+        advanceMenuStep(CONFIG_LENS_STEP_MAX);
       }
       else if (ui_mode == UiMode::ConfigMeter)
       {
-        config_step++;
-        if (config_step > CONFIG_METER_STEP_MAX)
-        {
-          config_step = 0;
-        }
+        advanceMenuStep(CONFIG_METER_STEP_MAX);
       }
       else if (ui_mode == UiMode::ConfigUi)
       {
-        config_step++;
-        if (config_step > CONFIG_UI_STEP_MAX)
-        {
-          config_step = 0;
-        }
+        advanceMenuStep(CONFIG_UI_STEP_MAX);
       }
       else if (ui_mode == UiMode::Calib)
       {
@@ -262,8 +250,7 @@ void checkButtons()
         {
           if (config_step == CONFIG_LENS_STEP_LENS) {
             cycleLenses();
-            int non_zero_aperture_index = getFirstNonZeroAperture();
-            if (non_zero_aperture_index < 0) non_zero_aperture_index = 0;
+            int non_zero_aperture_index = max(0, getFirstNonZeroAperture());
             aperture = lenses[selected_lens].apertures[non_zero_aperture_index];
             aperture_index = non_zero_aperture_index;
           }

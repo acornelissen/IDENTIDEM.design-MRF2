@@ -411,7 +411,7 @@ void enterSleepServices()
   // Keep external sleep text visible while turning the main display fully off.
   if (mainDisplayReady)
   {
-    display.oled_command(0xAE);
+    display.oled_command(OLED_CMD_DISPLAY_OFF);
   }
 
   if (statusPixelReady)
@@ -449,7 +449,7 @@ void exitSleepServices()
 
   if (mainDisplayReady)
   {
-    display.oled_command(0xAF);
+    display.oled_command(OLED_CMD_DISPLAY_ON);
   }
 
   if (mpuReady)
@@ -576,15 +576,6 @@ void initializeSchedulerIfNeeded(unsigned long nowMs)
   }
 
   loopState.scheduler.initialized = true;
-  loopState.scheduler.lastInputMs = 0;
-  loopState.scheduler.lastFilmCounterMs = 0;
-  loopState.scheduler.lastSleepCheckMs = 0;
-  loopState.scheduler.lastLidarMs = 0;
-  loopState.scheduler.lastLensMs = 0;
-  loopState.scheduler.lastMeterMs = 0;
-  loopState.scheduler.lastBatteryMs = 0;
-  loopState.scheduler.lastUiMs = 0;
-  loopState.scheduler.lastPrefsFlushMs = 0;
   loopState.lastFilmMovementMs = nowMs;
   loopState.lastLensMovementMs = nowMs;
   loopState.lastMeterChangeMs = nowMs;
