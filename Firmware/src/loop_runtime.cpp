@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "driver/gpio.h"
+#include "esp_sleep.h"
+
 #include "activity.h"
 #include "cyclefuncs.h"
 #include "globals.h"
@@ -426,12 +429,23 @@ void enterSleepServices()
 
   // Scale CPU down after all I2C work is complete.
   setCpuFrequencyMhz(CPU_FREQ_SLEEP_MHZ);
+
+  // Configure button GPIOs as light-sleep wakeup sources.
+  gpio_wakeup_enable(static_cast<gpio_num_t>(BUTTON_LEFT_PIN),  GPIO_INTR_LOW_LEVEL);
+  gpio_wakeup_enable(static_cast<gpio_num_t>(BUTTON_RIGHT_PIN), GPIO_INTR_LOW_LEVEL);
+  esp_sleep_enable_gpio_wakeup();
 }
 
 void exitSleepServices()
 {
   // Restore full CPU speed before any I2C communications.
   setCpuFrequencyMhz(CPU_FREQ_ACTIVE_MHZ);
+
+  // Remove light-sleep wakeup sources before returning to active polling.
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_GPIO);
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+  gpio_wakeup_disable(static_cast<gpio_num_t>(BUTTON_LEFT_PIN));
+  gpio_wakeup_disable(static_cast<gpio_num_t>(BUTTON_RIGHT_PIN));
 
   if (mainDisplayReady)
   {
