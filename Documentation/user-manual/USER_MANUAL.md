@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.1.2
+**Firmware version:** 10.2.0
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -189,9 +189,11 @@ Shows quick diagnostics:
 
 - Firmware version (`FW`)
 - Preferences schema status (`Prefs`)
-- LiDAR enabled status and last error code
-- LiDAR recovery counter
-- Idle timer in seconds
+- LiDAR sensor and enabled status, plus last error code
+- LiDAR recovery count
+- Hardware peripheral flags — `1` = ready, `0` = not detected:
+  - `D` main display, `X` external display, `A` lens ADC (ADS1015), `M` accelerometer (MPU6050)
+  - `L` light meter (BH1750), `B` battery gauge (MAX17048), `E` encoder, `P` status pixel
 
 ### ISO list
 
@@ -267,7 +269,7 @@ After the configured **Sleep timeout** period of inactivity (default **1 minute*
 
 - LiDAR turns off.
 - Main display is blank.
-- External display shows `ZzzZzzZZz...`.
+- External display shows a sleeping face graphic.
 - Status LED is off.
 
 ![Sleep screen](images/sleep-ui.svg)

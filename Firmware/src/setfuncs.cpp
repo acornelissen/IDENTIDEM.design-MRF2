@@ -20,6 +20,31 @@
 
 namespace
 {
+struct LensSpikeFilterState
+{
+  bool initialized = false;
+  int stableReading = 0;
+  int pendingReading = 0;
+  uint8_t pendingCount = 0;
+};
+
+struct LensSnapState
+{
+  int prevIndex = -1;
+  int prevLens = -1;
+};
+
+struct LightMeterSmoothingState
+{
+  bool initialized = false;
+  float smoothedLux = 0.0f;
+};
+
+LensSpikeFilterState lensSpikeFilter;
+LensSnapState lensSnap;
+LightMeterSmoothingState lightMeterSmoothing;
+LidarRecoveryState lidarRecoveryState = {};
+
 void applyLidarCalibrationProfile()
 {
   // Re-apply library-side distance correction after sensor state changes.
@@ -60,11 +85,9 @@ void clearLidarDisplay()
 // ---------------------
 void setDistance()
 {
-  static LidarRecoveryState recoveryState = {false, false, 0, 0, 0};
-
   if (!lidarSensorReady || !lidarEnabled)
   {
-    recoveryState = {false, false, 0, 0, 0};
+    lidarRecoveryState = {};
     return;
   }
 
@@ -83,14 +106,14 @@ void setDistance()
     if (!chosen.valid)
     {
       // Keep main-branch behavior: do not force recovery on filtered/noisy frames.
-      if ((now - recoveryState.last_valid_measurement_ms) > LIDAR_NO_DATA_TIMEOUT_MS)
+      if ((now - lidarRecoveryState.last_valid_measurement_ms) > LIDAR_NO_DATA_TIMEOUT_MS)
       {
         clearLidarDisplay();
       }
       return;
     }
 
-    updateLidarRecoveryState(recoveryState, LidarRecoveryEvent::VALID_MEASUREMENT, now);
+    updateLidarRecoveryState(lidarRecoveryState, LidarRecoveryEvent::VALID_MEASUREMENT, now);
     lidar_quality_level = chosen.quality_level;
 
     distance = static_cast<int16_t>(blendLidarDistance(prev_distance, chosen.distance_cm, chosen.confidence));
@@ -105,7 +128,7 @@ void setDistance()
   LidarRecoveryEvent event = (lidarUpdateError == DTSError::TIMEOUT)
                                  ? LidarRecoveryEvent::TIMEOUT
                                  : LidarRecoveryEvent::ERROR;
-  LidarRecoveryDecision recoveryDecision = updateLidarRecoveryState(recoveryState, event, now);
+  LidarRecoveryDecision recoveryDecision = updateLidarRecoveryState(lidarRecoveryState, event, now);
 
   if (recoveryDecision.clear_display)
   {
@@ -126,21 +149,16 @@ void setDistance()
   {
     applyLidarCalibrationProfile();
   }
-  noteLidarRecoveryAttemptResult(recoveryState, recovered, now);
+  noteLidarRecoveryAttemptResult(lidarRecoveryState, recovered, now);
 }
 
 // Borrows moving average code from
 // https://github.com/makeabilitylab/arduino/blob/master/Filters/MovingAverageFilter/MovingAverageFilter.ino
 int getLensSensorReading()
 {
-  static bool spikeFilterInitialized = false;
-  static int stableReading = 0;
-  static int pendingReading = 0;
-  static uint8_t pendingCount = 0;
-
   if (!adsReady)
   {
-    return stableReading;
+    return lensSpikeFilter.stableReading;
   }
 
   if (LENS_ADC_QUIET_DELAY_MS > 0)
@@ -165,50 +183,48 @@ int getLensSensorReading()
   }
 
   int smoothedReading = calcMovingAvg(sensorVal);
-  if (!spikeFilterInitialized)
+  if (!lensSpikeFilter.initialized)
   {
-    spikeFilterInitialized = true;
-    stableReading = smoothedReading;
-    pendingReading = smoothedReading;
-    pendingCount = 0;
-    return stableReading;
+    lensSpikeFilter.initialized = true;
+    lensSpikeFilter.stableReading = smoothedReading;
+    lensSpikeFilter.pendingReading = smoothedReading;
+    lensSpikeFilter.pendingCount = 0;
+    return lensSpikeFilter.stableReading;
   }
 
-  if (abs(smoothedReading - stableReading) <= LENS_SPIKE_DELTA_THRESHOLD)
+  if (abs(smoothedReading - lensSpikeFilter.stableReading) <= LENS_SPIKE_DELTA_THRESHOLD)
   {
-    stableReading = smoothedReading;
-    pendingCount = 0;
-    return stableReading;
+    lensSpikeFilter.stableReading = smoothedReading;
+    lensSpikeFilter.pendingCount = 0;
+    return lensSpikeFilter.stableReading;
   }
 
-  if (pendingCount == 0 || abs(smoothedReading - pendingReading) > LENS_SPIKE_DELTA_THRESHOLD)
+  if (lensSpikeFilter.pendingCount == 0 ||
+      abs(smoothedReading - lensSpikeFilter.pendingReading) > LENS_SPIKE_DELTA_THRESHOLD)
   {
-    pendingReading = smoothedReading;
-    pendingCount = 1;
-    return stableReading;
+    lensSpikeFilter.pendingReading = smoothedReading;
+    lensSpikeFilter.pendingCount = 1;
+    return lensSpikeFilter.stableReading;
   }
 
-  pendingCount++;
-  if (pendingCount >= LENS_SPIKE_CONFIRMATION_COUNT)
+  lensSpikeFilter.pendingCount++;
+  if (lensSpikeFilter.pendingCount >= LENS_SPIKE_CONFIRMATION_COUNT)
   {
-    stableReading = smoothedReading;
-    pendingCount = 0;
+    lensSpikeFilter.stableReading = smoothedReading;
+    lensSpikeFilter.pendingCount = 0;
   }
 
-  return stableReading;
+  return lensSpikeFilter.stableReading;
 }
 
 void setLensDistance()
 {
-  static int prevSnapIndex = -1;
-  static int prevSnapLens = -1;
-
   const Lens &lens = lenses[selected_lens];
 
-  if (selected_lens != prevSnapLens)
+  if (selected_lens != lensSnap.prevLens)
   {
-    prevSnapLens = selected_lens;
-    prevSnapIndex = -1;
+    lensSnap.prevLens = selected_lens;
+    lensSnap.prevIndex = -1;
   }
 
   if (lens_sensor_reading == prev_lens_sensor_reading)
@@ -225,15 +241,15 @@ void setLensDistance()
   if (lens.calibrated)
   {
     snapIndex = findLensSnapIndex(lens, lens_sensor_reading);
-    if (snapIndex >= 0 && snapIndex != prevSnapIndex)
+    if (snapIndex >= 0 && snapIndex != lensSnap.prevIndex)
     {
       activityDetected = true;
     }
-    prevSnapIndex = snapIndex;
+    lensSnap.prevIndex = snapIndex;
   }
   else
   {
-    prevSnapIndex = -1;
+    lensSnap.prevIndex = -1;
   }
 
   if (activityDetected)
@@ -346,9 +362,6 @@ void setVoltage()
 
 void setLightMeter()
 {
-  static bool smoothingInitialized = false;
-  static float smoothedLux = 0.0f;
-
   if (!lightMeterReady)
   {
     lux = 0.0f;
@@ -364,19 +377,20 @@ void setLightMeter()
   }
 
   float alpha = getMeterSmoothingAlpha(meter_smoothing_mode);
-  if (!smoothingInitialized || alpha >= 1.0f)
+  if (!lightMeterSmoothing.initialized || alpha >= 1.0f)
   {
-    smoothedLux = rawLux;
-    smoothingInitialized = true;
+    lightMeterSmoothing.smoothedLux = rawLux;
+    lightMeterSmoothing.initialized = true;
   }
   else
   {
-    smoothedLux = (rawLux * alpha) + (smoothedLux * (1.0f - alpha));
+    lightMeterSmoothing.smoothedLux =
+        (rawLux * alpha) + (lightMeterSmoothing.smoothedLux * (1.0f - alpha));
   }
 
   float exposureCompEv = static_cast<float>(exposure_comp_thirds) / 3.0f;
-  lux = applyExposureCompensationToLux(smoothedLux, exposureCompEv);
-  ev_readout = calculateEV100(smoothedLux);
+  lux = applyExposureCompensationToLux(lightMeterSmoothing.smoothedLux, exposureCompEv);
+  ev_readout = calculateEV100(lightMeterSmoothing.smoothedLux);
 
   if (aperture == 0 && lux > 0)
   {

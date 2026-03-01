@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "driver/gpio.h"
+#include "esp_sleep.h"
+
 #include "activity.h"
 #include "cyclefuncs.h"
 #include "globals.h"
@@ -408,7 +411,7 @@ void enterSleepServices()
   // Keep external sleep text visible while turning the main display fully off.
   if (mainDisplayReady)
   {
-    display.oled_command(0xAE);
+    display.oled_command(OLED_CMD_DISPLAY_OFF);
   }
 
   if (statusPixelReady)
@@ -418,14 +421,42 @@ void enterSleepServices()
   }
 
   initializeSleepWakeBaselines();
+
+  if (mpuReady)
+  {
+    mpu.enableSleep(true);
+  }
+
+  // Scale CPU down after all I2C work is complete.
+  setCpuFrequencyMhz(CPU_FREQ_SLEEP_MHZ);
+
+  // Configure button GPIOs as light-sleep wakeup sources.
+  gpio_wakeup_enable(static_cast<gpio_num_t>(BUTTON_LEFT_PIN),  GPIO_INTR_LOW_LEVEL);
+  gpio_wakeup_enable(static_cast<gpio_num_t>(BUTTON_RIGHT_PIN), GPIO_INTR_LOW_LEVEL);
+  esp_sleep_enable_gpio_wakeup();
 }
 
 void exitSleepServices()
 {
+  // Restore full CPU speed before any I2C communications.
+  setCpuFrequencyMhz(CPU_FREQ_ACTIVE_MHZ);
+
+  // Remove light-sleep wakeup sources before returning to active polling.
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_GPIO);
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+  gpio_wakeup_disable(static_cast<gpio_num_t>(BUTTON_LEFT_PIN));
+  gpio_wakeup_disable(static_cast<gpio_num_t>(BUTTON_RIGHT_PIN));
+
   if (mainDisplayReady)
   {
-    display.oled_command(0xAF);
+    display.oled_command(OLED_CMD_DISPLAY_ON);
   }
+
+  if (mpuReady)
+  {
+    mpu.enableSleep(false);
+  }
+
   wakeLightMeterFromSleep();
   toggleLidar(true);
   loopState.lidarIdleStandbyActive = false;
@@ -545,21 +576,12 @@ void initializeSchedulerIfNeeded(unsigned long nowMs)
   }
 
   loopState.scheduler.initialized = true;
-  loopState.scheduler.lastInputMs = 0;
-  loopState.scheduler.lastFilmCounterMs = 0;
-  loopState.scheduler.lastSleepCheckMs = 0;
-  loopState.scheduler.lastLidarMs = 0;
-  loopState.scheduler.lastLensMs = 0;
-  loopState.scheduler.lastMeterMs = 0;
-  loopState.scheduler.lastBatteryMs = 0;
-  loopState.scheduler.lastUiMs = 0;
-  loopState.scheduler.lastPrefsFlushMs = 0;
   loopState.lastFilmMovementMs = nowMs;
   loopState.lastLensMovementMs = nowMs;
   loopState.lastMeterChangeMs = nowMs;
 }
 
-void runSleepTasks(unsigned long nowMs)
+void runSleepTasks([[maybe_unused]] unsigned long nowMs)
 {
   if (!loopState.sleepServicesActive)
   {
@@ -567,16 +589,21 @@ void runSleepTasks(unsigned long nowMs)
     loopState.sleepServicesActive = true;
   }
 
-  if (shouldRunTask(nowMs, loopState.scheduler.lastInputMs, LOOP_SLEEP_INPUT_INTERVAL_MS))
+  // Sleep the CPU until a button GPIO fires or the sensor-poll timer expires.
+  esp_sleep_enable_timer_wakeup(LOOP_SLEEP_LIGHT_SLEEP_US);
+  esp_light_sleep_start();
+
+  // Always check buttons regardless of wakeup cause.
+  // GPIO_INTR_LOW_LEVEL fires when a button is pressed (pin goes LOW), but
+  // releasing the button makes the pin HIGH again, so the release arrives on
+  // the next timer wakeup — not a GPIO wakeup. Bounce2's rose() event (which
+  // registers activity) would be missed if checkButtons() were skipped here.
+  checkButtons();
+
+  if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_GPIO)
   {
-    checkButtons();
-  }
-  if (shouldRunTask(nowMs, loopState.scheduler.lastFilmCounterMs, LOOP_SLEEP_ENCODER_POLL_INTERVAL_MS))
-  {
+    // Timer elapsed (or undefined wakeup) — poll I2C sensors for activity.
     pollSleepWakeEncoder();
-  }
-  if (shouldRunTask(nowMs, loopState.scheduler.lastLensMs, LOOP_SLEEP_LENS_POLL_INTERVAL_MS))
-  {
     pollSleepWakeLens();
   }
 }

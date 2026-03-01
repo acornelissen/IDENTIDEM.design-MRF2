@@ -2,6 +2,36 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.2.0 - 2026-02-28
+
+- Power and runtime efficiency:
+  - Replaced busy-polling in sleep mode with `esp_light_sleep_start()`, cutting CPU current between poll cycles from ~20–30 mA to ~0.8 mA.
+  - Button GPIOs (`BUTTON_LEFT_PIN`, `BUTTON_RIGHT_PIN`) now configured as GPIO hardware wakeup sources during device sleep for immediate response.
+  - Encoder and lens ADC polls unified on a 100 ms timer wakeup during device sleep (encoder previously polled at 50 ms).
+  - MPU6050 now placed into hardware sleep on device sleep entry and woken on exit.
+  - CPU frequency scaled down to 80 MHz during device sleep and restored to 240 MHz on wake.
+  - Film counter idle polling interval increased 25 ms → 75 ms to reduce unnecessary ADC reads.
+  - Battery gauge polling interval increased 1.5 s → 5 s (battery state changes slowly).
+  - UI redraw tick slowed from ~30 Hz (33 ms) to 20 Hz (50 ms).
+- Sleep indicator:
+  - External OLED sleep indicator replaced: `ZzzZzzZZz...` text replaced with a minimal circle-face graphic plus `Zzz` label.
+- Bug fixes (found during hardware testing):
+  - Button wakeup from light sleep now fires correctly on both press and release. Button-release Bounce2 `rose()` events were previously missed because `checkButtons()` was only called on GPIO wakeup causes; the button release arrives on the subsequent timer wakeup, so `checkButtons()` now runs unconditionally on every wakeup cycle.
+  - Battery percentage now appears immediately at boot instead of after the first 5-second battery poll cycle.
+  - I2C bus speed is now restored to 400 kHz after each display write; the SH1107 display constructor previously left Wire at 1 MHz, which is above the MAX17048 rated maximum.
+  - Battery gauge (`MAX17048`) now reliably reports as ready when sharing I2C address `0x36` with the Seesaw peripheral. The library's soft-reset sequence deliberately expects a NACK from the MAX17048 (which resets before acknowledging), but the Seesaw at the same address ACKed the write, causing `begin()` to report failure despite the gauge being operational. A fallback SOC plausibility check now sets `batteryGaugeReady` correctly.
+- Testing:
+  - Extended runtime state machine test suite: boundary tests for all five sleep timeout modes, `MODE_OFF` coverage, and constant-value guards for `LOOP_SLEEP_LIGHT_SLEEP_US`, `SLEEP_WAKE_ENCODER_DELTA`, and `SLEEP_WAKE_LENS_DELTA`.
+- Code quality and maintainability:
+  - Lifted hidden function-local statics in `setfuncs.cpp` into named namespace-scope structs (`LensSpikeFilterState`, `LensSnapState`, `LightMeterSmoothingState`, `LidarRecoveryState`) for explicit ownership and easier testing.
+  - Split the `checkButtons()` monolith into three focused handlers: `handleLeftButtonShortPress()`, `handleRightButtonLongPress()`, `handleRightButtonShortPress()`.
+  - Decomposed `drawLevelIndicator()` into `readAccelerometer()`, `updatePortraitMode()`, `computeLevelAngles()`, and `renderLevelLine()`.
+  - Named magic OLED command bytes as `OLED_CMD_DISPLAY_OFF`/`OLED_CMD_DISPLAY_ON` constants.
+  - Extracted `advanceMenuStep()` helper to eliminate five identical menu step-cycling blocks.
+- Release metadata/docs:
+  - Bumped `FWVERSION` to `10.2.0`.
+  - Updated firmware README, user manual, and camera UI SVG snapshots.
+
 ## 10.1.2 - 2026-02-26
 - Lens calibration and distance-scale updates:
   - Added per-lens calibration point-count support (up to `10` markers per lens profile).

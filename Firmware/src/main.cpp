@@ -1,4 +1,4 @@
-// IDENTIDEM.design Medium Format Rangefinder firmware v10.1.2
+// IDENTIDEM.design Medium Format Rangefinder firmware v10.2.0
 // Hardware: DTS6012M LiDAR, STEMMA I2C QT Rotary Encoder (4991), SH1107 main + SSD1306 external OLEDs
 
 #include <Arduino.h>
@@ -12,6 +12,7 @@
 #include "helpers.h"
 #include "loop_runtime.h"
 #include "mrfconstants.h"
+#include "setfuncs.h"
 
 namespace
 {
@@ -142,6 +143,18 @@ void resetLensMovingAverageState()
 void initializePowerAndInputPeripherals()
 {
   batteryGaugeReady = maxlipo.begin();
+  if (!batteryGaugeReady)
+  {
+    // maxlipo.begin() fails when the Seesaw (also at I2C address 0x36) ACKs
+    // the soft-reset write that MAX17048 deliberately NACKs as part of its
+    // initialisation sequence. i2c_dev is still valid at this point.
+    // The Seesaw protocol uses two-byte register addresses so it does not
+    // respond to the single-byte register reads that MAX17048 uses; SOC reads
+    // therefore return accurate data despite the shared address. Confirm the
+    // gauge is present by checking that a direct SOC read is plausible.
+    float testPct = maxlipo.cellPercent();
+    batteryGaugeReady = (testPct >= 0.0f && testPct <= 100.0f);
+  }
   logPeripheralInitStatus(F("MAX17048"), batteryGaugeReady);
 
   lightMeterReady = lightMeter.begin();
@@ -183,6 +196,7 @@ void setup()
   initializeLidarSensor();
   resetLensMovingAverageState();
   initializePowerAndInputPeripherals();
+  setVoltage(); // Populate bat_per before the first loop tick.
 
   // Treat end-of-setup as the idle timer baseline.
   lastActivityTime = millis();

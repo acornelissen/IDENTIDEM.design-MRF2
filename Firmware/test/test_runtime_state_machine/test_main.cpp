@@ -99,11 +99,78 @@ void test_idle_duration_handles_ordering()
   TEST_ASSERT_EQUAL_UINT32(0, getIdleDurationMs(900));
 }
 
+void test_sleep_mode_off_never_enters_sleep()
+{
+  // Complement to the existing test: MODE_OFF must also prevent a non-sleeping
+  // device from ever entering sleep, regardless of idle duration.
+  sleep_timeout_mode = SLEEP_TIMEOUT_MODE_OFF;
+  lastActivityTime = 0;
+  sleepMode = false;
+
+  updateSleepMode(SLEEP_BOOT_GRACE_MS + 3600000UL); // 1 hour idle
+  TEST_ASSERT_FALSE(sleepMode);
+}
+
+void test_all_timeout_modes_have_correct_boundaries()
+{
+  // Verify each configured timeout fires at exactly the right millisecond
+  // boundary. Use a fixed "now" well past the grace window and set
+  // lastActivityTime to dial the idle duration precisely, avoiding
+  // cross-iteration state accumulation.
+  ui_mode = UiMode::Main;
+
+  const struct
+  {
+    int  mode;
+    unsigned long timeoutMs;
+  } cases[] = {
+    { SLEEP_TIMEOUT_MODE_15S,   15000  },
+    { SLEEP_TIMEOUT_MODE_30S,   30000  },
+    { SLEEP_TIMEOUT_MODE_1M,    60000  },
+    { SLEEP_TIMEOUT_MODE_1M30S, 90000  },
+    { SLEEP_TIMEOUT_MODE_2M,    120000 },
+  };
+
+  for (const auto &c : cases)
+  {
+    sleep_timeout_mode = c.mode;
+    const unsigned long now = SLEEP_BOOT_GRACE_MS + c.timeoutMs + 10;
+
+    // Idle = timeoutMs - 1  →  should NOT sleep yet.
+    lastActivityTime = now - (c.timeoutMs - 1);
+    sleepMode = false;
+    updateSleepMode(now);
+    TEST_ASSERT_FALSE(sleepMode);
+
+    // Idle = timeoutMs + 1  →  should sleep.
+    lastActivityTime = now - (c.timeoutMs + 1);
+    sleepMode = false;
+    updateSleepMode(now);
+    TEST_ASSERT_TRUE(sleepMode);
+  }
+}
+
+void test_sleep_constants_match_intended_durations()
+{
+  // LOOP_SLEEP_LIGHT_SLEEP_US drives the timer wakeup interval in
+  // runSleepTasks(); changing it accidentally would silently alter sensor
+  // responsiveness during device sleep.
+  TEST_ASSERT_EQUAL_UINT64(100000ULL, LOOP_SLEEP_LIGHT_SLEEP_US);
+
+  // Wake-detection thresholds: tighten these and the device becomes harder
+  // to wake; loosen them and spurious noise causes unwanted wakes.
+  TEST_ASSERT_EQUAL_INT(1, SLEEP_WAKE_ENCODER_DELTA);
+  TEST_ASSERT_EQUAL_INT(8, SLEEP_WAKE_LENS_DELTA);
+}
+
 int main(int, char **)
 {
   UNITY_BEGIN();
   RUN_TEST(test_register_activity_sets_timestamp_and_wakes);
   RUN_TEST(test_sleep_state_machine_boot_grace_and_modes);
   RUN_TEST(test_idle_duration_handles_ordering);
+  RUN_TEST(test_sleep_mode_off_never_enters_sleep);
+  RUN_TEST(test_all_timeout_modes_have_correct_boundaries);
+  RUN_TEST(test_sleep_constants_match_intended_durations);
   return UNITY_END();
 }

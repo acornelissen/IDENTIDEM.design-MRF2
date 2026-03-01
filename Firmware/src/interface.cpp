@@ -52,6 +52,21 @@ struct MainFramelineLayout
 
 constexpr int LIDAR_QUALITY_BLOCK_COUNT = 4;
 
+struct AccelReading
+{
+  float x;
+  float y;
+  float z;
+};
+
+struct LevelAngles
+{
+  float pitch;
+  float roll;
+};
+
+bool portraitMode = false; // Landscape/portrait hysteresis state.
+
 void getCompactShutterDisplay(const char *fullShutter, char *buffer, size_t bufferSize)
 {
   if (!buffer || bufferSize == 0)
@@ -456,27 +471,15 @@ void drawReticleAndFocusRing(const MainFramelineLayout &layout)
   }
 }
 
-void drawLevelIndicator(int centerX, int centerY)
+AccelReading readAccelerometer()
 {
-  if (!mpuReady)
-  {
-    return;
-  }
-
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
+  return {a.acceleration.x, a.acceleration.y, a.acceleration.z};
+}
 
-  float x = a.acceleration.x;
-  float y = a.acceleration.y;
-  float z = a.acceleration.z;
-
-  // Convert accelerometer readings into angles.
-  // Keep the existing calibration basis but auto-rebase roll when in portrait.
-  float pitchRaw = atan2(x, sqrt(x * x + z * z));
-  float rollRaw = atan2(y, sqrt(x * x + z * z));
-  float rollPortraitRaw = atan2(y, z);
-
-  static bool portraitMode = false;
+void updatePortraitMode(float rollRaw)
+{
   float absRollRaw = fabsf(rollRaw);
   if (!portraitMode)
   {
@@ -489,20 +492,30 @@ void drawLevelIndicator(int centerX, int centerY)
   {
     portraitMode = false;
   }
+}
+
+LevelAngles computeLevelAngles(const AccelReading &accel)
+{
+  // Convert accelerometer readings into angles.
+  // Keep the existing calibration basis but auto-rebase roll when in portrait.
+  float pitchRaw = atan2(accel.x, sqrt(accel.x * accel.x + accel.z * accel.z));
+  float rollRaw = atan2(accel.y, sqrt(accel.x * accel.x + accel.z * accel.z));
+  float rollPortraitRaw = atan2(accel.y, accel.z);
+
+  updatePortraitMode(rollRaw);
 
   float pitchScale = portraitMode ? LEVEL_PITCH_SCALE_PORTRAIT : LEVEL_PITCH_SCALE;
   float rollScale = portraitMode ? LEVEL_ROLL_SCALE_PORTRAIT : LEVEL_ROLL_SCALE;
 
   float pitchAngle = pitchRaw;
-  const float deadzone = LEVEL_DEADZONE;
-  if (fabsf(pitchAngle) < deadzone)
+  if (fabsf(pitchAngle) < LEVEL_DEADZONE)
   {
     pitchAngle = 0.0f;
   }
   pitchAngle *= pitchScale;
 
-  float rollAngle = 0.0f;
   const float degToRad = PI / 180.0f;
+  float rollAngle = 0.0f;
   if (portraitMode)
   {
     float portraitSign = (rollPortraitRaw >= 0.0f) ? 1.0f : -1.0f;
@@ -512,7 +525,7 @@ void drawLevelIndicator(int centerX, int centerY)
     // Normalize deviation so both sides around portrait center are represented.
     rollDeviation = atan2f(sinf(rollDeviation), cosf(rollDeviation));
 
-    if (fabsf(rollDeviation) < deadzone)
+    if (fabsf(rollDeviation) < LEVEL_DEADZONE)
     {
       rollDeviation = 0.0f;
     }
@@ -532,7 +545,7 @@ void drawLevelIndicator(int centerX, int centerY)
   else
   {
     float rollLandscape = rollRaw;
-    if (fabsf(rollLandscape) < deadzone)
+    if (fabsf(rollLandscape) < LEVEL_DEADZONE)
     {
       rollLandscape = 0.0f;
     }
@@ -541,16 +554,21 @@ void drawLevelIndicator(int centerX, int centerY)
     rollAngle = (rollLandscape * rollScale) + landscapeTrim;
   }
 
+  return {pitchAngle, rollAngle};
+}
+
+void renderLevelLine(int centerX, int centerY, const LevelAngles &angles)
+{
   float lineLength = SCREEN_WIDTH - LEVEL_LINE_MARGIN_PX;
   float halfLength = lineLength * 0.5f;
 
   // Calculate the horizon line direction and shift pitch along the line normal.
-  float dirX = cosf(rollAngle);
-  float dirY = sinf(rollAngle);
+  float dirX = cosf(angles.roll);
+  float dirY = sinf(angles.roll);
   float normalX = -dirY;
   float normalY = dirX;
-  float offsetX = normalX * pitchAngle;
-  float offsetY = normalY * pitchAngle;
+  float offsetX = normalX * angles.pitch;
+  float offsetY = normalY * angles.pitch;
 
   float startX = centerX + offsetX - (halfLength * dirX);
   float startY = centerY + offsetY - (halfLength * dirY);
@@ -562,6 +580,18 @@ void drawLevelIndicator(int centerX, int centerY)
   int verticalLineStartY = centerY - (LEVEL_VERTICAL_LINE_LENGTH / 2);
   int verticalLineEndY = centerY + (LEVEL_VERTICAL_LINE_LENGTH / 2);
   display.drawLine(centerX, verticalLineStartY, centerX, verticalLineEndY, INVERSE);
+}
+
+void drawLevelIndicator(int centerX, int centerY)
+{
+  if (!mpuReady)
+  {
+    return;
+  }
+
+  AccelReading accel = readAccelerometer();
+  LevelAngles angles = computeLevelAngles(accel);
+  renderLevelLine(centerX, centerY, angles);
 }
 
 void prepareExternalDisplayTextMode()
@@ -1021,13 +1051,24 @@ void drawSleepUI()
   if (externalDisplayReady)
   {
     display_ext.clearDisplay();
+    // Face outline
+    display_ext.drawCircle(EXT_SLEEP_FACE_CX, EXT_SLEEP_FACE_CY, EXT_SLEEP_FACE_RADIUS, WHITE);
+    // Closed eyes
+    display_ext.drawLine(EXT_SLEEP_FACE_CX - 8, EXT_SLEEP_FACE_CY - 3,
+                         EXT_SLEEP_FACE_CX - 4, EXT_SLEEP_FACE_CY - 3, WHITE);
+    display_ext.drawLine(EXT_SLEEP_FACE_CX + 4, EXT_SLEEP_FACE_CY - 3,
+                         EXT_SLEEP_FACE_CX + 8, EXT_SLEEP_FACE_CY - 3, WHITE);
+    // Mouth
+    display_ext.drawLine(EXT_SLEEP_FACE_CX - 4, EXT_SLEEP_FACE_CY + 5,
+                         EXT_SLEEP_FACE_CX + 4, EXT_SLEEP_FACE_CY + 5, WHITE);
+    // "Zzz" tag
     u8g2_ext.setFontMode(1);
     u8g2_ext.setFontDirection(0);
     u8g2_ext.setForegroundColor(WHITE);
     u8g2_ext.setBackgroundColor(BLACK);
-    u8g2_ext.setFont(u8g2_font_10x20_mf);
-    u8g2_ext.setCursor(EXT_SLEEP_TEXT_X, EXT_SLEEP_TEXT_Y);
-    u8g2_ext.print(F("ZzzZzzZZz..."));
+    u8g2_ext.setFont(u8g2_font_6x10_mf);
+    u8g2_ext.setCursor(EXT_SLEEP_ZZZ_X, EXT_SLEEP_ZZZ_Y);
+    u8g2_ext.print(F("Zzz"));
     display_ext.display();
   }
 }
