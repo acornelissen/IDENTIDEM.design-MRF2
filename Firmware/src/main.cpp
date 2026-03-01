@@ -12,6 +12,7 @@
 #include "helpers.h"
 #include "loop_runtime.h"
 #include "mrfconstants.h"
+#include "setfuncs.h"
 
 namespace
 {
@@ -183,6 +184,7 @@ void setup()
   initializeLidarSensor();
   resetLensMovingAverageState();
   initializePowerAndInputPeripherals();
+  setVoltage(); // Populate bat_per before the first loop tick.
 
   // Treat end-of-setup as the idle timer baseline.
   lastActivityTime = millis();
