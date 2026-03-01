@@ -593,19 +593,18 @@ void runSleepTasks([[maybe_unused]] unsigned long nowMs)
   esp_sleep_enable_timer_wakeup(LOOP_SLEEP_LIGHT_SLEEP_US);
   esp_light_sleep_start();
 
-  switch (esp_sleep_get_wakeup_cause())
-  {
-    case ESP_SLEEP_WAKEUP_GPIO:
-      // Button pressed — let Bounce2 confirm and register activity.
-      checkButtons();
-      break;
+  // Always check buttons regardless of wakeup cause.
+  // GPIO_INTR_LOW_LEVEL fires when a button is pressed (pin goes LOW), but
+  // releasing the button makes the pin HIGH again, so the release arrives on
+  // the next timer wakeup — not a GPIO wakeup. Bounce2's rose() event (which
+  // registers activity) would be missed if checkButtons() were skipped here.
+  checkButtons();
 
-    case ESP_SLEEP_WAKEUP_TIMER:
-    default:
-      // Timer elapsed (or undefined wakeup) — poll I2C sensors for activity.
-      pollSleepWakeEncoder();
-      pollSleepWakeLens();
-      break;
+  if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_GPIO)
+  {
+    // Timer elapsed (or undefined wakeup) — poll I2C sensors for activity.
+    pollSleepWakeEncoder();
+    pollSleepWakeLens();
   }
 }
 
