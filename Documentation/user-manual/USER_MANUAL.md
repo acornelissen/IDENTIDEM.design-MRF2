@@ -189,9 +189,11 @@ Shows quick diagnostics:
 
 - Firmware version (`FW`)
 - Preferences schema status (`Prefs`)
-- LiDAR enabled status and last error code
-- LiDAR recovery counter
-- Idle timer in seconds
+- LiDAR sensor and enabled status, plus last error code
+- LiDAR recovery count
+- Hardware peripheral flags — `1` = ready, `0` = not detected:
+  - `D` main display, `X` external display, `A` lens ADC (ADS1015), `M` accelerometer (MPU6050)
+  - `L` light meter (BH1750), `B` battery gauge (MAX17048), `E` encoder, `P` status pixel
 
 ### ISO list
 

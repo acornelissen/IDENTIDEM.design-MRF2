@@ -15,6 +15,11 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
   - UI redraw tick slowed from ~30 Hz (33 ms) to 20 Hz (50 ms).
 - Sleep indicator:
   - External OLED sleep indicator replaced: `ZzzZzzZZz...` text replaced with a minimal circle-face graphic plus `Zzz` label.
+- Bug fixes (found during hardware testing):
+  - Button wakeup from light sleep now fires correctly on both press and release. Button-release Bounce2 `rose()` events were previously missed because `checkButtons()` was only called on GPIO wakeup causes; the button release arrives on the subsequent timer wakeup, so `checkButtons()` now runs unconditionally on every wakeup cycle.
+  - Battery percentage now appears immediately at boot instead of after the first 5-second battery poll cycle.
+  - I2C bus speed is now restored to 400 kHz after each display write; the SH1107 display constructor previously left Wire at 1 MHz, which is above the MAX17048 rated maximum.
+  - Battery gauge (`MAX17048`) now reliably reports as ready when sharing I2C address `0x36` with the Seesaw peripheral. The library's soft-reset sequence deliberately expects a NACK from the MAX17048 (which resets before acknowledging), but the Seesaw at the same address ACKed the write, causing `begin()` to report failure despite the gauge being operational. A fallback SOC plausibility check now sets `batteryGaugeReady` correctly.
 - Testing:
   - Extended runtime state machine test suite: boundary tests for all five sleep timeout modes, `MODE_OFF` coverage, and constant-value guards for `LOOP_SLEEP_LIGHT_SLEEP_US`, `SLEEP_WAKE_ENCODER_DELTA`, and `SLEEP_WAKE_LENS_DELTA`.
 - Code quality and maintainability:
