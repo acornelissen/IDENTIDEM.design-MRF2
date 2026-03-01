@@ -143,6 +143,18 @@ void resetLensMovingAverageState()
 void initializePowerAndInputPeripherals()
 {
   batteryGaugeReady = maxlipo.begin();
+  if (!batteryGaugeReady)
+  {
+    // maxlipo.begin() fails when the Seesaw (also at I2C address 0x36) ACKs
+    // the soft-reset write that MAX17048 deliberately NACKs as part of its
+    // initialisation sequence. i2c_dev is still valid at this point.
+    // The Seesaw protocol uses two-byte register addresses so it does not
+    // respond to the single-byte register reads that MAX17048 uses; SOC reads
+    // therefore return accurate data despite the shared address. Confirm the
+    // gauge is present by checking that a direct SOC read is plausible.
+    float testPct = maxlipo.cellPercent();
+    batteryGaugeReady = (testPct >= 0.0f && testPct <= 100.0f);
+  }
   logPeripheralInitStatus(F("MAX17048"), batteryGaugeReady);
 
   lightMeterReady = lightMeter.begin();
