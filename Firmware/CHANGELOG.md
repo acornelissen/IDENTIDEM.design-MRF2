@@ -17,6 +17,12 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
   - External OLED sleep indicator replaced: `ZzzZzzZZz...` text replaced with a minimal circle-face graphic plus `Zzz` label.
 - Testing:
   - Extended runtime state machine test suite: boundary tests for all five sleep timeout modes, `MODE_OFF` coverage, and constant-value guards for `LOOP_SLEEP_LIGHT_SLEEP_US`, `SLEEP_WAKE_ENCODER_DELTA`, and `SLEEP_WAKE_LENS_DELTA`.
+- Code quality and maintainability:
+  - Lifted hidden function-local statics in `setfuncs.cpp` into named namespace-scope structs (`LensSpikeFilterState`, `LensSnapState`, `LightMeterSmoothingState`, `LidarRecoveryState`) for explicit ownership and easier testing.
+  - Split the `checkButtons()` monolith into three focused handlers: `handleLeftButtonShortPress()`, `handleRightButtonLongPress()`, `handleRightButtonShortPress()`.
+  - Decomposed `drawLevelIndicator()` into `readAccelerometer()`, `updatePortraitMode()`, `computeLevelAngles()`, and `renderLevelLine()`.
+  - Named magic OLED command bytes as `OLED_CMD_DISPLAY_OFF`/`OLED_CMD_DISPLAY_ON` constants.
+  - Extracted `advanceMenuStep()` helper to eliminate five identical menu step-cycling blocks.
 - Release metadata/docs:
   - Bumped `FWVERSION` to `10.2.0`.
   - Updated firmware README, user manual, and camera UI SVG snapshots.
