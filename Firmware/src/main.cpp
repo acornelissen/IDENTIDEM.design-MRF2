@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "esp_wifi.h"
 #include "esp_bt.h"
@@ -16,6 +17,50 @@
 
 namespace
 {
+int bootProgressStep = 0;
+const int BOOT_PROGRESS_TOTAL = 5;
+
+void drawBootProgress()
+{
+  if (!mainDisplayReady)
+  {
+    return;
+  }
+
+  display.clearDisplay();
+  u8g2.setFontMode(1);
+  u8g2.setFontDirection(0);
+  u8g2.setForegroundColor(SH110X_WHITE);
+  u8g2.setBackgroundColor(SH110X_BLACK);
+
+  u8g2.setFont(u8g2_font_6x10_mf);
+  const char *title = "Initialising...";
+  int titleWidth = static_cast<int>(strlen(title)) * 6;
+  u8g2.setCursor((SCREEN_WIDTH - titleWidth) / 2, 55);
+  u8g2.print(title);
+
+  // Draw progress bar.
+  const int barWidth = 80;
+  const int barHeight = 6;
+  const int barX = (SCREEN_WIDTH - barWidth) / 2;
+  const int barY = 65;
+  display.drawRect(barX, barY, barWidth, barHeight, SH110X_WHITE);
+
+  int fillWidth = (barWidth - 2) * bootProgressStep / BOOT_PROGRESS_TOTAL;
+  if (fillWidth > 0)
+  {
+    display.fillRect(barX + 1, barY + 1, fillWidth, barHeight - 2, SH110X_WHITE);
+  }
+
+  display.display();
+}
+
+void advanceBootProgress()
+{
+  bootProgressStep++;
+  drawBootProgress();
+}
+
 void logPeripheralInitStatus(const __FlashStringHelper *name, bool ok)
 {
   Serial.print(name);
@@ -192,11 +237,17 @@ void setup()
   lastActivityTime = millis();
 
   initializeMainDisplay();
+  drawBootProgress(); // Show initial progress on main display.
   showBootScreenOnExternalDisplay();
+  advanceBootProgress(); // Step 1: displays ready.
   initializeLidarSensor();
+  advanceBootProgress(); // Step 2: LiDAR ready.
   resetLensMovingAverageState();
+  advanceBootProgress(); // Step 3: lens filter ready.
   initializePowerAndInputPeripherals();
+  advanceBootProgress(); // Step 4: peripherals ready.
   setVoltage(); // Populate bat_per before the first loop tick.
+  advanceBootProgress(); // Step 5: boot complete.
 
   // Treat end-of-setup as the idle timer baseline.
   lastActivityTime = millis();
