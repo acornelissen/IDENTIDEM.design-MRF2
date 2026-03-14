@@ -714,13 +714,19 @@ void drawConfigUI()
   beginConfigMenuScreen(F("Setup"));
 
   selectConfigMenuRow(CONFIG_ROOT_STEP_FILM_MENU, config_step == CONFIG_ROOT_STEP_FILM_MENU);
-  u8g2.print(F(" Film > "));
+  u8g2.print(F(" Film: "));
+  u8g2.print(film_formats[selected_format].name);
+  u8g2.print(F(" > "));
 
   selectConfigMenuRow(CONFIG_ROOT_STEP_LENS_MENU, config_step == CONFIG_ROOT_STEP_LENS_MENU);
-  u8g2.print(F(" Lens Settings > "));
+  u8g2.print(F(" Lens: "));
+  u8g2.print(lenses[selected_lens].name);
+  u8g2.print(F(" > "));
 
   selectConfigMenuRow(CONFIG_ROOT_STEP_METER_MENU, config_step == CONFIG_ROOT_STEP_METER_MENU);
-  u8g2.print(F(" Light Meter > "));
+  u8g2.print(F(" Meter: ISO"));
+  u8g2.print(iso);
+  u8g2.print(F(" > "));
 
   selectConfigMenuRow(CONFIG_ROOT_STEP_UI_MENU, config_step == CONFIG_ROOT_STEP_UI_MENU);
   u8g2.print(F(" UI Settings > "));
