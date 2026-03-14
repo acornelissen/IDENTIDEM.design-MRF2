@@ -11,10 +11,10 @@
 
   <rect x="200" y="245" width="1040" height="110" rx="16" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
   <text x="230" y="286" font-family="IBM Plex Mono, monospace" font-size="24" fill="#111827">
-    Latest Build: 10.2.0
+    Latest Build: 10.2.1
   </text>
   <text x="230" y="325" font-family="IBM Plex Mono, monospace" font-size="24" fill="#111827">
-    Version To Install: 10.2.0 (Latest)
+    Version To Install: 10.2.1 (Latest)
   </text>
 
   <rect x="200" y="375" width="420" height="64" rx="10" fill="#111827"/>

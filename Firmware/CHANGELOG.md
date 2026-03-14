@@ -11,6 +11,11 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
   - Expanded horizon trim labels: "Horizon L" / "Horizon P+" / "Horizon P-" are now "Horizon Landscape" / "Horizon Portrait+" / "Horizon Portrait-".
   - Sleep fade: the main OLED fades to black over ~200 ms before powering off, instead of blanking abruptly. Brightness is restored on wake.
   - Setup value previews: Film, Lens, and Meter entries on the root Setup menu show their active value inline (e.g. "Film: 6x7 >", "Lens: 65/6.3 >", "Meter: ISO400 >").
+- Bug fixes (from 10.2.1):
+  - Fixed calibration median index off-by-one: used lower median `(sample_count - 1) / 2` instead of upper median `sample_count / 2` for even sample counts.
+  - Replaced `ev_readout == ev_readout` NaN self-comparison with explicit `isnan()` for clarity and robustness against `-ffast-math`.
+- NVS flash wear reduction (from 10.2.1):
+  - All `savePrefs()` calls in `cyclefuncs.cpp` now pass `PREFS_DIRTY_SETTINGS` instead of defaulting to `PREFS_DIRTY_ALL`.
 - Release metadata/docs:
   - Bumped `FWVERSION` to `10.3.0`.
   - Rewrote lens calibration section in user manual to explain focus-ring/sensor relationship.

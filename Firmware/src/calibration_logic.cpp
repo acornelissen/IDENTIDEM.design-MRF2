@@ -45,7 +45,7 @@ bool computeStableCalibrationReading(
     sorted[i] = samples[i];
   }
   sortAscending(sorted, sample_count);
-  const int median = sorted[sample_count / 2];
+  const int median = sorted[(sample_count - 1) / 2];
 
   long inlierSum = 0;
   int inlierCount = 0;

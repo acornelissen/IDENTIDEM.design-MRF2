@@ -303,7 +303,7 @@ void drawMainHeader()
     getCompactShutterDisplay(shutter_speed, compactShutter, sizeof(compactShutter));
     u8g2.print(compactShutter);
     u8g2.print(F(" EV"));
-    if (ev_readout == ev_readout)
+    if (!isnan(ev_readout))
     {
       u8g2.print(ev_readout, 1);
     }
