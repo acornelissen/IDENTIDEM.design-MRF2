@@ -277,8 +277,8 @@ void test_lidar_invalid_and_display_formatting()
 {
   DTSMeasurement measurement = {};
   measurement.primaryDistance_mm = 1000;
-  measurement.primaryIntensity = 50; // Below LIDAR_FUSION_MIN_INTENSITY
-  measurement.primaryQuality = DataQuality::GOOD;
+  measurement.primaryIntensity = 0; // Below LIDAR_FUSION_MIN_INTENSITY and fallback floor
+  measurement.primaryQuality = DataQuality::INVALID;
   measurement.secondaryDistance_mm = DTS_INVALID_DISTANCE;
   measurement.secondaryIntensity = 0;
   measurement.secondaryQuality = DataQuality::INVALID;
