@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128">
   <rect x="0" y="0" width="128" height="128" fill="#000000" stroke="#ffffff" stroke-width="1"/>
-  <text x="3" y="15" font-family="monospace" font-size="12" fill="#ffffff">Meter</text>
+  <text x="3" y="15" font-family="monospace" font-size="12" fill="#ffffff">Setup &gt; Meter</text>
 
   <rect x="2" y="19" width="124" height="10" fill="#ffffff"/>
   <text x="4" y="26" font-family="monospace" font-size="6" fill="#000000"> ISO:400 </text>

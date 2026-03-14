@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.2.0  
+**Version**: 10.3.0
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -85,7 +85,8 @@ Firmware/
    - Disable WiFi/Bluetooth for power saving
    - Load saved preferences
    - Initialize all hardware components
-   - Configure displays and show boot screen
+   - Show "Initialising..." progress bar on main display as each peripheral group comes up
+   - Configure displays and show boot screen on external display
    - Start sensor readings
 
 2. **Main Loop** (`loop()` in `src/main.cpp`)
@@ -101,11 +102,11 @@ Firmware/
 
 - **Main Mode**: Normal operation with rangefinder display
 - **Config Mode**: Settings and configuration menu
-- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, UI settings submenu, system health screen, reset, and exit
-- **Film Submenu**: format selection, frame-1 offset, and frame-spacing offset
-- **Lens Submenu**: Lens profile, parallax correction toggle, and lens calibration entry
-- **Light Meter Submenu**: ISO, EV compensation, smoothing strength, EV readout toggle
-- **UI Settings Submenu**: landscape/portrait horizon trims, sleep timeout, and LiDAR idle timeout
+- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, UI settings submenu, system health screen, reset, and exit. Film, Lens, and Meter entries show their active value inline (e.g. `Film: 6x7 >`)
+- **Film Submenu** (`Setup > Film`): format selection, frame-1 offset, and frame-spacing offset
+- **Lens Submenu** (`Setup > Lens`): Lens profile, parallax correction toggle, and lens calibration entry
+- **Light Meter Submenu** (`Setup > Meter`): ISO, EV compensation, smoothing strength, EV readout toggle
+- **UI Settings Submenu** (`Setup > UI`): landscape/portrait horizon trims, sleep timeout, and LiDAR idle timeout
 - **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, and idle timer
 - **Calibration Mode**: Lens calibration interface
 - **Sleep Mode**: Low-power state with minimal display
@@ -145,7 +146,7 @@ Firmware/
 #### Level Aid
 - Horizon line with accelerometer-based tilt compensation
 - Automatic landscape/portrait orientation handling
-- Per-orientation horizon trim controls (`Horizon L`, `Horizon P+`, `Horizon P-`) in `2.5deg` steps (`-30deg..+30deg`)
+- Per-orientation horizon trim controls (`Horizon Landscape`, `Horizon Portrait+`, `Horizon Portrait-`) in `2.5deg` steps (`-30deg..+30deg`)
 
 ## Building and Flashing
 

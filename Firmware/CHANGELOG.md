@@ -2,6 +2,20 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.3.0 - 2026-03-14
+
+- Usability improvements:
+  - Boot progress: main display now shows an "Initialising..." label with a progress bar that fills as each peripheral group starts up, instead of staying blank for ~2 seconds.
+  - Calibration UX: the calibration screen now shows a progress bar, a point counter (e.g. "3/7"), revised help text explaining the focus-ring workflow, and clearer error messages ("Hold lens still and retry" / "Turn ring further from camera"). A green LED pulse confirms each successful capture.
+  - Menu breadcrumbs: submenu headers now show the navigation path (e.g. "Setup > Film", "Setup > Lens", "Lens > Calibrate").
+  - Expanded horizon trim labels: "Horizon L" / "Horizon P+" / "Horizon P-" are now "Horizon Landscape" / "Horizon Portrait+" / "Horizon Portrait-".
+  - Sleep fade: the main OLED fades to black over ~200 ms before powering off, instead of blanking abruptly. Brightness is restored on wake.
+  - Setup value previews: Film, Lens, and Meter entries on the root Setup menu show their active value inline (e.g. "Film: 6x7 >", "Lens: 65/6.3 >", "Meter: ISO400 >").
+- Release metadata/docs:
+  - Bumped `FWVERSION` to `10.3.0`.
+  - Rewrote lens calibration section in user manual to explain focus-ring/sensor relationship.
+  - Updated firmware README, user manual, and CHANGELOG for all changes.
+
 ## 10.2.0 - 2026-02-28
 
 - Power and runtime efficiency:
