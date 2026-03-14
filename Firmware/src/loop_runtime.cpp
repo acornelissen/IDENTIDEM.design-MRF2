@@ -400,12 +400,43 @@ void resetWakeSchedulerAndActivityBaselines(unsigned long nowMs)
   loopState.lastMeterChangeMs = nowMs;
 }
 
+void fadeOutMainDisplay()
+{
+  if (!mainDisplayReady)
+  {
+    return;
+  }
+
+  // SH1107 contrast command: 0x81 followed by contrast value (0x00..0xFF).
+  for (int brightness = 0xFF; brightness >= 0; brightness -= 0x20)
+  {
+    display.oled_command(0x81);
+    display.oled_command(static_cast<uint8_t>(max(0, brightness)));
+    delay(25);
+  }
+}
+
+void restoreMainDisplayBrightness()
+{
+  if (!mainDisplayReady)
+  {
+    return;
+  }
+
+  // Restore default contrast after wake.
+  display.oled_command(0x81);
+  display.oled_command(0xFF);
+}
+
 void enterSleepServices()
 {
   toggleLidar(false);
   loopState.lidarIdleStandbyActive = false;
   loopState.uiRenderCache.initialized = false;
   powerDownLightMeterForSleep();
+
+  // Fade out main display before blanking.
+  fadeOutMainDisplay();
   drawSleepUI();
 
   // Keep external sleep text visible while turning the main display fully off.
@@ -450,6 +481,7 @@ void exitSleepServices()
   if (mainDisplayReady)
   {
     display.oled_command(OLED_CMD_DISPLAY_ON);
+    restoreMainDisplayBrightness();
   }
 
   if (mpuReady)
