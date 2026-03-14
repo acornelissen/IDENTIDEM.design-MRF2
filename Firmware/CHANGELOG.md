@@ -12,6 +12,11 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
   - Calibration text wrap: moved "(R) to Cancel" to its own line on the calibration capture screen to prevent text overflowing the 128 px display width.
   - Sleep fade: the main OLED fades to black over ~200 ms before powering off, instead of blanking abruptly. Brightness is restored on wake.
   - Setup value previews: Film, Lens, and Meter entries on the root Setup menu show their active value inline (e.g. "Film: 6x7 >", "Lens: 65/6.3 >", "Meter: ISO400 >").
+- LiDAR outdoor reliability:
+  - Lowered near-range minimum intensity gate from 60 to 40 and SNR hard-reject floor from 40‰ to 25‰, reducing false `...` dropouts in bright sunlight.
+  - Lowered SNR confidence penalty targets for near (420→300‰) and mid (280→200‰) ranges so readings lose less confidence under high ambient light.
+  - Extended fallback candidate path to all ranges (previously blocked ≤220 cm), allowing low-confidence tracking at close distances when primary filtering rejects.
+  - Increased no-data display timeout from 500 ms to 750 ms so brief dropouts hold the last valid reading instead of flashing `...`.
 - Bug fixes (from 10.2.1):
   - Fixed calibration median index off-by-one: used lower median `(sample_count - 1) / 2` instead of upper median `sample_count / 2` for even sample counts.
   - Replaced `ev_readout == ev_readout` NaN self-comparison with explicit `isnan()` for clarity and robustness against `-ffast-math`.

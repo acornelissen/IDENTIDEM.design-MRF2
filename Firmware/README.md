@@ -116,6 +116,7 @@ Firmware/
 #### Distance Measurement
 - DTS6012M v2 provides primary and secondary returns per sample
 - Confidence scoring combines data quality, intensity, ambient sunlight ratio (SNR), temporal consistency, and lens-position prior
+- Fallback candidate path accepts returns at all ranges when primary filtering rejects, with conservative confidence cap
 - Two-stage correction: library scale/offset in mm, then curve/residual correction in cm
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
 - In Main mode, LiDAR idle standby timeout is user-configurable (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
@@ -183,8 +184,9 @@ pio test -e native_core_tests
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
 - `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor
 - `LIDAR_LIBRARY_DISTANCE_OFFSET_MM`: LiDAR library distance offset in mm
-- `LIDAR_NO_DATA_TIMEOUT_MS`: Timeout before showing unavailable distance
-- `LIDAR_FUSION_MIN_INTENSITY`: Minimum intensity gate for valid candidates
+- `LIDAR_NO_DATA_TIMEOUT_MS`: Timeout before showing unavailable distance (`750ms`)
+- `LIDAR_FUSION_MIN_INTENSITY`: Near-range minimum intensity gate (`40`)
+- `LIDAR_SNR_PERMILLE_HARD_REJECT`: SNR hard-reject floor (`25‰`)
 - `LIDAR_CONFIDENCE_HIGH` / `LIDAR_CONFIDENCE_MEDIUM`: Confidence thresholds for smoothing behavior
 - `LIDAR_CAL_CUTOFF_CM` / `LIDAR_CAL_REF_RAW_CM` / `LIDAR_CAL_REF_TRUE_CM`: Near-range calibration curve parameters
 - `LIDAR_RESIDUAL_DIST_CM` / `LIDAR_RESIDUAL_DELTA_CM`: Piecewise residual correction table

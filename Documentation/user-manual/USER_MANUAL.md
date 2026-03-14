@@ -72,10 +72,10 @@ You can tune horizon trim offsets independently for **Horizon Landscape**, **Hor
 
 - **LiDAR distance (Dist)**
   - Uses LiDAR v2 primary/secondary returns with confidence scoring and correction for more stable readings.
-  - Confidence now accounts for ambient sunlight (`sunlightBase`) relative to return intensity, which helps retain usable long-range readings in bright conditions.
+  - Confidence accounts for ambient sunlight relative to return intensity. Thresholds are tuned for outdoor use in bright conditions, and the sensor falls back to low-confidence tracking at all ranges when primary filtering rejects a return.
   - Measurement range: 5 cm to 18 m.
   - Displays values below 1 meter in centimeters (for example, `75cm`), and 1 meter and above in meters.
-  - Displays `...` if the sensor has no recent data.
+  - Displays `...` if the sensor has no valid data for 750 ms.
   - Displays `Zzz` when LiDAR is in idle standby (wake by focusing or pressing a button).
   - Displays `<15cm` for near readings below display threshold.
   - Displays `Inf.` for readings above 10.5 meters.
@@ -104,9 +104,33 @@ The firmware uses the BH1750 light meter, ISO, and aperture to compute shutter s
 - Shows `Dark!` if light level is near zero.
 - Otherwise shows a shutter speed like `1/125 sec.` or `1.3 sec.`
 
-### Focus ring
+### How to focus
 
-The focus ring thickness and radius reflect the difference between the LiDAR distance and the lens distance. When both are close, the ring is thinner and closer to the reticle center.
+The MRF2 gives you two independent distance readouts — **LiDAR distance** (measured to the subject) and **Lens distance** (read from the focus ring position) — plus a visual **focus ring** that shows how well they agree. Together they let you focus quickly and confirm accuracy without a split-image or ground-glass screen.
+
+#### Basic workflow
+
+1. **Point the camera at your subject.** The LiDAR distance appears in the top-right corner of the main screen (e.g. `2.5m`). The quality indicator shows how confident the reading is.
+2. **Turn the focus ring** until the Lens distance (bottom-right) matches the LiDAR distance. As the two readings converge the focus ring shrinks toward the reticle.
+3. **When the ring is at its smallest**, the lens is focused at the measured distance. Compose and shoot.
+
+#### Reading the focus ring
+
+The focus ring is a circle drawn around the centre reticle. Its size and thickness tell you how far off focus you are:
+
+- **Large ring** — the lens is focused far from the subject. Keep turning.
+- **Small, thin ring** — the lens and LiDAR distances are close. You are in focus or very near it.
+- **Minimum size (tight dot)** — the two distances match within a few centimetres. Focus is confirmed.
+
+The ring radius is the absolute difference between the LiDAR distance and the lens distance, clamped to the display area. The thickness scales with the radius so it stays visible at all sizes.
+
+#### Tips
+
+- **Use the LiDAR number first, then fine-tune with the ring.** Glance at the `Dist` readout to get a ballpark, dial the focus ring close, then watch the ring shrink for the last adjustment.
+- **Calibrate your lens** before relying on Lens distance. Without calibration the Lens readout is inactive and the ring defaults to maximum size. See [Lens calibration](#lens-calibration).
+- **In bright sunlight** the LiDAR may occasionally drop to `...`. The last valid reading is held for 750 ms, so brief dropouts are hidden. If `...` persists, the subject may be too far, too reflective, or at a steep angle — fall back to the distance markings on the lens barrel.
+- **At infinity** the Lens readout shows `Inf.` and the LiDAR readout shows `Inf.` above 10.5 m. The focus ring is irrelevant at infinity — just set the ring to the ∞ mark.
+- **Parallax correction** shifts the framelines based on focus distance. Keep it enabled (default) for accurate framing at close range. It has no effect at infinity.
 
 ## Setup menus
 
@@ -242,7 +266,7 @@ Navigate to **Setup > Lens Settings > Lens Calibration**. The calibration screen
 
 ![Calibration - capture distance](images/calib-distance.svg)
 
-The screen shows the target distance, the live sensor reading, and a progress counter (e.g. "3/7"). A progress bar beneath the title tracks how many points have been captured.
+The screen shows the target distance, the live sensor reading, and a progress counter (e.g. "3/7"). A full-width progress bar beneath the distance line tracks how many points have been captured.
 
 For each target distance:
 
@@ -327,7 +351,7 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 - **LiDAR distance shows `Zzz`**
   - LiDAR is in idle standby. Turn the focus ring or press a button to wake it, or increase/disable **LiDAR idle timeout** in **Setup > UI Settings >**.
 - **LiDAR quality stays at 1 square (Poor)**
-  - Check subject reflectivity/angle and ambient interference; low-SNR returns under strong sunlight are deprioritized and may update more slowly.
+  - Check subject reflectivity/angle and ambient interference; low-SNR returns under strong sunlight are accepted at lower confidence and may update more slowly through temporal blending.
 - **Shutter speed reads `Bright!` or `Dark!`**
   - Adjust ISO and/or aperture, or verify the light meter sensor.
 - **Lens option does not show your lens**
