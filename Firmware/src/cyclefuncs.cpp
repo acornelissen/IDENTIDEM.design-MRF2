@@ -127,14 +127,14 @@ void cycleApertures(CycleDirection direction)
     if (lenses[selected_lens].apertures[aperture_index] != 0)
     {
       aperture = lenses[selected_lens].apertures[aperture_index];
-      savePrefs();
+      savePrefs(false, PREFS_DIRTY_SETTINGS);
       return;
     }
   }
 
   aperture_index = 0;
   aperture = lenses[selected_lens].apertures[aperture_index];
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleISOs()
@@ -145,7 +145,7 @@ void cycleISOs()
     iso_index = 0;
   }
   iso = ISOS[iso_index];
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLenses()
@@ -165,7 +165,7 @@ void cycleLenses()
     }
   } while (!lenses[selected_lens].calibrated);
 
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleCalibLenses()
@@ -186,7 +186,7 @@ void cycleFormats()
   {
     selected_format = 0;
   }
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleCurrentFrame()
@@ -240,7 +240,7 @@ void cycleExposureCompensation(CycleDirection direction)
   {
     exposure_comp_thirds = LIGHTMETER_EV_COMP_MAX_THIRDS;
   }
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleMeterSmoothing()
@@ -250,43 +250,43 @@ void cycleMeterSmoothing()
   {
     meter_smoothing_mode = LIGHTMETER_SMOOTHING_MODE_MIN;
   }
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void toggleEvReadout()
 {
   show_ev_readout = !show_ev_readout;
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLevelTrimLandscape()
 {
   level_trim_landscape_deci_deg = cycleLevelTrimValue(level_trim_landscape_deci_deg);
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLevelTrimPortraitPos()
 {
   level_trim_portrait_pos_deci_deg = cycleLevelTrimValue(level_trim_portrait_pos_deci_deg);
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLevelTrimPortraitNeg()
 {
   level_trim_portrait_neg_deci_deg = cycleLevelTrimValue(level_trim_portrait_neg_deci_deg);
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleSleepTimeoutMode()
 {
   sleep_timeout_mode = cycleSleepTimeoutModeValue(sleep_timeout_mode);
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLidarIdleTimeoutMode()
 {
   lidar_idle_timeout_mode = cycleSleepTimeoutModeValue(lidar_idle_timeout_mode);
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 const char *getSleepTimeoutModeLabel(int timeout_mode)
