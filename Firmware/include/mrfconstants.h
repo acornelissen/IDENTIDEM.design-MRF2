@@ -113,7 +113,7 @@ const int CM_PER_METER = 100; // Centimeters per meter.
 #define RETICLE_OFFSET_X -5 // Main reticle X offset for optical alignment.
 #define RETICLE_OFFSET_Y 0  // Main reticle Y offset for optical alignment.
 const int LIDAR_DISTANCE_DIVISOR = 10;           // Raw LiDAR millimeter-to-centimeter divisor.
-const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 500; // Hide stale LiDAR data after this timeout.
+const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 750; // Hide stale LiDAR data after this timeout.
 const int LIDAR_RECOVERY_ERROR_THRESHOLD = 3;    // Errors before recovery path escalates.
 const unsigned long LIDAR_RECOVERY_TIMEOUT_MS = 1500; // Timeout window triggering recovery.
 const unsigned long LIDAR_RECOVERY_RETRY_BASE_MS = 250; // Initial retry backoff.
@@ -121,18 +121,18 @@ const unsigned long LIDAR_RECOVERY_RETRY_MAX_MS = 2000; // Max retry backoff.
 const float LIDAR_LIBRARY_DISTANCE_SCALE = 1.0f; // Library-side linear distance scale.
 const int LIDAR_LIBRARY_DISTANCE_OFFSET_MM = 400; // Library-side linear distance offset.
 const int LIDAR_LIBRARY_MIN_INTENSITY_THRESHOLD = 80; // Library reject threshold for weak returns.
-const int LIDAR_FUSION_MIN_INTENSITY = 60;       // Fusion-stage baseline minimum intensity.
+const int LIDAR_FUSION_MIN_INTENSITY = 40;       // Fusion-stage baseline minimum intensity.
 const int LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM = 220; // Near-range boundary for intensity gating.
 const int LIDAR_FUSION_INTENSITY_MID_RANGE_CM = 500;  // Mid-range boundary for intensity gating.
 const int LIDAR_FUSION_INTENSITY_FAR_RANGE_CM = 1000; // Far-range boundary for intensity gating.
 const int LIDAR_FUSION_MIN_INTENSITY_MID = 10;   // Mid-range minimum intensity.
 const int LIDAR_FUSION_MIN_INTENSITY_FAR = 6;    // Far-range minimum intensity.
 const int LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE = 3; // Very-far minimum intensity.
-const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 420;  // Target SNR (permille) for near returns.
-const int LIDAR_SNR_PERMILLE_TARGET_MID = 280;   // Target SNR (permille) for mid returns.
+const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 300;  // Target SNR (permille) for near returns.
+const int LIDAR_SNR_PERMILLE_TARGET_MID = 200;   // Target SNR (permille) for mid returns.
 const int LIDAR_SNR_PERMILLE_TARGET_FAR = 180;   // Target SNR (permille) for far returns.
 const int LIDAR_SNR_PERMILLE_TARGET_MAX_RANGE = 120; // Target SNR (permille) at max range.
-const int LIDAR_SNR_PERMILLE_HARD_REJECT = 40;   // SNR hard-reject floor.
+const int LIDAR_SNR_PERMILLE_HARD_REJECT = 25;   // SNR hard-reject floor.
 const int LIDAR_SNR_HARD_REJECT_INTENSITY_MULTIPLIER = 2; // Extra rejection guard in low intensity.
 const int LIDAR_SNR_PENALTY_DIVISOR = 18;        // Maps SNR deficit to confidence penalty.
 const int LIDAR_SNR_PENALTY_MAX = 14;            // Max SNR-based confidence penalty.
@@ -387,8 +387,10 @@ const int CALIB_TITLE_Y = 15;              // Calibration title Y position.
 const int CALIB_ITEM_X = 3;                // Calibration item X position.
 const int CALIB_LENS_Y = 35;               // Calibration lens line Y position.
 const int CALIB_DISTANCE_Y = 47;           // Calibration distance line Y position.
+const int CALIB_PROGRESS_BAR_Y = 53;       // Calibration progress bar Y (below distance line).
 const int CALIB_HELP_Y1 = 70;              // Calibration help line 1 Y.
-const int CALIB_HELP_Y2 = 81;              // Calibration help line 2 Y.
+const int CALIB_HELP_Y2 = 78;              // Calibration help line 2 Y.
+const int CALIB_HELP_Y3 = 86;              // Calibration help line 3 Y.
 const int HEALTH_TITLE_X = 3;              // Health title X position.
 const int HEALTH_TITLE_Y = 15;             // Health title Y position.
 const int HEALTH_ITEM_X = 3;               // Health item X position.
@@ -440,8 +442,8 @@ const int CALIB_MONOTONIC_MIN_STEP = 1;      // Minimum monotonic step between c
 const int CALIB_CAPTURE_STATUS_NONE = 0;     // Calibration capture status: no error.
 const int CALIB_CAPTURE_STATUS_UNSTABLE = 1; // Calibration capture status: unstable reading.
 const int CALIB_CAPTURE_STATUS_NON_MONOTONIC = 2; // Calibration capture status: invalid sequence.
-const int CALIB_STATUS_Y1 = 94;              // Calibration status line 1 Y.
-const int CALIB_STATUS_Y2 = 104;             // Calibration status line 2 Y.
+const int CALIB_STATUS_Y1 = 98;              // Calibration status line 1 Y.
+const int CALIB_STATUS_Y2 = 106;             // Calibration status line 2 Y.
 
 // ---------------------------------------------------------------------------
 // Light meter exposure constant

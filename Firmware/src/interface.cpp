@@ -878,10 +878,10 @@ void drawUiConfigUI()
 
 void drawCalibProgressBar(int current, int total)
 {
-  const int barWidth = 80;
+  const int barWidth = SCREEN_WIDTH;
   const int barHeight = 5;
-  const int barX = (SCREEN_WIDTH - barWidth) / 2;
-  const int barY = CALIB_TITLE_Y + 5;
+  const int barX = 0;
+  const int barY = CALIB_PROGRESS_BAR_Y;
 
   display.drawRect(barX, barY, barWidth, barHeight, WHITE);
   int fillWidth = (total > 0) ? ((barWidth - 2) * current / total) : 0;
@@ -950,7 +950,7 @@ void drawCalibUI()
     u8g2.print(F(" Set focus ring to distance,"));
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2);
     u8g2.print(F(" then (L) to capture."));
-    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2 + 8);
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y3);
     u8g2.print(F(" (R) to Cancel"));
 
     if (calib_capture_status == CALIB_CAPTURE_STATUS_UNSTABLE)
