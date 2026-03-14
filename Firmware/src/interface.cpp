@@ -744,7 +744,7 @@ void drawConfigUI()
 
 void drawFilmConfigUI()
 {
-  beginConfigMenuScreen(F("Film"));
+  beginConfigMenuScreen(F("Setup > Film"));
 
   int maxFrameForFormat = getFilmFormatMaxFrame(film_formats[selected_format]);
   int displayedFrame = constrain(film_counter, 0, maxFrameForFormat);
@@ -779,7 +779,7 @@ void drawFilmConfigUI()
 
 void drawLensConfigUI()
 {
-  beginConfigMenuScreen(F("Lens"));
+  beginConfigMenuScreen(F("Setup > Lens"));
 
   selectConfigMenuRow(CONFIG_LENS_STEP_LENS, config_step == CONFIG_LENS_STEP_LENS);
   u8g2.print(F(" Lens:"));
@@ -802,7 +802,7 @@ void drawLensConfigUI()
 
 void drawMeterConfigUI()
 {
-  beginConfigMenuScreen(F("Meter"));
+  beginConfigMenuScreen(F("Setup > Meter"));
 
   selectConfigMenuRow(CONFIG_METER_STEP_ISO, config_step == CONFIG_METER_STEP_ISO);
   u8g2.print(F(" ISO:"));
@@ -837,7 +837,7 @@ void drawMeterConfigUI()
 
 void drawUiConfigUI()
 {
-  beginConfigMenuScreen(F("UI Settings"));
+  beginConfigMenuScreen(F("Setup > UI"));
 
   selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_LANDSCAPE, config_step == CONFIG_UI_STEP_HORIZON_LANDSCAPE);
   u8g2.print(F(" Horizon L: "));
@@ -891,7 +891,7 @@ void drawCalibUI()
 
   u8g2.setFont(u8g2_font_6x10_mf);
   u8g2.setCursor(CALIB_TITLE_X, CALIB_TITLE_Y);
-  u8g2.print(F("Calibrate"));
+  u8g2.print(F("Lens > Calibrate"));
 
   u8g2.setFont(u8g2_font_4x6_mf);
 
