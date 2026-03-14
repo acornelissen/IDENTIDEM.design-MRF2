@@ -870,6 +870,21 @@ void drawUiConfigUI()
   display.display();
 }
 
+void drawCalibProgressBar(int current, int total)
+{
+  const int barWidth = 80;
+  const int barHeight = 5;
+  const int barX = (SCREEN_WIDTH - barWidth) / 2;
+  const int barY = CALIB_TITLE_Y + 5;
+
+  display.drawRect(barX, barY, barWidth, barHeight, WHITE);
+  int fillWidth = (total > 0) ? ((barWidth - 2) * current / total) : 0;
+  if (fillWidth > 0)
+  {
+    display.fillRect(barX + 1, barY + 1, fillWidth, barHeight - 2, WHITE);
+  }
+}
+
 void drawCalibUI()
 {
   preparePrimaryDisplayTextMode();
@@ -902,9 +917,19 @@ void drawCalibUI()
   u8g2.print(calibrationDistance, DISTANCE_DECIMAL_PLACES);
   u8g2.print(F("m: "));
   u8g2.print(lens_sensor_reading);
-  u8g2.print(F(" "));
+  u8g2.print(F(" ("));
+  u8g2.print(current_calib_distance + 1);
+  u8g2.print(F("/"));
+  u8g2.print(calibrationPointCount);
+  u8g2.print(F(") "));
 
   resetConfigTextColors();
+
+  // Draw progress bar during capture step.
+  if (calib_step == 1)
+  {
+    drawCalibProgressBar(current_calib_distance, calibrationPointCount);
+  }
 
   if (calib_step == 0)
   {
@@ -916,23 +941,23 @@ void drawCalibUI()
   else
   {
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1);
-    u8g2.print(F(" (L) to Select"));
+    u8g2.print(F(" Set focus ring to distance,"));
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2);
-    u8g2.print(F(" (R) to Cancel"));
+    u8g2.print(F(" then (L) to capture. (R) Cancel"));
 
     if (calib_capture_status == CALIB_CAPTURE_STATUS_UNSTABLE)
     {
       u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
       u8g2.print(F(" Unstable reading"));
       u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
-      u8g2.print(F(" Hold still + retry"));
+      u8g2.print(F(" Hold lens still and retry"));
     }
     else if (calib_capture_status == CALIB_CAPTURE_STATUS_NON_MONOTONIC)
     {
       u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
       u8g2.print(F(" Out of sequence"));
       u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
-      u8g2.print(F(" Recheck distance"));
+      u8g2.print(F(" Turn ring further from camera"));
     }
   }
 
