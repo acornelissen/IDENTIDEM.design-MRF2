@@ -2,6 +2,17 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.2.1 - 2026-03-14
+
+- Bug fixes:
+  - Fixed calibration median index off-by-one: used lower median `(sample_count - 1) / 2` instead of upper median `sample_count / 2` for even sample counts.
+  - Replaced `ev_readout == ev_readout` NaN self-comparison with explicit `isnan()` for clarity and robustness against `-ffast-math`.
+- NVS flash wear reduction:
+  - All `savePrefs()` calls in `cyclefuncs.cpp` now pass `PREFS_DIRTY_SETTINGS` instead of defaulting to `PREFS_DIRTY_ALL`.
+- Release metadata/docs:
+  - Bumped `FWVERSION` to `10.2.1`.
+  - Updated firmware README, user manual, and camera UI SVG snapshots.
+
 ## 10.2.0 - 2026-02-28
 
 - Power and runtime efficiency:
