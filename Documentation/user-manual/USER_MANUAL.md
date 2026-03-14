@@ -253,7 +253,7 @@ For each target distance:
 If a capture fails, the screen shows a specific error:
 
 - **"Unstable reading / Hold lens still and retry"** — the sensor values varied too much during sampling. Keep the ring stationary and press **L** again.
-- **"Out of sequence / Turn ring further from camera"** — the new reading was not higher than the previous one. The focus ring must move progressively from near to far. Turn it further towards infinity and retry.
+- **"Out of sequence / Increase focus distance"** — the new reading was not higher than the previous one. The focus ring must move progressively from near to far. Turn it further towards infinity and retry.
 
 Controls during capture:
 

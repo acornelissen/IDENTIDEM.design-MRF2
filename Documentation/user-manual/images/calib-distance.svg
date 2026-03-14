@@ -12,5 +12,6 @@
   <text x="4" y="47" font-family="monospace" font-size="6" fill="#000000"> 2.0m: 287 (4/7) </text>
 
   <text x="4" y="70" font-family="monospace" font-size="6" fill="#ffffff"> Set focus ring to distance,</text>
-  <text x="4" y="81" font-family="monospace" font-size="6" fill="#ffffff"> then (L) to capture. (R) Cancel</text>
+  <text x="4" y="81" font-family="monospace" font-size="6" fill="#ffffff"> then (L) to capture.</text>
+  <text x="4" y="89" font-family="monospace" font-size="6" fill="#ffffff"> (R) to Cancel</text>
 </svg>

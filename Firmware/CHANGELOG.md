@@ -6,9 +6,10 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
 
 - Usability improvements:
   - Boot progress: main display now shows an "Initialising..." label with a progress bar that fills as each peripheral group starts up, instead of staying blank for ~2 seconds.
-  - Calibration UX: the calibration screen now shows a progress bar, a point counter (e.g. "3/7"), revised help text explaining the focus-ring workflow, and clearer error messages ("Hold lens still and retry" / "Turn ring further from camera"). A green LED pulse confirms each successful capture.
+  - Calibration UX: the calibration screen now shows a progress bar, a point counter (e.g. "3/7"), revised help text explaining the focus-ring workflow, and clearer error messages ("Hold lens still and retry" / "Increase focus distance"). A green LED pulse confirms each successful capture.
   - Menu breadcrumbs: submenu headers now show the navigation path (e.g. "Setup > Film", "Setup > Lens", "Lens > Calibrate").
   - Expanded horizon trim labels: "Horizon L" / "Horizon P+" / "Horizon P-" are now "Horizon Landscape" / "Horizon Portrait+" / "Horizon Portrait-".
+  - Calibration text wrap: moved "(R) to Cancel" to its own line on the calibration capture screen to prevent text overflowing the 128 px display width.
   - Sleep fade: the main OLED fades to black over ~200 ms before powering off, instead of blanking abruptly. Brightness is restored on wake.
   - Setup value previews: Film, Lens, and Meter entries on the root Setup menu show their active value inline (e.g. "Film: 6x7 >", "Lens: 65/6.3 >", "Meter: ISO400 >").
 - Bug fixes (from 10.2.1):
