@@ -840,17 +840,17 @@ void drawUiConfigUI()
   beginConfigMenuScreen(F("Setup > UI"));
 
   selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_LANDSCAPE, config_step == CONFIG_UI_STEP_HORIZON_LANDSCAPE);
-  u8g2.print(F(" Horizon L: "));
+  u8g2.print(F(" Horizon Landscape:"));
   printSignedDeciDegrees(level_trim_landscape_deci_deg);
   u8g2.print(F("deg "));
 
   selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_PORTRAIT_POS, config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_POS);
-  u8g2.print(F(" Horizon P+: "));
+  u8g2.print(F(" Horizon Portrait+:"));
   printSignedDeciDegrees(level_trim_portrait_pos_deci_deg);
   u8g2.print(F("deg "));
 
   selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG, config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG);
-  u8g2.print(F(" Horizon P-: "));
+  u8g2.print(F(" Horizon Portrait-:"));
   printSignedDeciDegrees(level_trim_portrait_neg_deci_deg);
   u8g2.print(F("deg "));
 
