@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
@@ -23,7 +23,13 @@
   <body>
     <main class="page">
       <section class="hero">
-        <p class="eyebrow">IDENTIDEM.design</p>
+        <a href="https://identidem.design" target="_blank" rel="noopener">
+          <img
+            class="logo"
+            src="https://identidem.design/cdn/shop/files/logotext.png?v=1739012392&width=600"
+            alt="IDENTIDEM.design"
+          />
+        </a>
         <h1>MRF2 Firmware Updater</h1>
         <p class="subtitle">
           Flash the latest or a previous MRF2 firmware version directly from a Chromium-based browser.
@@ -105,6 +111,11 @@
         <button id="debug-copy" type="button">Copy Debug Report</button>
         <pre id="debug-log">Waiting for installer activity...</pre>
       </section>
+      <footer class="footer">
+        <a href="https://github.com/acornelissen/IDENTIDEM.design-MRF2" target="_blank" rel="noopener">
+          GitHub Repository
+        </a>
+      </footer>
     </main>
 
     <script src="./app.js?v=__BUILD_SHA__"></script>

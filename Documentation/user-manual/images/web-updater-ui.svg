@@ -1,44 +1,55 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
-  <rect x="0" y="0" width="1440" height="900" fill="#f2f4f7"/>
-  <rect x="140" y="80" width="1160" height="740" rx="28" fill="#ffffff" stroke="#d0d7de" stroke-width="4"/>
+  <rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
+  <rect x="140" y="80" width="1160" height="740" rx="28" fill="#ffffff" stroke="rgba(18,18,18,0.12)" stroke-width="4"/>
 
-  <text x="200" y="160" font-family="Space Grotesk, Arial, sans-serif" font-size="52" fill="#111827">
+  <!-- Logo placeholder -->
+  <text x="200" y="140" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#121212">
+    IDENTIDEM.design
+  </text>
+
+  <text x="200" y="195" font-family="Inter, Arial, sans-serif" font-size="52" fill="#121212">
     MRF2 Firmware Updater
   </text>
-  <text x="200" y="205" font-family="Space Grotesk, Arial, sans-serif" font-size="24" fill="#4b5563">
+  <text x="200" y="240" font-family="Inter, Arial, sans-serif" font-size="24" fill="#555555">
     Flash latest or previous firmware directly from your browser.
   </text>
 
-  <rect x="200" y="245" width="1040" height="110" rx="16" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
-  <text x="230" y="286" font-family="IBM Plex Mono, monospace" font-size="24" fill="#111827">
-    Latest Build: 10.2.1
+  <rect x="200" y="275" width="1040" height="110" rx="16" fill="#f7f7f7" stroke="rgba(18,18,18,0.12)" stroke-width="2"/>
+  <text x="230" y="316" font-family="IBM Plex Mono, monospace" font-size="24" fill="#121212">
+    Latest Build: 10.3.0
   </text>
-  <text x="230" y="325" font-family="IBM Plex Mono, monospace" font-size="24" fill="#111827">
-    Version To Install: 10.2.1 (Latest)
+  <text x="230" y="355" font-family="IBM Plex Mono, monospace" font-size="24" fill="#121212">
+    Version To Install: 10.3.0 (Latest)
   </text>
 
-  <rect x="200" y="375" width="420" height="64" rx="10" fill="#111827"/>
-  <text x="410" y="416" text-anchor="middle" font-family="Space Grotesk, Arial, sans-serif" font-size="24" fill="#ffffff">
+  <!-- Yellow accent button -->
+  <rect x="200" y="405" width="420" height="64" rx="32" fill="#fce477"/>
+  <text x="410" y="446" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#121212">
     Connect Camera and Install
   </text>
 
-  <text x="200" y="495" font-family="Space Grotesk, Arial, sans-serif" font-size="34" fill="#111827">
+  <text x="200" y="530" font-family="Inter, Arial, sans-serif" font-size="34" fill="#121212">
     Release Notes (Current + Previous)
   </text>
-  <rect x="200" y="515" width="1040" height="250" rx="16" fill="#0b1220"/>
-  <text x="230" y="565" font-family="IBM Plex Mono, monospace" font-size="24" fill="#e5e7eb">
-    - 10.2.0: ESP32 light sleep between poll cycles; lower sleep current
+  <rect x="200" y="550" width="1040" height="220" rx="16" fill="#121212"/>
+  <text x="230" y="600" font-family="IBM Plex Mono, monospace" font-size="24" fill="#e0e0e0">
+    - 10.3.0: Boot progress bar, calibration UX, focus ring smoothing
   </text>
-  <text x="230" y="602" font-family="IBM Plex Mono, monospace" font-size="24" fill="#e5e7eb">
-    - 10.2.0: MPU6050 sleep, CPU scaling, reduced idle polling cadences
+  <text x="230" y="637" font-family="IBM Plex Mono, monospace" font-size="24" fill="#e0e0e0">
+    - 10.3.0: Factory Reset, Retry LiDAR, outdoor reliability
   </text>
-  <text x="230" y="639" font-family="IBM Plex Mono, monospace" font-size="24" fill="#9ca3af">
-    - 10.1.2: Added lens-specific calibration distance scales
+  <text x="230" y="674" font-family="IBM Plex Mono, monospace" font-size="24" fill="#999999">
+    - 10.2.1: Calibration median fix, NaN check, aperture clamp
   </text>
-  <text x="230" y="676" font-family="IBM Plex Mono, monospace" font-size="24" fill="#9ca3af">
-    - 10.1.2: Added configurable LiDAR idle timeout + adaptive polling
+  <text x="230" y="711" font-family="IBM Plex Mono, monospace" font-size="24" fill="#999999">
+    - 10.2.0: ESP32 light sleep, MPU6050 sleep, reduced idle polling
   </text>
-  <text x="230" y="731" font-family="IBM Plex Mono, monospace" font-size="22" fill="#93c5fd">
+  <text x="230" y="741" font-family="IBM Plex Mono, monospace" font-size="22" fill="#fce477">
     View full changelog
+  </text>
+
+  <!-- GitHub link footer -->
+  <text x="720" y="800" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="600" fill="#121212">
+    GitHub Repository
   </text>
 </svg>

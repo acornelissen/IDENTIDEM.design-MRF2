@@ -1,12 +1,12 @@
 :root {
-  --bg: #f2efe7;
-  --bg-2: #dfe8f0;
-  --ink: #132033;
-  --muted: #4d5a6c;
-  --accent: #d9622b;
-  --accent-2: #117a65;
-  --panel: rgba(255, 255, 255, 0.75);
-  --line: rgba(19, 32, 51, 0.12);
+  --bg: #ffffff;
+  --bg-2: #f7f7f7;
+  --ink: #121212;
+  --muted: #555555;
+  --accent: #fce477;
+  --accent-hover: #f5d84e;
+  --panel: rgba(255, 255, 255, 0.85);
+  --line: rgba(18, 18, 18, 0.12);
 }
 
 * {
@@ -15,12 +15,9 @@
 
 body {
   margin: 0;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 15% 10%, rgba(217, 98, 43, 0.23), transparent 35%),
-    radial-gradient(circle at 85% 20%, rgba(17, 122, 101, 0.2), transparent 32%),
-    linear-gradient(160deg, var(--bg), var(--bg-2));
+  background: var(--bg);
   min-height: 100vh;
 }
 
@@ -44,13 +41,11 @@ body {
   font-size: clamp(2rem, 5vw, 3.3rem);
 }
 
-.eyebrow {
-  margin: 0;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.78rem;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: var(--accent-2);
+.logo {
+  display: block;
+  height: 32px;
+  width: auto;
+  margin-bottom: 0.6rem;
 }
 
 .subtitle {
@@ -65,8 +60,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--panel);
-  backdrop-filter: blur(3px);
-  box-shadow: 0 9px 24px rgba(15, 31, 52, 0.08);
+  box-shadow: 0 9px 24px rgba(18, 18, 18, 0.06);
 }
 
 .panel {
@@ -98,7 +92,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg);
   color: var(--ink);
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.88rem;
@@ -121,8 +115,8 @@ button[slot="activate"] {
   font-weight: 700;
   border-radius: 999px;
   padding: 0.78rem 1.1rem;
-  background: linear-gradient(135deg, var(--accent), #ea7f3e);
-  color: #fff;
+  background: var(--accent);
+  color: var(--ink);
   cursor: pointer;
   transition: transform 0.14s ease, box-shadow 0.14s ease;
 }
@@ -130,7 +124,8 @@ button[slot="activate"] {
 esp-web-install-button::part(button):hover,
 button[slot="activate"]:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(217, 98, 43, 0.36);
+  background: var(--accent-hover);
+  box-shadow: 0 8px 18px rgba(252, 228, 119, 0.4);
 }
 
 .hint {
@@ -201,8 +196,8 @@ button[slot="activate"]:hover {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.86em;
   color: var(--ink);
-  background: rgba(19, 32, 51, 0.09);
-  border: 1px solid rgba(19, 32, 51, 0.18);
+  background: rgba(18, 18, 18, 0.06);
+  border: 1px solid rgba(18, 18, 18, 0.12);
   border-radius: 4px;
   padding: 0.08em 0.34em;
 }
@@ -216,7 +211,7 @@ button[slot="activate"]:hover {
 }
 
 #changelog-link {
-  color: var(--accent-2);
+  color: var(--ink);
   text-decoration: none;
   font-weight: 600;
 }
@@ -232,10 +227,10 @@ button[slot="activate"]:hover {
 }
 
 .debug-panel {
-  border: 1px dashed rgba(19, 32, 51, 0.35);
+  border: 1px dashed rgba(18, 18, 18, 0.35);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 9px 24px rgba(15, 31, 52, 0.08);
+  box-shadow: 0 9px 24px rgba(18, 18, 18, 0.06);
   padding: 1.1rem;
 }
 
@@ -250,8 +245,8 @@ button[slot="activate"]:hover {
   margin-top: 0.75rem;
   border-radius: 999px;
   padding: 0.55rem 0.95rem;
-  background: linear-gradient(135deg, var(--accent-2), #16a58a);
-  color: #fff;
+  background: var(--accent);
+  color: var(--ink);
   cursor: pointer;
   font-weight: 700;
   transition: transform 0.14s ease, box-shadow 0.14s ease;
@@ -259,24 +254,42 @@ button[slot="activate"]:hover {
 
 #debug-copy:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(17, 122, 101, 0.34);
+  background: var(--accent-hover);
+  box-shadow: 0 8px 18px rgba(252, 228, 119, 0.4);
 }
 
 #debug-log {
   margin: 0.75rem 0 0;
-  border: 1px solid rgba(19, 32, 51, 0.2);
+  border: 1px solid rgba(18, 18, 18, 0.2);
   border-radius: 10px;
   padding: 0.7rem;
   min-height: 120px;
   max-height: 280px;
   overflow: auto;
-  background: rgba(14, 26, 43, 0.94);
-  color: #d7e3f0;
+  background: var(--ink);
+  color: #e0e0e0;
   font-size: 0.78rem;
   line-height: 1.35;
   font-family: "IBM Plex Mono", monospace;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.footer {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.footer a {
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.footer a:hover {
+  text-decoration: underline;
 }
 
 ol,
