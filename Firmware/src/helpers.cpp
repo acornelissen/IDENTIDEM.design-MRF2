@@ -131,7 +131,7 @@ void clampLoadedState()
                           : 0;
   }
 
-  const int aperture_count = sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]);
+  const int aperture_count = LENS_APERTURE_COUNT;
   int fallback_aperture_index = getFirstNonZeroAperture();
   if (fallback_aperture_index < 0)
   {
@@ -253,7 +253,7 @@ bool migrateLegacyLensPrefs()
 // ---------------------
 int getFirstNonZeroAperture()
 {
-  const int aperture_count = sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]);
+  const int aperture_count = LENS_APERTURE_COUNT;
   for (int i = 0; i < aperture_count; i++)
   {
     if (lenses[selected_lens].apertures[i] != 0)

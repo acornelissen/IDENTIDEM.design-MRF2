@@ -108,7 +108,7 @@ int getAdjustedSensorPointForFrame(const FilmFormat &film_format, int frame_valu
 // ---------------------
 void cycleApertures(CycleDirection direction)
 {
-  const int aperture_count = sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]);
+  const int aperture_count = LENS_APERTURE_COUNT;
   int step = (direction == CycleDirection::Up) ? 1 : -1;
 
   for (int attempts = 0; attempts < aperture_count; attempts++)
