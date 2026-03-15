@@ -128,44 +128,56 @@ void handleLeftButtonShortPress()
     }
     else if (calib_step == 1)
     {
-      const int calibrationPointCount = getCalibrationPointCountForLens(lenses[calib_lens]);
-      int averagedReading = 0;
-      if (!captureStableCalibReading(averagedReading))
+      // Do not allow a new capture attempt while the previous error is
+      // still being held on screen for the minimum display time.
+      if (calib_capture_status != CALIB_CAPTURE_STATUS_NONE &&
+          (millis() - calib_capture_status_ms) < CALIB_ERROR_HOLD_MS)
       {
-        calib_capture_status = CALIB_CAPTURE_STATUS_UNSTABLE;
-      }
-      else if (!isMonotonicCalibSequenceWithCandidate(averagedReading))
-      {
-        calib_capture_status = CALIB_CAPTURE_STATUS_NON_MONOTONIC;
+        // Ignore this press; error message still visible.
       }
       else
       {
-        calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
-        calib_distance_set[current_calib_distance] = averagedReading;
-        current_calib_distance++;
-
-        // Brief green LED pulse to confirm successful capture.
-        if (statusPixelReady)
+        const int calibrationPointCount = getCalibrationPointCountForLens(lenses[calib_lens]);
+        int averagedReading = 0;
+        if (!captureStableCalibReading(averagedReading))
         {
-          sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(0, 255, 0));
-          sspixel.show();
-          delay(80);
-          sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
-          sspixel.show();
+          calib_capture_status = CALIB_CAPTURE_STATUS_UNSTABLE;
+          calib_capture_status_ms = millis();
         }
-        if (current_calib_distance >= calibrationPointCount)
+        else if (!isMonotonicCalibSequenceWithCandidate(averagedReading))
         {
-          lenses[calib_lens].calibrated = true;
-          const int sensorPointCount = sizeof(lenses[calib_lens].sensor_reading) /
-                                       sizeof(lenses[calib_lens].sensor_reading[0]);
-          for (int i = 0; i < sensorPointCount; i++)
+          calib_capture_status = CALIB_CAPTURE_STATUS_NON_MONOTONIC;
+          calib_capture_status_ms = millis();
+        }
+        else
+        {
+          calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
+          calib_distance_set[current_calib_distance] = averagedReading;
+          current_calib_distance++;
+
+          // Brief green LED pulse to confirm successful capture.
+          if (statusPixelReady)
           {
-            lenses[calib_lens].sensor_reading[i] = (i < calibrationPointCount) ? calib_distance_set[i] : 0;
+            sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(0, 255, 0));
+            sspixel.show();
+            delay(80);
+            sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
+            sspixel.show();
           }
-          selected_lens = calib_lens;
-          savePrefs(true);
-          config_step = CONFIG_LENS_STEP_CALIB;
-          ui_mode = UiMode::ConfigLens;
+          if (current_calib_distance >= calibrationPointCount)
+          {
+            lenses[calib_lens].calibrated = true;
+            const int sensorPointCount = sizeof(lenses[calib_lens].sensor_reading) /
+                                         sizeof(lenses[calib_lens].sensor_reading[0]);
+            for (int i = 0; i < sensorPointCount; i++)
+            {
+              lenses[calib_lens].sensor_reading[i] = (i < calibrationPointCount) ? calib_distance_set[i] : 0;
+            }
+            selected_lens = calib_lens;
+            savePrefs(true);
+            config_step = CONFIG_LENS_STEP_CALIB;
+            ui_mode = UiMode::ConfigLens;
+          }
         }
       }
     }

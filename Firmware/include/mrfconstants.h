@@ -444,6 +444,7 @@ const int CALIB_MONOTONIC_MIN_STEP = 1;      // Minimum monotonic step between c
 const int CALIB_CAPTURE_STATUS_NONE = 0;     // Calibration capture status: no error.
 const int CALIB_CAPTURE_STATUS_UNSTABLE = 1; // Calibration capture status: unstable reading.
 const int CALIB_CAPTURE_STATUS_NON_MONOTONIC = 2; // Calibration capture status: invalid sequence.
+const unsigned long CALIB_ERROR_HOLD_MS = 2000; // Minimum display time for calibration errors.
 const int CALIB_STATUS_Y1 = 98;              // Calibration status line 1 Y.
 const int CALIB_STATUS_Y2 = 106;             // Calibration status line 2 Y.
 

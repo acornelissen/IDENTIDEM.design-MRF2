@@ -79,6 +79,7 @@ extern bool parallaxEnabled;
 extern int calib_distance_set[CALIB_DISTANCE_COUNT];
 extern int current_calib_distance;
 extern int calib_capture_status;
+extern unsigned long calib_capture_status_ms;
 
 extern int film_counter;
 extern int prev_encoder_value;

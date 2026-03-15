@@ -140,6 +140,7 @@ uint32_t buildMenuUiSignature()
   hash = hashInt(hash, calib_lens);
   hash = hashInt(hash, current_calib_distance);
   hash = hashInt(hash, calib_capture_status);
+  hash = hashUint32(hash, static_cast<uint32_t>(calib_capture_status_ms));
   hash = hashInt(hash, lens_sensor_reading);
   hash = hashInt(hash, iso);
   hash = hashFloat(hash, aperture);

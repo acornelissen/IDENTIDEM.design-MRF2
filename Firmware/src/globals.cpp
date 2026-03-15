@@ -63,6 +63,7 @@ bool parallaxEnabled = true;
 int calib_distance_set[CALIB_DISTANCE_COUNT] = {};
 int current_calib_distance = 0;
 int calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
+unsigned long calib_capture_status_ms = 0;
 
 int film_counter = 0;
 int prev_encoder_value = 0;
