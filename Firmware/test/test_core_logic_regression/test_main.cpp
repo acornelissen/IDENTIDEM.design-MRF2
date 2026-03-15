@@ -546,6 +546,27 @@ void test_250mm_profiles_use_custom_distance_scales()
   TEST_ASSERT_FLOAT_WITHIN(0.0001f, 50.0f, lens250f8->distance[8]);
 }
 
+void test_calibration_median_spread_tolerates_gentle_drift()
+{
+  // 8 samples drifting gently upward: total spread 14 exceeds the old
+  // min-to-max limit of 10, but max deviation from median (504) is only 8,
+  // which the median-based check should accept.
+  const int driftSamples[8] = {500, 502, 504, 504, 506, 506, 508, 510};
+  int averagedReading = 0;
+  bool stable = computeStableCalibrationReading(driftSamples, 8, 6, 5, 10, averagedReading);
+  TEST_ASSERT_TRUE(stable);
+  TEST_ASSERT_INT_WITHIN(3, 505, averagedReading);
+}
+
+void test_calibration_rejects_truly_unstable_readings()
+{
+  // Max deviation from median exceeds the spread limit.
+  const int wildSamples[8] = {300, 310, 320, 300, 310, 320, 300, 310};
+  int averagedReading = 0;
+  bool stable = computeStableCalibrationReading(wildSamples, 8, 6, 5, 10, averagedReading);
+  TEST_ASSERT_FALSE(stable);
+}
+
 void test_lightmeter_dark_bright_fraction_and_seconds()
 {
   char formattedShutter[16] = {0};
@@ -570,6 +591,8 @@ int main(int, char **)
   RUN_TEST(test_encoder_filter_reverse_requires_rewind_mode);
   RUN_TEST(test_lidar_timeout_recovery_and_backoff);
   RUN_TEST(test_calibration_validation_stable_and_monotonic);
+  RUN_TEST(test_calibration_median_spread_tolerates_gentle_drift);
+  RUN_TEST(test_calibration_rejects_truly_unstable_readings);
   RUN_TEST(test_prefs_migration_mode_and_blob_apply);
   RUN_TEST(test_lidar_candidate_selection_and_blend);
   RUN_TEST(test_lidar_invalid_and_display_formatting);

@@ -49,16 +49,15 @@ bool computeStableCalibrationReading(
 
   long inlierSum = 0;
   int inlierCount = 0;
-  int minInlier = 32767;
-  int maxInlier = -32768;
+  int maxDeviationFromMedian = 0;
   for (int i = 0; i < sample_count; i++)
   {
     if (abs(samples[i] - median) <= outlier_max_delta)
     {
       inlierSum += samples[i];
       inlierCount++;
-      minInlier = min(minInlier, samples[i]);
-      maxInlier = max(maxInlier, samples[i]);
+      int deviation = abs(samples[i] - median);
+      maxDeviationFromMedian = max(maxDeviationFromMedian, deviation);
     }
   }
 
@@ -66,7 +65,10 @@ bool computeStableCalibrationReading(
   {
     return false;
   }
-  if ((maxInlier - minInlier) > max_inlier_spread)
+  // Check max distance from median rather than total min-to-max spread.
+  // This is more forgiving of gentle monotonic lens drift where all samples
+  // trend in one direction but each individual reading stays close to centre.
+  if (maxDeviationFromMedian > max_inlier_spread)
   {
     return false;
   }
