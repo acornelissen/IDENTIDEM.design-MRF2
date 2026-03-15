@@ -418,6 +418,24 @@ void drawMainFrameline(const MainFramelineLayout &layout)
   display.drawRect(layout.innerX, layout.innerY, layout.innerWidth, layout.innerHeight, WHITE);
 }
 
+int getSmoothedFocusRadius(int rawRadius)
+{
+  static bool init = false;
+  static float smoothed = 0.0f;
+
+  float target = static_cast<float>(rawRadius);
+  if (!init)
+  {
+    smoothed = target;
+    init = true;
+  }
+
+  smoothed += (target - smoothed) * FOCUS_RING_RADIUS_SMOOTHING;
+
+  int result = static_cast<int>(roundf(smoothed));
+  return max(FOCUS_RADIUS_MIN, min(FOCUS_RADIUS_MAX, result));
+}
+
 int getSmoothedFocusRingThickness(int focusRadius)
 {
   static bool focusThicknessInit = false;
@@ -451,7 +469,8 @@ void drawReticleAndFocusRing(const MainFramelineLayout &layout)
 {
   display.fillCircle(layout.reticleCenterX, layout.reticleCenterY, MAIN_RETICLE_CENTER_RADIUS, INVERSE);
 
-  int focusRadius = getFocusRadius();
+  int rawFocusRadius = getFocusRadius();
+  int focusRadius = getSmoothedFocusRadius(rawFocusRadius);
   int focusThickness = getSmoothedFocusRingThickness(focusRadius);
   int outerRadius = focusRadius;
   int innerRadius = focusRadius - focusThickness;

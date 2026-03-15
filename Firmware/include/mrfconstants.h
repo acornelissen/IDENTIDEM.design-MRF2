@@ -98,10 +98,11 @@ const int LENS_ADC_MAIN_OFFSET = 4;             // UI-mode compensation offset f
 const int LENS_SPIKE_DELTA_THRESHOLD = 8;       // Delta treated as potential ADC spike.
 const int LENS_SPIKE_CONFIRMATION_COUNT = 2;    // Consecutive spike readings required for accept.
 const int FOCUS_RADIUS_MIN = 3;                 // Minimum focus-ring radius in pixels.
-const int FOCUS_RADIUS_MAX = 30;                // Maximum focus-ring radius in pixels.
+const int FOCUS_RADIUS_MAX = 40;                // Maximum focus-ring radius in pixels.
 const int FOCUS_RING_THICKNESS_MIN = 1;         // Minimum focus-ring thickness.
-const int FOCUS_RING_THICKNESS_MAX = 3;         // Maximum focus-ring thickness.
-const float FOCUS_RING_THICKNESS_SMOOTHING = 0.25f; // Exponential smoothing factor for ring thickness.
+const int FOCUS_RING_THICKNESS_MAX = 5;         // Maximum focus-ring thickness.
+const float FOCUS_RING_RADIUS_SMOOTHING = 0.15f;    // EMA factor for radius (lower = smoother).
+const float FOCUS_RING_THICKNESS_SMOOTHING = 0.25f; // EMA factor for ring thickness.
 
 // ---------------------------------------------------------------------------
 // Unit conversion helpers
