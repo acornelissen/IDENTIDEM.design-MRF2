@@ -261,9 +261,6 @@ void handleRightButtonShortPress()
   {
     if (config_step == CONFIG_LENS_STEP_LENS) {
       cycleLenses();
-      int non_zero_aperture_index = max(0, getFirstNonZeroAperture());
-      aperture = lenses[selected_lens].apertures[non_zero_aperture_index];
-      aperture_index = non_zero_aperture_index;
     }
     else if (config_step == CONFIG_LENS_STEP_PARALLAX) {
       parallaxEnabled = !parallaxEnabled;

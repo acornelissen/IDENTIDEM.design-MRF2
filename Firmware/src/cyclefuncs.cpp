@@ -161,9 +161,19 @@ void cycleLenses()
     // Prevent infinite loop if no lenses are calibrated, though UI should prevent this.
     if (selected_lens == initial_lens && !lenses[selected_lens].calibrated) {
         // Potentially handle case where no calibrated lenses are available if needed
-        break; 
+        break;
     }
   } while (!lenses[selected_lens].calibrated);
+
+  // Clamp aperture to the new lens's valid range so callers never
+  // index past the end of the aperture array.
+  int firstValid = getFirstNonZeroAperture();
+  if (firstValid < 0)
+  {
+    firstValid = 0;
+  }
+  aperture_index = firstValid;
+  aperture = lenses[selected_lens].apertures[aperture_index];
 
   savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
