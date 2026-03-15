@@ -192,6 +192,10 @@ void handleLeftButtonShortPress()
     ui_mode = UiMode::Config;
     config_step = CONFIG_ROOT_STEP_HEALTH;
   }
+  else if (ui_mode == UiMode::FactoryResetConfirm)
+  {
+    ui_mode = UiMode::Health;
+  }
 }
 
 void handleRightButtonLongPress()
@@ -200,6 +204,10 @@ void handleRightButtonLongPress()
   if (ui_mode == UiMode::Main)
   {
     ui_mode = UiMode::Config;
+  }
+  else if (ui_mode == UiMode::Health)
+  {
+    ui_mode = UiMode::FactoryResetConfirm;
   }
 }
 
@@ -363,6 +371,10 @@ void handleRightButtonShortPress()
       ui_mode = UiMode::Config;
       config_step = CONFIG_ROOT_STEP_HEALTH;
     }
+  }
+  else if (ui_mode == UiMode::FactoryResetConfirm)
+  {
+    performFactoryReset();
   }
 }
 } // namespace

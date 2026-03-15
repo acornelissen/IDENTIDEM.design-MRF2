@@ -11,6 +11,7 @@ void drawMeterConfigUI();
 void drawUiConfigUI();
 void drawCalibUI();
 void drawResetConfirmUI();
+void drawFactoryResetConfirmUI();
 void drawHealthUI();
 void drawExternalUI();
 void drawSleepUI();

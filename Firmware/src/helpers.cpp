@@ -14,9 +14,10 @@
 #include "mrfconstants.h" // For SMOOTHING_WINDOW_SIZE
 #include "prefs_migration_logic.h"
 
+static const char *PREFS_NAMESPACE = "mrf";
+
 namespace
 {
-const char *PREFS_NAMESPACE = "mrf";
 const char *PREFS_KEY_SCHEMA = "schema";
 const char *PREFS_KEY_LEGACY_LENSES = "lenses";
 const char *PREFS_KEY_LENS_COUNT = "lc_count";
@@ -255,6 +256,15 @@ bool migrateLegacyLensPrefs()
 
 // Helper functions
 // ---------------------
+
+void performFactoryReset()
+{
+  prefs.begin(PREFS_NAMESPACE, false);
+  prefs.clear();
+  prefs.end();
+  ESP.restart();
+}
+
 int getFirstNonZeroAperture()
 {
   const int aperture_count = LENS_APERTURE_COUNT;

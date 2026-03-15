@@ -622,6 +622,9 @@ void drawPrimaryUiForCurrentMode()
   case UiMode::Health:
     drawHealthUI();
     break;
+  case UiMode::FactoryResetConfirm:
+    drawFactoryResetConfirmUI();
+    break;
   }
 }
 

@@ -15,7 +15,8 @@ enum class UiMode : uint8_t
   ConfigUi,
   Calib,
   ResetConfirm,
-  Health
+  Health,
+  FactoryResetConfirm
 };
 
 // Preferences

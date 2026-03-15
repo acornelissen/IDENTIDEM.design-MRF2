@@ -987,6 +987,23 @@ void drawResetConfirmUI()
   display.display();
 }
 
+void drawFactoryResetConfirmUI()
+{
+  beginConfigMenuScreen(F("Factory Reset?"));
+
+  u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y1);
+  u8g2.print(F(" All settings will be"));
+  u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y2);
+  u8g2.print(F(" erased. Device reboots."));
+
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y - 10);
+  u8g2.print(F(" (L) Cancel"));
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y);
+  u8g2.print(F(" (R) Reset all settings"));
+
+  display.display();
+}
+
 void drawHealthUI()
 {
   preparePrimaryDisplayTextMode();
@@ -1049,7 +1066,7 @@ void drawHealthUI()
   u8g2.print(F(" P"));
   u8g2.print(statusPixelReady ? 1 : 0);
 
-  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y);
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y - 8);
   if (!lidarSensorReady)
   {
     u8g2.print(F(" (L) Back  (R) Retry LiDAR"));
@@ -1058,6 +1075,8 @@ void drawHealthUI()
   {
     u8g2.print(F(" (L/R) Back"));
   }
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y);
+  u8g2.print(F(" (R long) Factory Reset"));
 
   display.display();
 }
