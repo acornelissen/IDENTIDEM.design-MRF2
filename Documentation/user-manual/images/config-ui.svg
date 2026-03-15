@@ -3,14 +3,14 @@
   <text x="3" y="15" font-family="monospace" font-size="12" fill="#ffffff">Setup</text>
 
   <rect x="2" y="19" width="124" height="10" fill="#ffffff"/>
-  <text x="4" y="26" font-family="monospace" font-size="6" fill="#000000"> Film &gt; </text>
+  <text x="4" y="26" font-family="monospace" font-size="6" fill="#000000"> Film: 6x7 &gt; </text>
 
-  <text x="4" y="35" font-family="monospace" font-size="6" fill="#ffffff"> Lens Settings &gt; </text>
-  <text x="4" y="44" font-family="monospace" font-size="6" fill="#ffffff"> Light Meter &gt; </text>
+  <text x="4" y="35" font-family="monospace" font-size="6" fill="#ffffff"> Lens: 65/6.3 &gt; </text>
+  <text x="4" y="44" font-family="monospace" font-size="6" fill="#ffffff"> Meter: ISO400 &gt; </text>
   <text x="4" y="53" font-family="monospace" font-size="6" fill="#ffffff"> UI Settings &gt; </text>
   <text x="4" y="62" font-family="monospace" font-size="6" fill="#ffffff"> Reset frame counter &gt;&gt; </text>
   <text x="4" y="71" font-family="monospace" font-size="6" fill="#ffffff"> System Health &gt; </text>
   <text x="4" y="80" font-family="monospace" font-size="6" fill="#ffffff"> Exit &gt;&gt; </text>
 
-  <text x="3" y="121" font-family="monospace" font-size="6" fill="#ffffff"> IDENTIDEM.design MRF 10.2.0</text>
+  <text x="3" y="121" font-family="monospace" font-size="6" fill="#ffffff"> IDENTIDEM.design MRF 10.3.0</text>
 </svg>

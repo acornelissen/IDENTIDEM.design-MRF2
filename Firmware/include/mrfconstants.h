@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity and boot behavior
 // ---------------------------------------------------------------------------
-#define FWVERSION "10.2.0"                  // Version shown in UI and release metadata.
+#define FWVERSION "10.3.0"                  // Version shown in UI and release metadata.
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
 // ---------------------------------------------------------------------------
@@ -78,6 +78,8 @@ const int SHARED_I2C_FREQUENCY_HZ  = 400000;           // Standard I2C speed res
 const int DISPLAY_COMMAND_FLIP = 0xC8;                 // SH1107 vertical flip command.
 const uint8_t OLED_CMD_DISPLAY_OFF = 0xAE;             // SH1107 command to blank the display.
 const uint8_t OLED_CMD_DISPLAY_ON  = 0xAF;             // SH1107 command to enable the display.
+const unsigned long FADE_STEP_INTERVAL_MS = 25;        // Delay between non-blocking fade steps.
+const int FADE_STEP_DECREMENT = 0x20;                  // Contrast decrement per fade step.
 
 // ---------------------------------------------------------------------------
 // Lens ADC filtering, snap logic, and focus-ring rendering
@@ -96,10 +98,11 @@ const int LENS_ADC_MAIN_OFFSET = 4;             // UI-mode compensation offset f
 const int LENS_SPIKE_DELTA_THRESHOLD = 8;       // Delta treated as potential ADC spike.
 const int LENS_SPIKE_CONFIRMATION_COUNT = 2;    // Consecutive spike readings required for accept.
 const int FOCUS_RADIUS_MIN = 3;                 // Minimum focus-ring radius in pixels.
-const int FOCUS_RADIUS_MAX = 30;                // Maximum focus-ring radius in pixels.
+const int FOCUS_RADIUS_MAX = 40;                // Maximum focus-ring radius in pixels.
 const int FOCUS_RING_THICKNESS_MIN = 1;         // Minimum focus-ring thickness.
-const int FOCUS_RING_THICKNESS_MAX = 3;         // Maximum focus-ring thickness.
-const float FOCUS_RING_THICKNESS_SMOOTHING = 0.25f; // Exponential smoothing factor for ring thickness.
+const int FOCUS_RING_THICKNESS_MAX = 5;         // Maximum focus-ring thickness.
+const float FOCUS_RING_RADIUS_SMOOTHING = 0.15f;    // EMA factor for radius (lower = smoother).
+const float FOCUS_RING_THICKNESS_SMOOTHING = 0.25f; // EMA factor for ring thickness.
 
 // ---------------------------------------------------------------------------
 // Unit conversion helpers
@@ -113,7 +116,7 @@ const int CM_PER_METER = 100; // Centimeters per meter.
 #define RETICLE_OFFSET_X -5 // Main reticle X offset for optical alignment.
 #define RETICLE_OFFSET_Y 0  // Main reticle Y offset for optical alignment.
 const int LIDAR_DISTANCE_DIVISOR = 10;           // Raw LiDAR millimeter-to-centimeter divisor.
-const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 500; // Hide stale LiDAR data after this timeout.
+const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 750; // Hide stale LiDAR data after this timeout.
 const int LIDAR_RECOVERY_ERROR_THRESHOLD = 3;    // Errors before recovery path escalates.
 const unsigned long LIDAR_RECOVERY_TIMEOUT_MS = 1500; // Timeout window triggering recovery.
 const unsigned long LIDAR_RECOVERY_RETRY_BASE_MS = 250; // Initial retry backoff.
@@ -121,18 +124,18 @@ const unsigned long LIDAR_RECOVERY_RETRY_MAX_MS = 2000; // Max retry backoff.
 const float LIDAR_LIBRARY_DISTANCE_SCALE = 1.0f; // Library-side linear distance scale.
 const int LIDAR_LIBRARY_DISTANCE_OFFSET_MM = 400; // Library-side linear distance offset.
 const int LIDAR_LIBRARY_MIN_INTENSITY_THRESHOLD = 80; // Library reject threshold for weak returns.
-const int LIDAR_FUSION_MIN_INTENSITY = 60;       // Fusion-stage baseline minimum intensity.
+const int LIDAR_FUSION_MIN_INTENSITY = 40;       // Fusion-stage baseline minimum intensity.
 const int LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM = 220; // Near-range boundary for intensity gating.
 const int LIDAR_FUSION_INTENSITY_MID_RANGE_CM = 500;  // Mid-range boundary for intensity gating.
 const int LIDAR_FUSION_INTENSITY_FAR_RANGE_CM = 1000; // Far-range boundary for intensity gating.
 const int LIDAR_FUSION_MIN_INTENSITY_MID = 10;   // Mid-range minimum intensity.
 const int LIDAR_FUSION_MIN_INTENSITY_FAR = 6;    // Far-range minimum intensity.
 const int LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE = 3; // Very-far minimum intensity.
-const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 420;  // Target SNR (permille) for near returns.
-const int LIDAR_SNR_PERMILLE_TARGET_MID = 280;   // Target SNR (permille) for mid returns.
+const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 300;  // Target SNR (permille) for near returns.
+const int LIDAR_SNR_PERMILLE_TARGET_MID = 200;   // Target SNR (permille) for mid returns.
 const int LIDAR_SNR_PERMILLE_TARGET_FAR = 180;   // Target SNR (permille) for far returns.
 const int LIDAR_SNR_PERMILLE_TARGET_MAX_RANGE = 120; // Target SNR (permille) at max range.
-const int LIDAR_SNR_PERMILLE_HARD_REJECT = 40;   // SNR hard-reject floor.
+const int LIDAR_SNR_PERMILLE_HARD_REJECT = 25;   // SNR hard-reject floor.
 const int LIDAR_SNR_HARD_REJECT_INTENSITY_MULTIPLIER = 2; // Extra rejection guard in low intensity.
 const int LIDAR_SNR_PENALTY_DIVISOR = 18;        // Maps SNR deficit to confidence penalty.
 const int LIDAR_SNR_PENALTY_MAX = 14;            // Max SNR-based confidence penalty.
@@ -292,46 +295,80 @@ const int SLEEP_WAKE_LENS_DELTA = 8;                      // Lens ADC delta to w
 // ---------------------------------------------------------------------------
 // Config menu indexes: setup root
 // ---------------------------------------------------------------------------
-const int CONFIG_ROOT_STEP_FILM_MENU = 0;  // Enter Film submenu.
-const int CONFIG_ROOT_STEP_LENS_MENU = 1;  // Enter Lens submenu.
-const int CONFIG_ROOT_STEP_METER_MENU = 2; // Enter Light Meter submenu.
-const int CONFIG_ROOT_STEP_UI_MENU = 3;    // Enter UI Settings submenu.
-const int CONFIG_ROOT_STEP_RESET = 4;      // Enter reset-frame confirmation.
-const int CONFIG_ROOT_STEP_HEALTH = 5;     // Enter health diagnostics screen.
-const int CONFIG_ROOT_STEP_EXIT = 6;       // Exit setup to main UI.
-const int CONFIG_ROOT_STEP_MAX = CONFIG_ROOT_STEP_EXIT; // Last valid root step index.
+// Config menu indexes are plain enums so they remain int-compatible with
+// config_step.  Each menu declares a COUNT sentinel so that _MAX is
+// derived automatically — adding a new item without updating the list
+// triggers a compile error from the static_assert below.
+enum ConfigRootStep
+{
+  CONFIG_ROOT_STEP_FILM_MENU = 0,  // Enter Film submenu.
+  CONFIG_ROOT_STEP_LENS_MENU,      // Enter Lens submenu.
+  CONFIG_ROOT_STEP_METER_MENU,     // Enter Light Meter submenu.
+  CONFIG_ROOT_STEP_UI_MENU,        // Enter UI Settings submenu.
+  CONFIG_ROOT_STEP_RESET,          // Enter reset-frame confirmation.
+  CONFIG_ROOT_STEP_HEALTH,         // Enter health diagnostics screen.
+  CONFIG_ROOT_STEP_EXIT,           // Exit setup to main UI.
+  CONFIG_ROOT_STEP_COUNT
+};
+const int CONFIG_ROOT_STEP_MAX = CONFIG_ROOT_STEP_EXIT;
+static_assert(CONFIG_ROOT_STEP_COUNT - 1 == CONFIG_ROOT_STEP_MAX,
+              "CONFIG_ROOT_STEP_MAX does not match enum count");
 
 // Config menu indexes: Film submenu.
-const int CONFIG_FILM_STEP_FORMAT = 0;          // Film format selector.
-const int CONFIG_FILM_STEP_CURRENT_FRAME = 1;   // Current frame selector.
-const int CONFIG_FILM_STEP_FRAME_ONE_OFFSET = 2; // Frame-1 offset tuning.
-const int CONFIG_FILM_STEP_FRAME_SPACING = 3;   // Frame spacing tuning.
-const int CONFIG_FILM_STEP_BACK = 4;            // Back to setup root.
-const int CONFIG_FILM_STEP_MAX = CONFIG_FILM_STEP_BACK; // Last valid film step.
+enum ConfigFilmStep
+{
+  CONFIG_FILM_STEP_FORMAT = 0,          // Film format selector.
+  CONFIG_FILM_STEP_CURRENT_FRAME,       // Current frame selector.
+  CONFIG_FILM_STEP_FRAME_ONE_OFFSET,    // Frame-1 offset tuning.
+  CONFIG_FILM_STEP_FRAME_SPACING,       // Frame spacing tuning.
+  CONFIG_FILM_STEP_BACK,                // Back to setup root.
+  CONFIG_FILM_STEP_COUNT
+};
+const int CONFIG_FILM_STEP_MAX = CONFIG_FILM_STEP_BACK;
+static_assert(CONFIG_FILM_STEP_COUNT - 1 == CONFIG_FILM_STEP_MAX,
+              "CONFIG_FILM_STEP_MAX does not match enum count");
 
 // Config menu indexes: Lens submenu.
-const int CONFIG_LENS_STEP_LENS = 0;      // Lens selector.
-const int CONFIG_LENS_STEP_PARALLAX = 1;  // Parallax toggle.
-const int CONFIG_LENS_STEP_CALIB = 2;     // Enter lens calibration.
-const int CONFIG_LENS_STEP_BACK = 3;      // Back to setup root.
-const int CONFIG_LENS_STEP_MAX = CONFIG_LENS_STEP_BACK; // Last valid lens step.
+enum ConfigLensStep
+{
+  CONFIG_LENS_STEP_LENS = 0,      // Lens selector.
+  CONFIG_LENS_STEP_PARALLAX,      // Parallax toggle.
+  CONFIG_LENS_STEP_CALIB,         // Enter lens calibration.
+  CONFIG_LENS_STEP_BACK,          // Back to setup root.
+  CONFIG_LENS_STEP_COUNT
+};
+const int CONFIG_LENS_STEP_MAX = CONFIG_LENS_STEP_BACK;
+static_assert(CONFIG_LENS_STEP_COUNT - 1 == CONFIG_LENS_STEP_MAX,
+              "CONFIG_LENS_STEP_MAX does not match enum count");
 
 // Config menu indexes: Meter submenu.
-const int CONFIG_METER_STEP_ISO = 0;       // ISO selector.
-const int CONFIG_METER_STEP_EV_COMP = 1;   // EV compensation selector.
-const int CONFIG_METER_STEP_SMOOTHING = 2; // Smoothing selector.
-const int CONFIG_METER_STEP_EV_READOUT = 3; // EV readout toggle.
-const int CONFIG_METER_STEP_BACK = 4;      // Back to setup root.
-const int CONFIG_METER_STEP_MAX = CONFIG_METER_STEP_BACK; // Last valid meter step.
+enum ConfigMeterStep
+{
+  CONFIG_METER_STEP_ISO = 0,       // ISO selector.
+  CONFIG_METER_STEP_EV_COMP,       // EV compensation selector.
+  CONFIG_METER_STEP_SMOOTHING,     // Smoothing selector.
+  CONFIG_METER_STEP_EV_READOUT,    // EV readout toggle.
+  CONFIG_METER_STEP_BACK,          // Back to setup root.
+  CONFIG_METER_STEP_COUNT
+};
+const int CONFIG_METER_STEP_MAX = CONFIG_METER_STEP_BACK;
+static_assert(CONFIG_METER_STEP_COUNT - 1 == CONFIG_METER_STEP_MAX,
+              "CONFIG_METER_STEP_MAX does not match enum count");
 
 // Config menu indexes: UI Settings submenu.
-const int CONFIG_UI_STEP_HORIZON_LANDSCAPE = 0;  // Landscape horizon trim.
-const int CONFIG_UI_STEP_HORIZON_PORTRAIT_POS = 1; // Portrait + horizon trim.
-const int CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG = 2; // Portrait - horizon trim.
-const int CONFIG_UI_STEP_SLEEP_TIMEOUT = 3;       // Sleep timeout selector.
-const int CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT = 4;  // LiDAR idle-timeout selector.
-const int CONFIG_UI_STEP_BACK = 5;                // Back to setup root.
-const int CONFIG_UI_STEP_MAX = CONFIG_UI_STEP_BACK; // Last valid UI settings step.
+enum ConfigUiStep
+{
+  CONFIG_UI_STEP_HORIZON_LANDSCAPE = 0,  // Landscape horizon trim.
+  CONFIG_UI_STEP_HORIZON_PORTRAIT_POS,   // Portrait + horizon trim.
+  CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG,   // Portrait - horizon trim.
+  CONFIG_UI_STEP_SLEEP_TIMEOUT,          // Sleep timeout selector.
+  CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT,     // LiDAR idle-timeout selector.
+  CONFIG_UI_STEP_BACK,                   // Back to setup root.
+  CONFIG_UI_STEP_COUNT
+};
+const int CONFIG_UI_STEP_MAX = CONFIG_UI_STEP_BACK;
+static_assert(CONFIG_UI_STEP_COUNT - 1 == CONFIG_UI_STEP_MAX,
+              "CONFIG_UI_STEP_MAX does not match enum count");
 
 // ---------------------------------------------------------------------------
 // Main UI numeric formatting and level-aid tuning
@@ -387,8 +424,10 @@ const int CALIB_TITLE_Y = 15;              // Calibration title Y position.
 const int CALIB_ITEM_X = 3;                // Calibration item X position.
 const int CALIB_LENS_Y = 35;               // Calibration lens line Y position.
 const int CALIB_DISTANCE_Y = 47;           // Calibration distance line Y position.
+const int CALIB_PROGRESS_BAR_Y = 53;       // Calibration progress bar Y (below distance line).
 const int CALIB_HELP_Y1 = 70;              // Calibration help line 1 Y.
-const int CALIB_HELP_Y2 = 81;              // Calibration help line 2 Y.
+const int CALIB_HELP_Y2 = 78;              // Calibration help line 2 Y.
+const int CALIB_HELP_Y3 = 86;              // Calibration help line 3 Y.
 const int HEALTH_TITLE_X = 3;              // Health title X position.
 const int HEALTH_TITLE_Y = 15;             // Health title Y position.
 const int HEALTH_ITEM_X = 3;               // Health item X position.
@@ -440,8 +479,13 @@ const int CALIB_MONOTONIC_MIN_STEP = 1;      // Minimum monotonic step between c
 const int CALIB_CAPTURE_STATUS_NONE = 0;     // Calibration capture status: no error.
 const int CALIB_CAPTURE_STATUS_UNSTABLE = 1; // Calibration capture status: unstable reading.
 const int CALIB_CAPTURE_STATUS_NON_MONOTONIC = 2; // Calibration capture status: invalid sequence.
-const int CALIB_STATUS_Y1 = 94;              // Calibration status line 1 Y.
-const int CALIB_STATUS_Y2 = 104;             // Calibration status line 2 Y.
+const unsigned long CALIB_ERROR_HOLD_MS = 2000; // Minimum display time for calibration errors.
+const int CALIB_COMPLETE_LED_PULSES = 3;     // Number of green LED pulses on calibration complete.
+const unsigned long CALIB_COMPLETE_LED_ON_MS = 80;  // LED on duration per pulse.
+const unsigned long CALIB_COMPLETE_LED_OFF_MS = 80; // LED off duration between pulses.
+const unsigned long CALIB_COMPLETE_HOLD_MS = 1500;  // Hold success screen after LED pulses.
+const int CALIB_STATUS_Y1 = 98;              // Calibration status line 1 Y.
+const int CALIB_STATUS_Y2 = 106;             // Calibration status line 2 Y.
 
 // ---------------------------------------------------------------------------
 // Light meter exposure constant

@@ -74,12 +74,13 @@ void setLensDistanceFromCm(int distance_cm)
   cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES, lens_distance_cm, sizeof(lens_distance_cm));
 }
 
-void clearLidarDisplay()
+} // namespace
+
+void clearLidarDisplay(const char *placeholder)
 {
-  snprintf(distance_cm, sizeof(distance_cm), "...");
+  snprintf(distance_cm, sizeof(distance_cm), "%s", placeholder);
   lidar_quality_level = 0;
 }
-} // namespace
 
 // Functions to read values from sensors and set variables
 // ---------------------
@@ -108,7 +109,7 @@ void setDistance()
       // Keep main-branch behavior: do not force recovery on filtered/noisy frames.
       if ((now - lidarRecoveryState.last_valid_measurement_ms) > LIDAR_NO_DATA_TIMEOUT_MS)
       {
-        clearLidarDisplay();
+        clearLidarDisplay("...");
       }
       return;
     }
@@ -132,7 +133,7 @@ void setDistance()
 
   if (recoveryDecision.clear_display)
   {
-    clearLidarDisplay();
+    clearLidarDisplay("...");
   }
 
   if (!recoveryDecision.attempt_recovery)
@@ -354,10 +355,6 @@ void setVoltage()
     bat_per = BATTERY_PERCENT_MAX;
   }
 
-  if (bat_per != prev_bat_per)
-  {
-    prev_bat_per = bat_per;
-  }
 }
 
 void setLightMeter()
@@ -398,9 +395,31 @@ void setLightMeter()
   }
 
   formatShutterSpeed(lux, aperture, iso, shutter_speed, sizeof(shutter_speed));
-  prev_lux = lux;
   prev_iso = iso;
   prev_aperture = aperture;
+}
+
+void retryLidarInit()
+{
+  if (lidarSensorReady)
+  {
+    return;
+  }
+
+  DTSResult result = lidar.begin(LIDAR_BAUD_RATE, RXD2, TXD2);
+  if (result != DTSError::NONE)
+  {
+    lidarSensorReady = false;
+    lidarEnabled = false;
+    last_lidar_error_code = static_cast<int>(static_cast<DTSError>(result));
+    return;
+  }
+
+  lidarSensorReady = true;
+  lidarEnabled = true;
+  lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
+  lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
+  last_lidar_error_code = 0;
 }
 
 void toggleLidar(bool lidarStatusParam)

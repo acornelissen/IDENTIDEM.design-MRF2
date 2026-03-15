@@ -15,7 +15,8 @@ enum class UiMode : uint8_t
   ConfigUi,
   Calib,
   ResetConfirm,
-  Health
+  Health,
+  FactoryResetConfirm
 };
 
 // Preferences
@@ -29,7 +30,6 @@ extern int prev_iso;
 extern int iso;
 extern float prev_aperture;
 extern float aperture;
-extern float prev_lux;
 extern float lux;
 extern float ev_readout;
 extern char shutter_speed[16];
@@ -64,7 +64,6 @@ extern int lidar_quality_level; // 0..4 (none, poor..excellent)
 extern bool lidarEnabled;
 
 // Battery gauge
-extern int prev_bat_per;
 extern int bat_per;
 
 // Camera state
@@ -79,6 +78,7 @@ extern bool parallaxEnabled;
 extern int calib_distance_set[CALIB_DISTANCE_COUNT];
 extern int current_calib_distance;
 extern int calib_capture_status;
+extern unsigned long calib_capture_status_ms;
 
 extern int film_counter;
 extern int prev_encoder_value;

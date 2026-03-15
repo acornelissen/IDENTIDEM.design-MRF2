@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128">
+  <rect x="0" y="0" width="128" height="128" fill="#000000" stroke="#ffffff" stroke-width="1"/>
+
+  <text x="16" y="58" font-family="monospace" font-size="10" fill="#ffffff">Calibration</text>
+  <text x="28" y="72" font-family="monospace" font-size="10" fill="#ffffff">complete!</text>
+</svg>

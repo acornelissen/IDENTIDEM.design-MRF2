@@ -12,6 +12,7 @@
 #include "setfuncs.h"
 #include "activity.h"
 #include "calibration_logic.h"
+#include "interface.h"
 
 // Functions to check and act on button presses
 // ---------------------
@@ -128,34 +129,79 @@ void handleLeftButtonShortPress()
     }
     else if (calib_step == 1)
     {
-      const int calibrationPointCount = getCalibrationPointCountForLens(lenses[calib_lens]);
-      int averagedReading = 0;
-      if (!captureStableCalibReading(averagedReading))
+      // Do not allow a new capture attempt while the previous error is
+      // still being held on screen for the minimum display time.
+      if (calib_capture_status != CALIB_CAPTURE_STATUS_NONE &&
+          (millis() - calib_capture_status_ms) < CALIB_ERROR_HOLD_MS)
       {
-        calib_capture_status = CALIB_CAPTURE_STATUS_UNSTABLE;
-      }
-      else if (!isMonotonicCalibSequenceWithCandidate(averagedReading))
-      {
-        calib_capture_status = CALIB_CAPTURE_STATUS_NON_MONOTONIC;
+        // Ignore this press; error message still visible.
       }
       else
       {
-        calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
-        calib_distance_set[current_calib_distance] = averagedReading;
-        current_calib_distance++;
-        if (current_calib_distance >= calibrationPointCount)
+        const int calibrationPointCount = getCalibrationPointCountForLens(lenses[calib_lens]);
+        int averagedReading = 0;
+        if (!captureStableCalibReading(averagedReading))
         {
-          lenses[calib_lens].calibrated = true;
-          const int sensorPointCount = sizeof(lenses[calib_lens].sensor_reading) /
-                                       sizeof(lenses[calib_lens].sensor_reading[0]);
-          for (int i = 0; i < sensorPointCount; i++)
+          calib_capture_status = CALIB_CAPTURE_STATUS_UNSTABLE;
+          calib_capture_status_ms = millis();
+        }
+        else if (!isMonotonicCalibSequenceWithCandidate(averagedReading))
+        {
+          calib_capture_status = CALIB_CAPTURE_STATUS_NON_MONOTONIC;
+          calib_capture_status_ms = millis();
+        }
+        else
+        {
+          calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
+          calib_distance_set[current_calib_distance] = averagedReading;
+          current_calib_distance++;
+
+          // Brief green LED pulse to confirm successful capture.
+          // Invalidate prev_frame_progress so the next external UI draw
+          // restores the correct progress colour.
+          if (statusPixelReady)
           {
-            lenses[calib_lens].sensor_reading[i] = (i < calibrationPointCount) ? calib_distance_set[i] : 0;
+            sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(0, 255, 0));
+            sspixel.show();
+            delay(80);
+            prev_frame_progress = -1.0f;
           }
-          selected_lens = calib_lens;
-          savePrefs(true);
-          config_step = CONFIG_LENS_STEP_CALIB;
-          ui_mode = UiMode::ConfigLens;
+          if (current_calib_distance >= calibrationPointCount)
+          {
+            lenses[calib_lens].calibrated = true;
+            const int sensorPointCount = sizeof(lenses[calib_lens].sensor_reading) /
+                                         sizeof(lenses[calib_lens].sensor_reading[0]);
+            for (int i = 0; i < sensorPointCount; i++)
+            {
+              lenses[calib_lens].sensor_reading[i] = (i < calibrationPointCount) ? calib_distance_set[i] : 0;
+            }
+            selected_lens = calib_lens;
+            savePrefs(true);
+
+            // Show full-screen success and pulse LED before leaving calibration.
+            drawCalibCompleteUI();
+
+            if (statusPixelReady)
+            {
+              for (int i = 0; i < CALIB_COMPLETE_LED_PULSES; i++)
+              {
+                sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(0, 255, 0));
+                sspixel.show();
+                delay(CALIB_COMPLETE_LED_ON_MS);
+                sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
+                sspixel.show();
+                if (i < CALIB_COMPLETE_LED_PULSES - 1)
+                {
+                  delay(CALIB_COMPLETE_LED_OFF_MS);
+                }
+              }
+              prev_frame_progress = -1.0f;
+            }
+
+            delay(CALIB_COMPLETE_HOLD_MS);
+            config_step = CONFIG_LENS_STEP_CALIB;
+            ui_mode = UiMode::ConfigLens;
+          }
         }
       }
     }
@@ -170,6 +216,10 @@ void handleLeftButtonShortPress()
     ui_mode = UiMode::Config;
     config_step = CONFIG_ROOT_STEP_HEALTH;
   }
+  else if (ui_mode == UiMode::FactoryResetConfirm)
+  {
+    ui_mode = UiMode::Health;
+  }
 }
 
 void handleRightButtonLongPress()
@@ -178,6 +228,10 @@ void handleRightButtonLongPress()
   if (ui_mode == UiMode::Main)
   {
     ui_mode = UiMode::Config;
+  }
+  else if (ui_mode == UiMode::Health)
+  {
+    ui_mode = UiMode::FactoryResetConfirm;
   }
 }
 
@@ -251,9 +305,6 @@ void handleRightButtonShortPress()
   {
     if (config_step == CONFIG_LENS_STEP_LENS) {
       cycleLenses();
-      int non_zero_aperture_index = max(0, getFirstNonZeroAperture());
-      aperture = lenses[selected_lens].apertures[non_zero_aperture_index];
-      aperture_index = non_zero_aperture_index;
     }
     else if (config_step == CONFIG_LENS_STEP_PARALLAX) {
       parallaxEnabled = !parallaxEnabled;
@@ -335,8 +386,19 @@ void handleRightButtonShortPress()
   }
   else if (ui_mode == UiMode::Health)
   {
-    ui_mode = UiMode::Config;
-    config_step = CONFIG_ROOT_STEP_HEALTH;
+    if (!lidarSensorReady)
+    {
+      retryLidarInit();
+    }
+    else
+    {
+      ui_mode = UiMode::Config;
+      config_step = CONFIG_ROOT_STEP_HEALTH;
+    }
+  }
+  else if (ui_mode == UiMode::FactoryResetConfirm)
+  {
+    performFactoryReset();
   }
 }
 } // namespace

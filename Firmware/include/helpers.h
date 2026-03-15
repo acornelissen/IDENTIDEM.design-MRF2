@@ -20,6 +20,7 @@ void loadPrefs();
 
 void savePrefs(bool force = false, uint8_t dirtyMask = PREFS_DIRTY_ALL);
 void flushPrefsIfDirty();
+void performFactoryReset();
 
 void cmToReadable(int cm, int places, char *buffer, size_t bufferSize);
 

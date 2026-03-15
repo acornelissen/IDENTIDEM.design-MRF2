@@ -32,32 +32,12 @@ int clampSleepTimeoutMode(int timeout_mode)
   return constrain(timeout_mode, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);
 }
 
-int cycleSleepTimeoutModeValue(int timeout_mode)
+int cycleValueWrapping(int current, int step, int minVal, int maxVal)
 {
-  timeout_mode++;
-  if (timeout_mode > SLEEP_TIMEOUT_MODE_MAX)
+  current += step;
+  if (current > maxVal)
   {
-    timeout_mode = SLEEP_TIMEOUT_MODE_MIN;
-  }
-  return timeout_mode;
-}
-
-int cycleFrameTuningValue(int current)
-{
-  current++;
-  if (current > FRAME_TUNING_MAX)
-  {
-    current = FRAME_TUNING_MIN;
-  }
-  return current;
-}
-
-int cycleLevelTrimValue(int current)
-{
-  current += LEVEL_TRIM_STEP_DECI_DEG;
-  if (current > LEVEL_TRIM_MAX_DECI_DEG)
-  {
-    current = LEVEL_TRIM_MIN_DECI_DEG;
+    current = minVal;
   }
   return current;
 }
@@ -108,7 +88,7 @@ int getAdjustedSensorPointForFrame(const FilmFormat &film_format, int frame_valu
 // ---------------------
 void cycleApertures(CycleDirection direction)
 {
-  const int aperture_count = sizeof(lenses[selected_lens].apertures) / sizeof(lenses[selected_lens].apertures[0]);
+  const int aperture_count = LENS_APERTURE_COUNT;
   int step = (direction == CycleDirection::Up) ? 1 : -1;
 
   for (int attempts = 0; attempts < aperture_count; attempts++)
@@ -127,14 +107,14 @@ void cycleApertures(CycleDirection direction)
     if (lenses[selected_lens].apertures[aperture_index] != 0)
     {
       aperture = lenses[selected_lens].apertures[aperture_index];
-      savePrefs();
+      savePrefs(false, PREFS_DIRTY_SETTINGS);
       return;
     }
   }
 
   aperture_index = 0;
   aperture = lenses[selected_lens].apertures[aperture_index];
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleISOs()
@@ -145,7 +125,7 @@ void cycleISOs()
     iso_index = 0;
   }
   iso = ISOS[iso_index];
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLenses()
@@ -161,11 +141,21 @@ void cycleLenses()
     // Prevent infinite loop if no lenses are calibrated, though UI should prevent this.
     if (selected_lens == initial_lens && !lenses[selected_lens].calibrated) {
         // Potentially handle case where no calibrated lenses are available if needed
-        break; 
+        break;
     }
   } while (!lenses[selected_lens].calibrated);
 
-  savePrefs();
+  // Clamp aperture to the new lens's valid range so callers never
+  // index past the end of the aperture array.
+  int firstValid = getFirstNonZeroAperture();
+  if (firstValid < 0)
+  {
+    firstValid = 0;
+  }
+  aperture_index = firstValid;
+  aperture = lenses[selected_lens].apertures[aperture_index];
+
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleCalibLenses()
@@ -186,7 +176,7 @@ void cycleFormats()
   {
     selected_format = 0;
   }
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleCurrentFrame()
@@ -218,13 +208,13 @@ void cycleCurrentFrame()
 
 void cycleFrameOneOffset()
 {
-  frame_one_offset = cycleFrameTuningValue(frame_one_offset);
+  frame_one_offset = cycleValueWrapping(frame_one_offset, 1, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
   savePrefs(false, PREFS_DIRTY_FILM);
 }
 
 void cycleFrameSpacingOffset()
 {
-  frame_spacing_offset = cycleFrameTuningValue(frame_spacing_offset);
+  frame_spacing_offset = cycleValueWrapping(frame_spacing_offset, 1, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
   savePrefs(false, PREFS_DIRTY_FILM);
 }
 
@@ -240,7 +230,7 @@ void cycleExposureCompensation(CycleDirection direction)
   {
     exposure_comp_thirds = LIGHTMETER_EV_COMP_MAX_THIRDS;
   }
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleMeterSmoothing()
@@ -250,43 +240,43 @@ void cycleMeterSmoothing()
   {
     meter_smoothing_mode = LIGHTMETER_SMOOTHING_MODE_MIN;
   }
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void toggleEvReadout()
 {
   show_ev_readout = !show_ev_readout;
-  savePrefs();
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLevelTrimLandscape()
 {
-  level_trim_landscape_deci_deg = cycleLevelTrimValue(level_trim_landscape_deci_deg);
-  savePrefs();
+  level_trim_landscape_deci_deg = cycleValueWrapping(level_trim_landscape_deci_deg, LEVEL_TRIM_STEP_DECI_DEG, LEVEL_TRIM_MIN_DECI_DEG, LEVEL_TRIM_MAX_DECI_DEG);
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLevelTrimPortraitPos()
 {
-  level_trim_portrait_pos_deci_deg = cycleLevelTrimValue(level_trim_portrait_pos_deci_deg);
-  savePrefs();
+  level_trim_portrait_pos_deci_deg = cycleValueWrapping(level_trim_portrait_pos_deci_deg, LEVEL_TRIM_STEP_DECI_DEG, LEVEL_TRIM_MIN_DECI_DEG, LEVEL_TRIM_MAX_DECI_DEG);
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLevelTrimPortraitNeg()
 {
-  level_trim_portrait_neg_deci_deg = cycleLevelTrimValue(level_trim_portrait_neg_deci_deg);
-  savePrefs();
+  level_trim_portrait_neg_deci_deg = cycleValueWrapping(level_trim_portrait_neg_deci_deg, LEVEL_TRIM_STEP_DECI_DEG, LEVEL_TRIM_MIN_DECI_DEG, LEVEL_TRIM_MAX_DECI_DEG);
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleSleepTimeoutMode()
 {
-  sleep_timeout_mode = cycleSleepTimeoutModeValue(sleep_timeout_mode);
-  savePrefs();
+  sleep_timeout_mode = cycleValueWrapping(sleep_timeout_mode, 1, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLidarIdleTimeoutMode()
 {
-  lidar_idle_timeout_mode = cycleSleepTimeoutModeValue(lidar_idle_timeout_mode);
-  savePrefs();
+  lidar_idle_timeout_mode = cycleValueWrapping(lidar_idle_timeout_mode, 1, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 const char *getSleepTimeoutModeLabel(int timeout_mode)

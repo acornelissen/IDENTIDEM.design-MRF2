@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.2.0  
+**Version**: 10.3.0
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -53,9 +53,12 @@ Firmware/
 │   ├── activity.h        # Shared activity/sleep state helpers
 │   ├── loop_runtime.h    # Runtime scheduler and awake/sleep loop orchestration
 │   ├── lidar_logic.h     # LiDAR fusion and correction logic
+│   ├── lidar_recovery_logic.h # LiDAR error recovery state machine
 │   ├── lens_logic.h      # Lens sensor-to-distance mapping logic
 │   ├── film_counter_logic.h # Film counter interpolation logic
-│   └── lightmeter_logic.h # Shutter speed formatting logic
+│   ├── lightmeter_logic.h # Shutter speed formatting logic
+│   ├── calibration_logic.h # Lens calibration sample validation
+│   └── prefs_migration_logic.h # Preferences schema migration
 ├── src/              # Implementation files
 │   ├── main.cpp          # Main program logic
 │   ├── hardware.cpp      # Hardware instances
@@ -69,9 +72,12 @@ Firmware/
 │   ├── cyclefuncs.cpp    # Cycling logic
 │   ├── setfuncs.cpp      # Sensor orchestration
 │   ├── lidar_logic.cpp   # LiDAR processing pipeline
+│   ├── lidar_recovery_logic.cpp # LiDAR error recovery state machine
 │   ├── lens_logic.cpp    # Lens distance estimation
 │   ├── film_counter_logic.cpp # Film counter estimation
 │   ├── lightmeter_logic.cpp # Light-meter/shutter conversion
+│   ├── calibration_logic.cpp # Lens calibration sample validation
+│   ├── prefs_migration_logic.cpp # Preferences schema migration
 │   └── inputs.cpp        # Button and encoder handling
 ├── platformio.ini    # PlatformIO configuration
 └── README.md         # This file
@@ -85,7 +91,8 @@ Firmware/
    - Disable WiFi/Bluetooth for power saving
    - Load saved preferences
    - Initialize all hardware components
-   - Configure displays and show boot screen
+   - Show "Initialising..." progress bar on main display with a label naming each peripheral group as it comes up
+   - Configure displays and show boot screen on external display
    - Start sensor readings
 
 2. **Main Loop** (`loop()` in `src/main.cpp`)
@@ -101,12 +108,12 @@ Firmware/
 
 - **Main Mode**: Normal operation with rangefinder display
 - **Config Mode**: Settings and configuration menu
-- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, UI settings submenu, system health screen, reset, and exit
-- **Film Submenu**: format selection, frame-1 offset, and frame-spacing offset
-- **Lens Submenu**: Lens profile, parallax correction toggle, and lens calibration entry
-- **Light Meter Submenu**: ISO, EV compensation, smoothing strength, EV readout toggle
-- **UI Settings Submenu**: landscape/portrait horizon trims, sleep timeout, and LiDAR idle timeout
-- **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, and idle timer
+- **Setup Root Menu**: film submenu, lens submenu, light-meter submenu, UI settings submenu, system health screen, reset, and exit. Film, Lens, and Meter entries show their active value inline (e.g. `Film: 6x7 >`)
+- **Film Submenu** (`Setup > Film`): format selection, frame-1 offset, and frame-spacing offset
+- **Lens Submenu** (`Setup > Lens`): Lens profile, parallax correction toggle, and lens calibration entry
+- **Light Meter Submenu** (`Setup > Meter`): ISO, EV compensation, smoothing strength, EV readout toggle
+- **UI Settings Submenu** (`Setup > UI`): landscape/portrait horizon trims, sleep timeout, and LiDAR idle timeout
+- **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, idle timer, Retry LiDAR option when LiDAR failed to initialise, and Factory Reset (long-press R)
 - **Calibration Mode**: Lens calibration interface
 - **Sleep Mode**: Low-power state with minimal display
 
@@ -115,6 +122,7 @@ Firmware/
 #### Distance Measurement
 - DTS6012M v2 provides primary and secondary returns per sample
 - Confidence scoring combines data quality, intensity, ambient sunlight ratio (SNR), temporal consistency, and lens-position prior
+- Fallback candidate path accepts returns at all ranges when primary filtering rejects, with conservative confidence cap
 - Two-stage correction: library scale/offset in mm, then curve/residual correction in cm
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
 - In Main mode, LiDAR idle standby timeout is user-configurable (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
@@ -145,7 +153,7 @@ Firmware/
 #### Level Aid
 - Horizon line with accelerometer-based tilt compensation
 - Automatic landscape/portrait orientation handling
-- Per-orientation horizon trim controls (`Horizon L`, `Horizon P+`, `Horizon P-`) in `2.5deg` steps (`-30deg..+30deg`)
+- Per-orientation horizon trim controls (`Horizon Landscape`, `Horizon Portrait+`, `Horizon Portrait-`) in `2.5deg` steps (`-30deg..+30deg`)
 
 ## Building and Flashing
 
@@ -182,8 +190,9 @@ pio test -e native_core_tests
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
 - `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor
 - `LIDAR_LIBRARY_DISTANCE_OFFSET_MM`: LiDAR library distance offset in mm
-- `LIDAR_NO_DATA_TIMEOUT_MS`: Timeout before showing unavailable distance
-- `LIDAR_FUSION_MIN_INTENSITY`: Minimum intensity gate for valid candidates
+- `LIDAR_NO_DATA_TIMEOUT_MS`: Timeout before showing unavailable distance (`750ms`)
+- `LIDAR_FUSION_MIN_INTENSITY`: Near-range minimum intensity gate (`40`)
+- `LIDAR_SNR_PERMILLE_HARD_REJECT`: SNR hard-reject floor (`25‰`)
 - `LIDAR_CONFIDENCE_HIGH` / `LIDAR_CONFIDENCE_MEDIUM`: Confidence thresholds for smoothing behavior
 - `LIDAR_CAL_CUTOFF_CM` / `LIDAR_CAL_REF_RAW_CM` / `LIDAR_CAL_REF_TRUE_CM`: Near-range calibration curve parameters
 - `LIDAR_RESIDUAL_DIST_CM` / `LIDAR_RESIDUAL_DELTA_CM`: Piecewise residual correction table

@@ -2,6 +2,47 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.3.0 - 2026-03-15
+
+- Usability improvements:
+  - Boot progress: main display now shows an "Initialising..." progress bar with a label naming the peripheral group being started (e.g. "Sensors", "Displays"), instead of staying blank for ~2 seconds.
+  - Calibration UX: the calibration screen now shows a progress bar, a point counter (e.g. "3/7"), revised help text explaining the focus-ring workflow, and clearer error messages ("Hold lens still and retry" / "Increase focus distance") held on screen for a minimum of 2 seconds. A green LED pulse confirms each successful capture. On completion, a full-screen "Calibration complete!" message is shown with a triple green LED pulse, held for 1.5 seconds.
+  - Calibration inlier check: sample stability validation now uses median-based spread instead of min/max range, making it more tolerant of occasional outlier readings.
+  - Menu breadcrumbs: submenu headers now show the navigation path (e.g. "Setup > Film", "Setup > Lens", "Lens > Calibrate").
+  - Expanded horizon trim labels: "Horizon L" / "Horizon P+" / "Horizon P-" are now "Horizon Landscape" / "Horizon Portrait+" / "Horizon Portrait-".
+  - Calibration text wrap: moved "(R) to Cancel" to its own line on the calibration capture screen to prevent text overflowing the 128 px display width.
+  - Calibration progress bar: inset to align with text edges instead of spanning full screen width.
+  - Focus ring: increased max radius (30→40 px) and max thickness (3→5 px) for more prominent out-of-focus indication. Added EMA smoothing on the radius to reduce twitchiness near focus.
+  - Calibration LED: green capture pulse now restores the previous LED colour instead of turning it off.
+  - Sleep fade: the main OLED fades to black over ~200 ms using a non-blocking state machine before powering off, instead of blanking abruptly. Brightness is restored on wake.
+  - Setup value previews: Film, Lens, and Meter entries on the root Setup menu show their active value inline (e.g. "Film: 6x7 >", "Lens: 65/6.3 >", "Meter: ISO400 >").
+  - Health screen: added **Retry LiDAR** option (R button) when LiDAR failed to initialise, allowing re-initialisation without a power cycle.
+  - Health screen: added **Factory Reset** option (long-press R) with confirmation screen. Clears all NVS preferences and reboots to defaults.
+- LiDAR outdoor reliability:
+  - Lowered near-range minimum intensity gate from 60 to 40 and SNR hard-reject floor from 40‰ to 25‰, reducing false `...` dropouts in bright sunlight.
+  - Lowered SNR confidence penalty targets for near (420→300‰) and mid (280→200‰) ranges so readings lose less confidence under high ambient light.
+  - Extended fallback candidate path to all ranges (previously blocked ≤220 cm), allowing low-confidence tracking at close distances when primary filtering rejects.
+  - Increased no-data display timeout from 500 ms to 750 ms so brief dropouts hold the last valid reading instead of flashing `...`.
+- Bug fixes (from 10.2.1):
+  - Fixed calibration median index off-by-one: used lower median `(sample_count - 1) / 2` instead of upper median `sample_count / 2` for even sample counts.
+  - Replaced `ev_readout == ev_readout` NaN self-comparison with explicit `isnan()` for clarity and robustness against `-ffast-math`.
+  - Aperture index is now clamped after every lens switch, preventing out-of-bounds access when switching from a lens with more aperture stops to one with fewer.
+- NVS flash wear reduction (from 10.2.1):
+  - All `savePrefs()` calls in `cyclefuncs.cpp` now pass `PREFS_DIRTY_SETTINGS` instead of defaulting to `PREFS_DIRTY_ALL`.
+- Code quality and maintainability:
+  - Consolidated three cyclic value helpers into a single `cycleValueWrapping()` template.
+  - Unified LiDAR display clearing into a single parameterised function.
+  - Extracted `LENS_APERTURE_COUNT` constant and removed `sizeof` duplicates.
+  - Extracted `markPrefsClean()` helper and simplified `getFocusRadius()`.
+  - Removed redundant aperture bounds check and duplicate colour reset function.
+  - Removed dead `prev_bat_per` and `prev_lux` globals.
+  - Added compile-time `static_assert` validation for menu step constants.
+  - Fixed external UI SVG progress bar clipping and frame counter alignment.
+- Release metadata/docs:
+  - Bumped `FWVERSION` to `10.3.0`.
+  - Rewrote lens calibration section in user manual to explain focus-ring/sensor relationship.
+  - Updated firmware README, user manual, CHANGELOG, and UI SVGs for all changes.
+
 ## 10.2.0 - 2026-02-28
 
 - Power and runtime efficiency:

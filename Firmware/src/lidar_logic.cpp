@@ -246,7 +246,7 @@ LidarCandidate buildFallbackLidarCandidate(uint16_t raw_distance_mm,
   }
 
   int raw_cm = static_cast<int>(raw_distance_mm) / LIDAR_DISTANCE_DIVISOR;
-  if (raw_cm <= LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM)
+  if (raw_cm <= 0)
   {
     return candidate;
   }

@@ -243,11 +243,6 @@ void selectConfigMenuRow(int step, bool selected)
   setMenuItemColors(selected);
 }
 
-void resetConfigTextColors()
-{
-  u8g2.setBackgroundColor(BLACK);
-  u8g2.setForegroundColor(WHITE);
-}
 
 void drawLidarQualityIndicator()
 {
@@ -303,7 +298,7 @@ void drawMainHeader()
     getCompactShutterDisplay(shutter_speed, compactShutter, sizeof(compactShutter));
     u8g2.print(compactShutter);
     u8g2.print(F(" EV"));
-    if (ev_readout == ev_readout)
+    if (!isnan(ev_readout))
     {
       u8g2.print(ev_readout, 1);
     }
@@ -423,6 +418,24 @@ void drawMainFrameline(const MainFramelineLayout &layout)
   display.drawRect(layout.innerX, layout.innerY, layout.innerWidth, layout.innerHeight, WHITE);
 }
 
+int getSmoothedFocusRadius(int rawRadius)
+{
+  static bool init = false;
+  static float smoothed = 0.0f;
+
+  float target = static_cast<float>(rawRadius);
+  if (!init)
+  {
+    smoothed = target;
+    init = true;
+  }
+
+  smoothed += (target - smoothed) * FOCUS_RING_RADIUS_SMOOTHING;
+
+  int result = static_cast<int>(roundf(smoothed));
+  return max(FOCUS_RADIUS_MIN, min(FOCUS_RADIUS_MAX, result));
+}
+
 int getSmoothedFocusRingThickness(int focusRadius)
 {
   static bool focusThicknessInit = false;
@@ -456,7 +469,8 @@ void drawReticleAndFocusRing(const MainFramelineLayout &layout)
 {
   display.fillCircle(layout.reticleCenterX, layout.reticleCenterY, MAIN_RETICLE_CENTER_RADIUS, INVERSE);
 
-  int focusRadius = getFocusRadius();
+  int rawFocusRadius = getFocusRadius();
+  int focusRadius = getSmoothedFocusRadius(rawFocusRadius);
   int focusThickness = getSmoothedFocusRingThickness(focusRadius);
   int outerRadius = focusRadius;
   int innerRadius = focusRadius - focusThickness;
@@ -714,13 +728,19 @@ void drawConfigUI()
   beginConfigMenuScreen(F("Setup"));
 
   selectConfigMenuRow(CONFIG_ROOT_STEP_FILM_MENU, config_step == CONFIG_ROOT_STEP_FILM_MENU);
-  u8g2.print(F(" Film > "));
+  u8g2.print(F(" Film: "));
+  u8g2.print(film_formats[selected_format].name);
+  u8g2.print(F(" > "));
 
   selectConfigMenuRow(CONFIG_ROOT_STEP_LENS_MENU, config_step == CONFIG_ROOT_STEP_LENS_MENU);
-  u8g2.print(F(" Lens Settings > "));
+  u8g2.print(F(" Lens: "));
+  u8g2.print(lenses[selected_lens].name);
+  u8g2.print(F(" > "));
 
   selectConfigMenuRow(CONFIG_ROOT_STEP_METER_MENU, config_step == CONFIG_ROOT_STEP_METER_MENU);
-  u8g2.print(F(" Light Meter > "));
+  u8g2.print(F(" Meter: ISO"));
+  u8g2.print(iso);
+  u8g2.print(F(" > "));
 
   selectConfigMenuRow(CONFIG_ROOT_STEP_UI_MENU, config_step == CONFIG_ROOT_STEP_UI_MENU);
   u8g2.print(F(" UI Settings > "));
@@ -735,7 +755,7 @@ void drawConfigUI()
   u8g2.print(F(" Exit >> "));
 
   u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y);
-  resetConfigTextColors();
+  setMenuItemColors(false);
   u8g2.print(F(" IDENTIDEM.design MRF "));
   u8g2.print(FWVERSION);
 
@@ -744,7 +764,7 @@ void drawConfigUI()
 
 void drawFilmConfigUI()
 {
-  beginConfigMenuScreen(F("Film"));
+  beginConfigMenuScreen(F("Setup > Film"));
 
   int maxFrameForFormat = getFilmFormatMaxFrame(film_formats[selected_format]);
   int displayedFrame = constrain(film_counter, 0, maxFrameForFormat);
@@ -779,7 +799,7 @@ void drawFilmConfigUI()
 
 void drawLensConfigUI()
 {
-  beginConfigMenuScreen(F("Lens"));
+  beginConfigMenuScreen(F("Setup > Lens"));
 
   selectConfigMenuRow(CONFIG_LENS_STEP_LENS, config_step == CONFIG_LENS_STEP_LENS);
   u8g2.print(F(" Lens:"));
@@ -802,7 +822,7 @@ void drawLensConfigUI()
 
 void drawMeterConfigUI()
 {
-  beginConfigMenuScreen(F("Meter"));
+  beginConfigMenuScreen(F("Setup > Meter"));
 
   selectConfigMenuRow(CONFIG_METER_STEP_ISO, config_step == CONFIG_METER_STEP_ISO);
   u8g2.print(F(" ISO:"));
@@ -837,20 +857,20 @@ void drawMeterConfigUI()
 
 void drawUiConfigUI()
 {
-  beginConfigMenuScreen(F("UI Settings"));
+  beginConfigMenuScreen(F("Setup > UI"));
 
   selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_LANDSCAPE, config_step == CONFIG_UI_STEP_HORIZON_LANDSCAPE);
-  u8g2.print(F(" Horizon L: "));
+  u8g2.print(F(" Horizon Landscape:"));
   printSignedDeciDegrees(level_trim_landscape_deci_deg);
   u8g2.print(F("deg "));
 
   selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_PORTRAIT_POS, config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_POS);
-  u8g2.print(F(" Horizon P+: "));
+  u8g2.print(F(" Horizon Portrait+:"));
   printSignedDeciDegrees(level_trim_portrait_pos_deci_deg);
   u8g2.print(F("deg "));
 
   selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG, config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG);
-  u8g2.print(F(" Horizon P-: "));
+  u8g2.print(F(" Horizon Portrait-:"));
   printSignedDeciDegrees(level_trim_portrait_neg_deci_deg);
   u8g2.print(F("deg "));
 
@@ -870,13 +890,41 @@ void drawUiConfigUI()
   display.display();
 }
 
+void drawCalibProgressBar(int current, int total)
+{
+  const int barWidth = SCREEN_WIDTH - 2 * CALIB_ITEM_X;
+  const int barHeight = 5;
+  const int barX = CALIB_ITEM_X;
+  const int barY = CALIB_PROGRESS_BAR_Y;
+
+  display.drawRect(barX, barY, barWidth, barHeight, WHITE);
+  int fillWidth = (total > 0) ? ((barWidth - 2) * current / total) : 0;
+  if (fillWidth > 0)
+  {
+    display.fillRect(barX + 1, barY + 1, fillWidth, barHeight - 2, WHITE);
+  }
+}
+
+void drawCalibCompleteUI()
+{
+  preparePrimaryDisplayTextMode();
+
+  u8g2.setFont(u8g2_font_6x10_mf);
+  u8g2.setCursor(16, 58);
+  u8g2.print(F("Calibration"));
+  u8g2.setCursor(28, 72);
+  u8g2.print(F("complete!"));
+
+  display.display();
+}
+
 void drawCalibUI()
 {
   preparePrimaryDisplayTextMode();
 
   u8g2.setFont(u8g2_font_6x10_mf);
   u8g2.setCursor(CALIB_TITLE_X, CALIB_TITLE_Y);
-  u8g2.print(F("Calibrate"));
+  u8g2.print(F("Lens > Calibrate"));
 
   u8g2.setFont(u8g2_font_4x6_mf);
 
@@ -902,9 +950,19 @@ void drawCalibUI()
   u8g2.print(calibrationDistance, DISTANCE_DECIMAL_PLACES);
   u8g2.print(F("m: "));
   u8g2.print(lens_sensor_reading);
-  u8g2.print(F(" "));
+  u8g2.print(F(" ("));
+  u8g2.print(current_calib_distance + 1);
+  u8g2.print(F("/"));
+  u8g2.print(calibrationPointCount);
+  u8g2.print(F(") "));
 
-  resetConfigTextColors();
+  setMenuItemColors(false);
+
+  // Draw progress bar during capture step.
+  if (calib_step == 1)
+  {
+    drawCalibProgressBar(current_calib_distance, calibrationPointCount);
+  }
 
   if (calib_step == 0)
   {
@@ -916,23 +974,33 @@ void drawCalibUI()
   else
   {
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y1);
-    u8g2.print(F(" (L) to Select"));
+    u8g2.print(F(" Set focus ring to distance,"));
     u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y2);
+    u8g2.print(F(" then (L) to capture."));
+    u8g2.setCursor(CALIB_ITEM_X, CALIB_HELP_Y3);
     u8g2.print(F(" (R) to Cancel"));
 
-    if (calib_capture_status == CALIB_CAPTURE_STATUS_UNSTABLE)
+    // Show error for at least CALIB_ERROR_HOLD_MS, then auto-clear.
+    if (calib_capture_status != CALIB_CAPTURE_STATUS_NONE)
     {
-      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
-      u8g2.print(F(" Unstable reading"));
-      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
-      u8g2.print(F(" Hold still + retry"));
-    }
-    else if (calib_capture_status == CALIB_CAPTURE_STATUS_NON_MONOTONIC)
-    {
-      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
-      u8g2.print(F(" Out of sequence"));
-      u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
-      u8g2.print(F(" Recheck distance"));
+      if ((millis() - calib_capture_status_ms) >= CALIB_ERROR_HOLD_MS)
+      {
+        calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
+      }
+      else if (calib_capture_status == CALIB_CAPTURE_STATUS_UNSTABLE)
+      {
+        u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
+        u8g2.print(F(" Unstable reading"));
+        u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
+        u8g2.print(F(" Hold lens still and retry"));
+      }
+      else if (calib_capture_status == CALIB_CAPTURE_STATUS_NON_MONOTONIC)
+      {
+        u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
+        u8g2.print(F(" Out of sequence"));
+        u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
+        u8g2.print(F(" Increase focus distance"));
+      }
     }
   }
 
@@ -947,6 +1015,23 @@ void drawResetConfirmUI()
   u8g2.print(F(" (L) Cancel"));
   u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y2);
   u8g2.print(F(" (R) Reset"));
+
+  display.display();
+}
+
+void drawFactoryResetConfirmUI()
+{
+  beginConfigMenuScreen(F("Factory Reset?"));
+
+  u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y1);
+  u8g2.print(F(" All settings will be"));
+  u8g2.setCursor(CONFIG_ITEM_X, CALIB_HELP_Y2);
+  u8g2.print(F(" erased. Device reboots."));
+
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y - 10);
+  u8g2.print(F(" (L) Cancel"));
+  u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y);
+  u8g2.print(F(" (R) Reset all settings"));
 
   display.display();
 }
@@ -1013,8 +1098,17 @@ void drawHealthUI()
   u8g2.print(F(" P"));
   u8g2.print(statusPixelReady ? 1 : 0);
 
+  u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y - 8);
+  if (!lidarSensorReady)
+  {
+    u8g2.print(F(" (L) Back  (R) Retry LiDAR"));
+  }
+  else
+  {
+    u8g2.print(F(" (L/R) Back"));
+  }
   u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y);
-  u8g2.print(F(" (L/R) Back"));
+  u8g2.print(F(" (R long) Factory Reset"));
 
   display.display();
 }

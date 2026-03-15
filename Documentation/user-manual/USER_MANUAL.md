@@ -1,8 +1,43 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.2.0
+**Firmware version:** 10.3.0
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
+
+## Contents
+
+- [First-time setup (recommended order)](#first-time-setup-recommended-order)
+- [Quick start (after initial setup)](#quick-start-after-initial-setup)
+- [Controls](#controls)
+- [Displays and status LED](#displays-and-status-led)
+- [Main screen](#main-screen)
+  - [Portrait leveling](#portrait-leveling)
+  - [Distance readouts](#distance-readouts)
+  - [LiDAR quality indicator](#lidar-quality-indicator)
+  - [Light meter / shutter speed](#light-meter--shutter-speed)
+  - [How to focus](#how-to-focus)
+- [Setup menus](#setup-menus)
+  - [Setup root menu](#setup-root-menu)
+  - [Film submenu](#film-submenu)
+  - [Lens Settings submenu](#lens-settings-submenu)
+  - [Light Meter submenu](#light-meter-submenu)
+  - [UI Settings submenu](#ui-settings-submenu)
+  - [System Health screen](#system-health-screen)
+  - [ISO list](#iso-list)
+  - [Film formats](#film-formats)
+- [Lens calibration](#lens-calibration)
+  - [How it works](#how-it-works)
+  - [Before you start](#before-you-start)
+  - [Step 1: Select lens](#step-1-select-lens)
+  - [Step 2: Capture distance points](#step-2-capture-distance-points)
+  - [Distance point sequences](#distance-point-sequences)
+  - [Completion](#completion)
+- [Reset film counter](#reset-film-counter)
+- [External display](#external-display)
+- [Sleep mode](#sleep-mode)
+- [Default startup settings](#default-startup-settings)
+- [Troubleshooting](#troubleshooting)
+- [Firmware updates](#firmware-updates)
 
 ## First-time setup (recommended order)
 
@@ -19,7 +54,7 @@ If this is your first time using the camera, this sequence keeps things simple a
 
 ## Quick start (after initial setup)
 
-1. Power on the camera. The external display shows a short boot screen, then the main UI appears.
+1. Power on the camera. The main display shows an "Initialising..." progress bar with a label naming each peripheral group as it starts up, the external display shows a short boot screen, and then the main UI appears.
 2. Check the **main screen** for ISO, aperture, shutter speed, LiDAR distance, LiDAR quality blocks, and lens distance.
 3. Long-press **Right (R)** for 3 seconds to enter **Setup** and make changes.
 4. Use the **advance lever** to move the film; the external display shows the frame counter and progress bar.
@@ -64,7 +99,7 @@ The main screen displays:
 ### Portrait leveling
 
 When the camera is rotated to portrait orientation, the level aid automatically rebases to portrait behavior.
-You can tune horizon trim offsets independently for landscape, portrait `P+`, and portrait `P-` in **Setup > UI Settings >**.
+You can tune horizon trim offsets independently for **Horizon Landscape**, **Horizon Portrait+**, and **Horizon Portrait-** in **Setup > UI Settings >**.
 
 ![Main screen portrait leveling](images/main-ui-portrait.svg)
 
@@ -72,10 +107,10 @@ You can tune horizon trim offsets independently for landscape, portrait `P+`, an
 
 - **LiDAR distance (Dist)**
   - Uses LiDAR v2 primary/secondary returns with confidence scoring and correction for more stable readings.
-  - Confidence now accounts for ambient sunlight (`sunlightBase`) relative to return intensity, which helps retain usable long-range readings in bright conditions.
+  - Confidence accounts for ambient sunlight relative to return intensity. Thresholds are tuned for outdoor use in bright conditions, and the sensor falls back to low-confidence tracking at all ranges when primary filtering rejects a return.
   - Measurement range: 5 cm to 18 m.
   - Displays values below 1 meter in centimeters (for example, `75cm`), and 1 meter and above in meters.
-  - Displays `...` if the sensor has no recent data.
+  - Displays `...` if the sensor has no valid data for 750 ms.
   - Displays `Zzz` when LiDAR is in idle standby (wake by focusing or pressing a button).
   - Displays `<15cm` for near readings below display threshold.
   - Displays `Inf.` for readings above 10.5 meters.
@@ -104,9 +139,33 @@ The firmware uses the BH1750 light meter, ISO, and aperture to compute shutter s
 - Shows `Dark!` if light level is near zero.
 - Otherwise shows a shutter speed like `1/125 sec.` or `1.3 sec.`
 
-### Focus ring
+### How to focus
 
-The focus ring thickness and radius reflect the difference between the LiDAR distance and the lens distance. When both are close, the ring is thinner and closer to the reticle center.
+The MRF2 gives you two independent distance readouts — **LiDAR distance** (measured to the subject) and **Lens distance** (read from the focus ring position) — plus a visual **focus ring** that shows how well they agree. Together they let you focus quickly and confirm accuracy without a split-image or ground-glass screen.
+
+#### Basic workflow
+
+1. **Point the camera at your subject.** The LiDAR distance appears in the top-right corner of the main screen (e.g. `2.5m`). The quality indicator shows how confident the reading is.
+2. **Turn the focus ring** until the Lens distance (bottom-right) matches the LiDAR distance. As the two readings converge the focus ring shrinks toward the reticle.
+3. **When the ring is at its smallest**, the lens is focused at the measured distance. Compose and shoot.
+
+#### Reading the focus ring
+
+The focus ring is a circle drawn around the centre reticle. Its size and thickness tell you how far off focus you are:
+
+- **Large ring** — the lens is focused far from the subject. Keep turning.
+- **Small, thin ring** — the lens and LiDAR distances are close. You are in focus or very near it.
+- **Minimum size (tight dot)** — the two distances match within a few centimetres. Focus is confirmed.
+
+The ring radius is the absolute difference between the LiDAR distance and the lens distance, clamped to the display area. The thickness scales with the radius so it stays visible at all sizes.
+
+#### Tips
+
+- **Use the LiDAR number first, then fine-tune with the ring.** Glance at the `Dist` readout to get a ballpark, dial the focus ring close, then watch the ring shrink for the last adjustment.
+- **Calibrate your lens** before relying on Lens distance. Without calibration the Lens readout is inactive and the ring defaults to maximum size. See [Lens calibration](#lens-calibration).
+- **In bright sunlight** the LiDAR may occasionally drop to `...`. The last valid reading is held for 750 ms, so brief dropouts are hidden. If `...` persists, the subject may be too far, too reflective, or at a steep angle — fall back to the distance markings on the lens barrel.
+- **At infinity** the Lens readout shows `Inf.` and the LiDAR readout shows `Inf.` above 10.5 m. The focus ring is irrelevant at infinity — just set the ring to the ∞ mark.
+- **Parallax correction** shifts the framelines based on focus distance. Keep it enabled (default) for accurate framing at close range. It has no effect at infinity.
 
 ## Setup menus
 
@@ -123,9 +182,9 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 
 **Setup root items**
 
-1. **Film >**: opens film submenu.
-2. **Lens Settings >**: opens lens submenu.
-3. **Light Meter >**: opens light meter submenu.
+1. **Film: _format_ >**: opens film submenu. Shows the active film format (e.g. `6x7`).
+2. **Lens: _name_ >**: opens lens submenu. Shows the active lens (e.g. `65/6.3`).
+3. **Meter: ISO_value_ >**: opens light meter submenu. Shows the active ISO (e.g. `ISO400`).
 4. **UI Settings >**: opens UI settings submenu.
 5. **Reset frame counter >>**: confirm film counter reset.
 6. **System Health >**: opens diagnostics screen.
@@ -134,6 +193,8 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 ### Film submenu
 
 ![Film settings menu](images/config-film-ui.svg)
+
+The header reads **Setup > Film** so you always know where you are.
 
 1. **Format**: cycles film formats.
 2. **Current frame**: manually set frame counter for the selected format.
@@ -174,9 +235,9 @@ Current frame ranges are format-bound:
 
 ![UI settings menu](images/config-ui-settings.svg)
 
-1. **Horizon L**: landscape trim offset (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
-2. **Horizon P+**: portrait trim offset for one portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
-3. **Horizon P-**: portrait trim offset for the opposite portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
+1. **Horizon Landscape**: landscape trim offset (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
+2. **Horizon Portrait+**: portrait trim offset for one portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
+3. **Horizon Portrait-**: portrait trim offset for the opposite portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
 4. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
 5. **LiDAR idle timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m`).
 6. **Back <<**: return to setup root menu.
@@ -194,6 +255,12 @@ Shows quick diagnostics:
 - Hardware peripheral flags — `1` = ready, `0` = not detected:
   - `D` main display, `X` external display, `A` lens ADC (ADS1015), `M` accelerometer (MPU6050)
   - `L` light meter (BH1750), `B` battery gauge (MAX17048), `E` encoder, `P` status pixel
+
+Controls:
+
+- **L**: return to Setup.
+- **R short**: if LiDAR failed to initialise (`InitErr`), re-attempts LiDAR initialisation without a power cycle. Otherwise returns to Setup.
+- **R long** (3s): enters the **Factory Reset** confirmation screen. Confirming clears all saved settings (lens calibrations, film counter, ISO, sleep timeouts, etc.) and reboots the device with defaults. This is useful for troubleshooting corrupted preferences or preparing the camera for a new user.
 
 ### ISO list
 
@@ -213,30 +280,67 @@ Available ISO values:
 
 ## Lens calibration
 
-Calibration links the lens position sensor to real focus distances, enabling the **Lens distance** readout and focus ring behavior.
+Calibration teaches the MRF2 how the physical position of your lens's focus ring maps to real-world focus distances. An analog position sensor reads where the ring sits, and calibration records a series of sensor values at known distance markings. Once calibrated, the firmware interpolates between these points to display real-time focus distance and drive the focus-ring indicator on the main screen.
+
+### How it works
+
+Each lens has a set of distance markers engraved on its focus ring (for example, 1 m, 1.2 m, 1.5 m, 2 m, 3 m, 5 m, 10 m). During calibration, you physically turn the focus ring to each marked distance in order from closest to farthest and press a button to capture the sensor reading at that position. The readings must increase monotonically — each point must produce a higher sensor value than the last — because the ring moves in one direction from near to far.
+
+After all points are captured, the MRF2 saves a lookup table pairing sensor values to distances. During normal use, it reads the sensor, finds where the current value falls in the table, and interpolates the corresponding distance. This is what appears as the **Lens distance** readout and what sizes the focus ring in the viewfinder.
+
+### Before you start
+
+- Mount the lens you want to calibrate.
+- Make sure the focus ring moves freely and the position sensor cable is connected.
+- Know where the distance markings are on your lens barrel.
 
 ### Step 1: Select lens
 
 ![Calibration - select lens](images/calib-select-lens.svg)
 
-- **L**: cycle through lenses
-- **R**: select lens
+Navigate to **Setup > Lens Settings > Lens Calibration**. The calibration screen shows the currently selected lens.
+
+- **L**: cycle through available lenses
+- **R**: confirm lens selection and begin capture
 
 ### Step 2: Capture distance points
 
 ![Calibration - capture distance](images/calib-distance.svg)
 
-For each target distance, set the lens focus to that distance and press **L** to record the sensor reading.
+The screen shows the target distance, the live sensor reading, and a progress counter (e.g. "3/7"). A full-width progress bar beneath the distance line tracks how many points have been captured.
 
-- Distance points are lens-specific. The calibration UI shows the exact marker sequence for the selected lens.
-- Default lens sequence: **1, 1.2, 1.5, 2, 3, 5, 10 meters**
-- **150/5.6**: **2, 2.5, 3, 5, 10 meters**
-- **250/5.0**: **2.5, 4, 5, 7, 8, 10, 15, 20, 30, 50 meters**
-- **250/8.0**: **3.5, 4, 5, 7, 10, 15, 20, 30, 50 meters**
-- **L**: store current reading and move to the next distance
-- **R**: cancel and return to Setup
+For each target distance:
 
-When all distances are captured, the lens is marked calibrated and saved.
+1. Turn the lens focus ring until it aligns with the distance marking on the lens barrel.
+2. Hold the ring steady.
+3. Press **L** to capture. The LED flashes green to confirm a successful reading.
+
+When the final point is captured, a full-screen success message is shown and the LED pulses green three times. The message is held for 1.5 seconds before returning to the Lens settings menu with the calibrated lens selected.
+
+![Calibration complete](images/calib-complete.svg)
+
+If a capture fails, the screen shows a specific error and holds it for at least 2 seconds so you can read it:
+
+- **"Unstable reading / Hold lens still and retry"** — the sensor values varied too much during sampling. Keep the ring stationary and press **L** again.
+- **"Out of sequence / Increase focus distance"** — the new reading was not higher than the previous one. The focus ring must move progressively from near to far. Turn it further towards infinity and retry.
+
+Controls during capture:
+
+- **L**: capture current reading and advance to the next distance
+- **R**: cancel calibration and return to **Setup > Lens**
+
+### Distance point sequences
+
+Distance points are lens-specific. The calibration UI shows the exact sequence for the selected lens:
+
+- **Default** (50/6.3, 65/6.3, 75/5.6, 90/3.5, 100/3.5, 100/2.8, 127/4.7): **1, 1.2, 1.5, 2, 3, 5, 10 m**
+- **150/5.6**: **2, 2.5, 3, 5, 10 m**
+- **250/5.0**: **2.5, 4, 5, 7, 8, 10, 15, 20, 30, 50 m**
+- **250/8.0**: **3.5, 4, 5, 7, 10, 15, 20, 30, 50 m**
+
+### Completion
+
+When all distances are captured, the lens is automatically marked as calibrated, the calibration data is saved to preferences, and you return to the Lens Settings menu. The lens is now selectable from the main Lens picker and its distance readout is active on the main screen.
 
 ## Reset film counter
 
@@ -267,8 +371,8 @@ In Main mode, LiDAR enters low-power standby after the configured **LiDAR idle t
 
 After the configured **Sleep timeout** period of inactivity (default **1 minute**, set in **Setup > UI Settings >**), the firmware enters sleep mode:
 
+- Main display fades to black over ~200 ms, then powers off.
 - LiDAR turns off.
-- Main display is blank.
 - External display shows a sleeping face graphic.
 - Status LED is off.
 
@@ -292,7 +396,7 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 - **LiDAR distance shows `Zzz`**
   - LiDAR is in idle standby. Turn the focus ring or press a button to wake it, or increase/disable **LiDAR idle timeout** in **Setup > UI Settings >**.
 - **LiDAR quality stays at 1 square (Poor)**
-  - Check subject reflectivity/angle and ambient interference; low-SNR returns under strong sunlight are deprioritized and may update more slowly.
+  - Check subject reflectivity/angle and ambient interference; low-SNR returns under strong sunlight are accepted at lower confidence and may update more slowly through temporal blending.
 - **Shutter speed reads `Bright!` or `Dark!`**
   - Adjust ISO and/or aperture, or verify the light meter sensor.
 - **Lens option does not show your lens**

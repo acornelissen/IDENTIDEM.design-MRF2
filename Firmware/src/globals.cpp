@@ -13,7 +13,6 @@ int prev_iso = DEFAULT_ISO;
 int iso = DEFAULT_ISO;
 float prev_aperture;
 float aperture;
-float prev_lux = 0;
 float lux = 0;
 float ev_readout = 0;
 char shutter_speed[16] = "...";
@@ -48,7 +47,6 @@ int lidar_quality_level = 0;
 bool lidarEnabled = true;
 
 // Battery gauge
-int prev_bat_per = 0;
 int bat_per = 0;
 
 // Camera state
@@ -63,6 +61,7 @@ bool parallaxEnabled = true;
 int calib_distance_set[CALIB_DISTANCE_COUNT] = {};
 int current_calib_distance = 0;
 int calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
+unsigned long calib_capture_status_ms = 0;
 
 int film_counter = 0;
 int prev_encoder_value = 0;
