@@ -280,6 +280,8 @@ For each target distance:
 2. Hold the ring steady.
 3. Press **L** to capture. The LED flashes green to confirm a successful reading.
 
+When the final point is captured, the screen displays **"Calibration complete!"** and the LED pulses green three times. The device then returns to the Lens settings menu with the calibrated lens selected.
+
 If a capture fails, the screen shows a specific error and holds it for at least 2 seconds so you can read it:
 
 - **"Unstable reading / Hold lens still and retry"** — the sensor values varied too much during sampling. Keep the ring stationary and press **L** again.

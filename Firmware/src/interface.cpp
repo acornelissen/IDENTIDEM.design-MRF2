@@ -988,6 +988,11 @@ void drawCalibUI()
         u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
         u8g2.print(F(" Increase focus distance"));
       }
+      else if (calib_capture_status == CALIB_CAPTURE_STATUS_COMPLETE)
+      {
+        u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
+        u8g2.print(F(" Calibration complete!"));
+      }
     }
   }
 

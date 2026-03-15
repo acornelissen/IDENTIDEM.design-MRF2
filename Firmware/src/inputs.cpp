@@ -12,6 +12,7 @@
 #include "setfuncs.h"
 #include "activity.h"
 #include "calibration_logic.h"
+#include "interface.h"
 
 // Functions to check and act on button presses
 // ---------------------
@@ -176,6 +177,30 @@ void handleLeftButtonShortPress()
             }
             selected_lens = calib_lens;
             savePrefs(true);
+
+            // Show success message and pulse LED before leaving calibration.
+            calib_capture_status = CALIB_CAPTURE_STATUS_COMPLETE;
+            calib_capture_status_ms = millis();
+            drawCalibUI();
+
+            if (statusPixelReady)
+            {
+              for (int i = 0; i < CALIB_COMPLETE_LED_PULSES; i++)
+              {
+                sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(0, 255, 0));
+                sspixel.show();
+                delay(CALIB_COMPLETE_LED_ON_MS);
+                sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
+                sspixel.show();
+                if (i < CALIB_COMPLETE_LED_PULSES - 1)
+                {
+                  delay(CALIB_COMPLETE_LED_OFF_MS);
+                }
+              }
+              prev_frame_progress = -1.0f;
+            }
+
+            calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
             config_step = CONFIG_LENS_STEP_CALIB;
             ui_mode = UiMode::ConfigLens;
           }

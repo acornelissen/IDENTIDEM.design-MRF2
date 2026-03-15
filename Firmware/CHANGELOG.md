@@ -6,7 +6,7 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
 
 - Usability improvements:
   - Boot progress: main display now shows an "Initialising..." progress bar with a label naming the peripheral group being started (e.g. "Sensors", "Displays"), instead of staying blank for ~2 seconds.
-  - Calibration UX: the calibration screen now shows a progress bar, a point counter (e.g. "3/7"), revised help text explaining the focus-ring workflow, and clearer error messages ("Hold lens still and retry" / "Increase focus distance") held on screen for a minimum of 2 seconds. A green LED pulse confirms each successful capture.
+  - Calibration UX: the calibration screen now shows a progress bar, a point counter (e.g. "3/7"), revised help text explaining the focus-ring workflow, and clearer error messages ("Hold lens still and retry" / "Increase focus distance") held on screen for a minimum of 2 seconds. A green LED pulse confirms each successful capture. On completion, displays "Calibration complete!" with a triple green LED pulse.
   - Calibration inlier check: sample stability validation now uses median-based spread instead of min/max range, making it more tolerant of occasional outlier readings.
   - Menu breadcrumbs: submenu headers now show the navigation path (e.g. "Setup > Film", "Setup > Lens", "Lens > Calibrate").
   - Expanded horizon trim labels: "Horizon L" / "Horizon P+" / "Horizon P-" are now "Horizon Landscape" / "Horizon Portrait+" / "Horizon Portrait-".
