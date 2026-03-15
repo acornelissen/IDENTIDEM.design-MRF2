@@ -156,13 +156,14 @@ void handleLeftButtonShortPress()
           current_calib_distance++;
 
           // Brief green LED pulse to confirm successful capture.
+          // Invalidate prev_frame_progress so the next external UI draw
+          // restores the correct progress colour.
           if (statusPixelReady)
           {
             sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(0, 255, 0));
             sspixel.show();
             delay(80);
-            sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
-            sspixel.show();
+            prev_frame_progress = -1.0f;
           }
           if (current_calib_distance >= calibrationPointCount)
           {
