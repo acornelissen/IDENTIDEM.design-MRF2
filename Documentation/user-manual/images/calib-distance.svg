@@ -7,9 +7,9 @@
   <rect x="2" y="40" width="124" height="10" fill="#ffffff"/>
   <text x="4" y="47" font-family="monospace" font-size="6" fill="#000000"> 2.0m: 287 (4/7) </text>
 
-  <!-- Progress bar (full width, below distance line) -->
-  <rect x="0" y="53" width="128" height="5" fill="none" stroke="#ffffff" stroke-width="1"/>
-  <rect x="1" y="54" width="54" height="3" fill="#ffffff"/>
+  <!-- Progress bar (inset to align with text edges) -->
+  <rect x="3" y="53" width="122" height="5" fill="none" stroke="#ffffff" stroke-width="1"/>
+  <rect x="4" y="54" width="52" height="3" fill="#ffffff"/>
 
   <text x="4" y="70" font-family="monospace" font-size="6" fill="#ffffff"> Set focus ring to distance,</text>
   <text x="4" y="78" font-family="monospace" font-size="6" fill="#ffffff"> then (L) to capture.</text>

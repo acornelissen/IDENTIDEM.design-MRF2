@@ -892,9 +892,9 @@ void drawUiConfigUI()
 
 void drawCalibProgressBar(int current, int total)
 {
-  const int barWidth = SCREEN_WIDTH;
+  const int barWidth = SCREEN_WIDTH - 2 * CALIB_ITEM_X;
   const int barHeight = 5;
-  const int barX = 0;
+  const int barX = CALIB_ITEM_X;
   const int barY = CALIB_PROGRESS_BAR_Y;
 
   display.drawRect(barX, barY, barWidth, barHeight, WHITE);

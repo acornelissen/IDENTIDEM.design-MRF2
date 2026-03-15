@@ -11,6 +11,9 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
   - Menu breadcrumbs: submenu headers now show the navigation path (e.g. "Setup > Film", "Setup > Lens", "Lens > Calibrate").
   - Expanded horizon trim labels: "Horizon L" / "Horizon P+" / "Horizon P-" are now "Horizon Landscape" / "Horizon Portrait+" / "Horizon Portrait-".
   - Calibration text wrap: moved "(R) to Cancel" to its own line on the calibration capture screen to prevent text overflowing the 128 px display width.
+  - Calibration progress bar: inset to align with text edges instead of spanning full screen width.
+  - Focus ring: increased max radius (30→40 px) and max thickness (3→5 px) for more prominent out-of-focus indication. Added EMA smoothing on the radius to reduce twitchiness near focus.
+  - Calibration LED: green capture pulse now restores the previous LED colour instead of turning it off.
   - Sleep fade: the main OLED fades to black over ~200 ms using a non-blocking state machine before powering off, instead of blanking abruptly. Brightness is restored on wake.
   - Setup value previews: Film, Lens, and Meter entries on the root Setup menu show their active value inline (e.g. "Film: 6x7 >", "Lens: 65/6.3 >", "Meter: ISO400 >").
   - Health screen: added **Retry LiDAR** option (R button) when LiDAR failed to initialise, allowing re-initialisation without a power cycle.
