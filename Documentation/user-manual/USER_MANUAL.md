@@ -4,6 +4,41 @@
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
+## Contents
+
+- [First-time setup (recommended order)](#first-time-setup-recommended-order)
+- [Quick start (after initial setup)](#quick-start-after-initial-setup)
+- [Controls](#controls)
+- [Displays and status LED](#displays-and-status-led)
+- [Main screen](#main-screen)
+  - [Portrait leveling](#portrait-leveling)
+  - [Distance readouts](#distance-readouts)
+  - [LiDAR quality indicator](#lidar-quality-indicator)
+  - [Light meter / shutter speed](#light-meter--shutter-speed)
+  - [How to focus](#how-to-focus)
+- [Setup menus](#setup-menus)
+  - [Setup root menu](#setup-root-menu)
+  - [Film submenu](#film-submenu)
+  - [Lens Settings submenu](#lens-settings-submenu)
+  - [Light Meter submenu](#light-meter-submenu)
+  - [UI Settings submenu](#ui-settings-submenu)
+  - [System Health screen](#system-health-screen)
+  - [ISO list](#iso-list)
+  - [Film formats](#film-formats)
+- [Lens calibration](#lens-calibration)
+  - [How it works](#how-it-works)
+  - [Before you start](#before-you-start)
+  - [Step 1: Select lens](#step-1-select-lens)
+  - [Step 2: Capture distance points](#step-2-capture-distance-points)
+  - [Distance point sequences](#distance-point-sequences)
+  - [Completion](#completion)
+- [Reset film counter](#reset-film-counter)
+- [External display](#external-display)
+- [Sleep mode](#sleep-mode)
+- [Default startup settings](#default-startup-settings)
+- [Troubleshooting](#troubleshooting)
+- [Firmware updates](#firmware-updates)
+
 ## First-time setup (recommended order)
 
 If this is your first time using the camera, this sequence keeps things simple and predictable:
