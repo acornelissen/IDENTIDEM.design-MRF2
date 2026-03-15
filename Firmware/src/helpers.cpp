@@ -142,11 +142,6 @@ void clampLoadedState()
   {
     aperture_index = fallback_aperture_index;
   }
-
-  if (lenses[selected_lens].apertures[aperture_index] == 0)
-  {
-    aperture_index = fallback_aperture_index;
-  }
   aperture = lenses[selected_lens].apertures[aperture_index];
 
   if (film_counter < 0)

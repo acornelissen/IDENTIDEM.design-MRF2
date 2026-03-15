@@ -243,11 +243,6 @@ void selectConfigMenuRow(int step, bool selected)
   setMenuItemColors(selected);
 }
 
-void resetConfigTextColors()
-{
-  u8g2.setBackgroundColor(BLACK);
-  u8g2.setForegroundColor(WHITE);
-}
 
 void drawLidarQualityIndicator()
 {
@@ -741,7 +736,7 @@ void drawConfigUI()
   u8g2.print(F(" Exit >> "));
 
   u8g2.setCursor(CONFIG_ITEM_X, CONFIG_FOOTER_Y);
-  resetConfigTextColors();
+  setMenuItemColors(false);
   u8g2.print(F(" IDENTIDEM.design MRF "));
   u8g2.print(FWVERSION);
 
@@ -929,7 +924,7 @@ void drawCalibUI()
   u8g2.print(calibrationPointCount);
   u8g2.print(F(") "));
 
-  resetConfigTextColors();
+  setMenuItemColors(false);
 
   // Draw progress bar during capture step.
   if (calib_step == 1)
