@@ -50,7 +50,7 @@ body {
 
 .logo {
   display: block;
-  height: clamp(2rem, 5vw, 3.3rem);
+  height: clamp(4rem, 10vw, 6.6rem);
   width: auto;
 }
 
