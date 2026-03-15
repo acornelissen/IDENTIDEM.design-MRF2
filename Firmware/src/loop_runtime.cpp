@@ -814,6 +814,17 @@ void runAwakeTasks(unsigned long nowMs)
   updateLightMeterTask(nowMs);
   updateBatteryTask(nowMs);
   updateUiTask(nowMs);
+
+  // Turn off the calibration capture LED pulse after its hold time.
+  if (calib_led_pulse_ms != 0 && (nowMs - calib_led_pulse_ms) >= CALIB_LED_PULSE_MS)
+  {
+    if (statusPixelReady)
+    {
+      sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
+      sspixel.show();
+    }
+    calib_led_pulse_ms = 0;
+  }
 }
 
 void flushPrefsTask(unsigned long nowMs)

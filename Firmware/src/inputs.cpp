@@ -155,14 +155,12 @@ void handleLeftButtonShortPress()
           calib_distance_set[current_calib_distance] = averagedReading;
           current_calib_distance++;
 
-          // Brief green LED pulse to confirm successful capture.
+          // Begin non-blocking green LED pulse; turned off by the UI loop.
           if (statusPixelReady)
           {
             sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(0, 255, 0));
             sspixel.show();
-            delay(80);
-            sspixel.setPixelColor(NEOPIXEL_INDEX, sspixel.Color(NEOPIXEL_OFF_R, NEOPIXEL_OFF_G, NEOPIXEL_OFF_B));
-            sspixel.show();
+            calib_led_pulse_ms = millis();
           }
           if (current_calib_distance >= calibrationPointCount)
           {

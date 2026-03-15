@@ -479,6 +479,7 @@ const int CALIB_CAPTURE_STATUS_NONE = 0;     // Calibration capture status: no e
 const int CALIB_CAPTURE_STATUS_UNSTABLE = 1; // Calibration capture status: unstable reading.
 const int CALIB_CAPTURE_STATUS_NON_MONOTONIC = 2; // Calibration capture status: invalid sequence.
 const unsigned long CALIB_ERROR_HOLD_MS = 2000; // Minimum display time for calibration errors.
+const unsigned long CALIB_LED_PULSE_MS = 80;    // Green LED pulse duration after capture.
 const int CALIB_STATUS_Y1 = 98;              // Calibration status line 1 Y.
 const int CALIB_STATUS_Y2 = 106;             // Calibration status line 2 Y.
 
