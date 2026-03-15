@@ -224,7 +224,8 @@ Shows quick diagnostics:
 Controls:
 
 - **L**: return to Setup.
-- **R**: if LiDAR failed to initialise (`InitErr`), re-attempts LiDAR initialisation without a power cycle. Otherwise returns to Setup.
+- **R short**: if LiDAR failed to initialise (`InitErr`), re-attempts LiDAR initialisation without a power cycle. Otherwise returns to Setup.
+- **R long** (3s): enters the **Factory Reset** confirmation screen. Confirming clears all saved settings (lens calibrations, film counter, ISO, sleep timeouts, etc.) and reboots the device with defaults. This is useful for troubleshooting corrupted preferences or preparing the camera for a new user.
 
 ### ISO list
 

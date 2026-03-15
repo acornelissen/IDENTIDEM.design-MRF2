@@ -9,5 +9,6 @@
   <text x="4" y="70" font-family="monospace" font-size="6" fill="#ffffff">HW D1 X1 A1 M1</text>
   <text x="4" y="80" font-family="monospace" font-size="6" fill="#ffffff">HW L1 B1 E1 P1</text>
 
-  <text x="4" y="112" font-family="monospace" font-size="6" fill="#ffffff"> (L) Back  (R) Retry LiDAR</text>
+  <text x="4" y="104" font-family="monospace" font-size="6" fill="#ffffff"> (L) Back  (R) Retry LiDAR</text>
+  <text x="4" y="112" font-family="monospace" font-size="6" fill="#ffffff"> (R long) Factory Reset</text>
 </svg>

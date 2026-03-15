@@ -14,6 +14,7 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
   - Sleep fade: the main OLED fades to black over ~200 ms using a non-blocking state machine before powering off, instead of blanking abruptly. Brightness is restored on wake.
   - Setup value previews: Film, Lens, and Meter entries on the root Setup menu show their active value inline (e.g. "Film: 6x7 >", "Lens: 65/6.3 >", "Meter: ISO400 >").
   - Health screen: added **Retry LiDAR** option (R button) when LiDAR failed to initialise, allowing re-initialisation without a power cycle.
+  - Health screen: added **Factory Reset** option (long-press R) with confirmation screen. Clears all NVS preferences and reboots to defaults.
 - LiDAR outdoor reliability:
   - Lowered near-range minimum intensity gate from 60 to 40 and SNR hard-reject floor from 40‰ to 25‰, reducing false `...` dropouts in bright sunlight.
   - Lowered SNR confidence penalty targets for near (420→300‰) and mid (280→200‰) ranges so readings lose less confidence under high ambient light.

@@ -113,7 +113,7 @@ Firmware/
 - **Lens Submenu** (`Setup > Lens`): Lens profile, parallax correction toggle, and lens calibration entry
 - **Light Meter Submenu** (`Setup > Meter`): ISO, EV compensation, smoothing strength, EV readout toggle
 - **UI Settings Submenu** (`Setup > UI`): landscape/portrait horizon trims, sleep timeout, and LiDAR idle timeout
-- **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, idle timer, and Retry LiDAR option when LiDAR failed to initialise
+- **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, idle timer, Retry LiDAR option when LiDAR failed to initialise, and Factory Reset (long-press R)
 - **Calibration Mode**: Lens calibration interface
 - **Sleep Mode**: Low-power state with minimal display
 
