@@ -36,6 +36,35 @@ jobs:
       - name: Build firmware
         run: pio run -d Firmware -e "$PIO_ENV"
 
+      - name: Download previous Pages artifact
+        id: prev-artifact
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: prev-site-archive
+
+      - name: Extract previous firmware versions
+        id: prev-versions
+        run: |
+          PREV_VERSIONS_DIR="prev-firmware-versions"
+          mkdir -p "$PREV_VERSIONS_DIR"
+
+          if [ -f prev-site-archive/artifact.tar ]; then
+            echo "Extracting previous site artifact..."
+            EXTRACT_DIR="$(mktemp -d)"
+            tar xf prev-site-archive/artifact.tar -C "$EXTRACT_DIR"
+            if [ -d "$EXTRACT_DIR/firmware/versions" ]; then
+              cp -R "$EXTRACT_DIR/firmware/versions/." "$PREV_VERSIONS_DIR/"
+              echo "Restored previous versions: $(ls "$PREV_VERSIONS_DIR" | tr '\n' ' ')"
+            fi
+            rm -rf "$EXTRACT_DIR"
+          else
+            echo "No previous artifact found, building all versions from scratch."
+          fi
+
+          echo "dir=$PREV_VERSIONS_DIR" >> "$GITHUB_OUTPUT"
+
       - name: Prepare Pages site
         run: |
           set -euo pipefail
@@ -48,6 +77,7 @@ jobs:
           VERSION_INDEX_PATH="$FIRMWARE_ROOT/versions.json"
           FRAMEWORK_DIR="$HOME/.platformio/packages/framework-arduinoespressif32"
           VARIANT_DIR="$FRAMEWORK_DIR/variants/adafruit_feather_esp32s3"
+          PREV_VERSIONS_DIR="${{ steps.prev-versions.outputs.dir }}"
 
           mkdir -p "$LATEST_DIR" "$VERSIONS_DIR"
           cp -R docs/. "$SITE_DIR/"
@@ -138,20 +168,41 @@ jobs:
             printf '%s|%s|%s\n' "$fw_version" "./firmware/versions/$fw_version/manifest.json" "$source_tag" >> "$VERSION_ROWS_FILE"
           }
 
+          # 1. Build and publish the current (main) version as "latest"
           CURRENT_FW_VERSION="$(extract_fw_version Firmware)"
           copy_build_outputs "$BUILD_DIR" "$LATEST_DIR"
           write_manifest "$LATEST_DIR" "$CURRENT_FW_VERSION"
           add_version_artifacts "$CURRENT_FW_VERSION" "$BUILD_DIR" "main"
 
+          # 2. Restore previous version builds and only build missing ones
           mapfile -t RELEASE_TAGS < <(git tag -l --sort=-v:refname | grep -E '^v?[0-9]+(\.[0-9]+)*$' || true)
 
           for tag in "${RELEASE_TAGS[@]}"; do
+            TAG_FW_VERSION="${tag#v}"
+
+            # Skip if this version was already added (e.g. current main)
+            if [ -n "${VERSION_SEEN[$TAG_FW_VERSION]:-}" ]; then
+              echo "Skipping tag '$tag': version '$TAG_FW_VERSION' already present from main."
+              continue
+            fi
+
+            # Check if we have this version from a previous deployment
+            if [ -d "$PREV_VERSIONS_DIR/$TAG_FW_VERSION" ] && [ -f "$PREV_VERSIONS_DIR/$TAG_FW_VERSION/manifest.json" ]; then
+              echo "Reusing cached build for version '$TAG_FW_VERSION' from previous deployment."
+              cp -R "$PREV_VERSIONS_DIR/$TAG_FW_VERSION" "$VERSIONS_DIR/$TAG_FW_VERSION"
+              VERSION_SEEN["$TAG_FW_VERSION"]=1
+              printf '%s|%s|%s\n' "$TAG_FW_VERSION" "./firmware/versions/$TAG_FW_VERSION/manifest.json" "$tag" >> "$VERSION_ROWS_FILE"
+              continue
+            fi
+
+            # Build from scratch — this tag's version is missing
+            echo "Building version '$TAG_FW_VERSION' from tag '$tag' (not in cache)..."
             TAG_WORKTREE="$WORKTREE_ROOT/$tag"
             git worktree add --detach "$TAG_WORKTREE" "$tag"
 
             if pio run -d "$TAG_WORKTREE/Firmware" -e "$PIO_ENV"; then
-              TAG_FW_VERSION="$(extract_fw_version "$TAG_WORKTREE/Firmware")"
-              add_version_artifacts "$TAG_FW_VERSION" "$TAG_WORKTREE/Firmware/.pio/build/$PIO_ENV" "$tag"
+              ACTUAL_FW_VERSION="$(extract_fw_version "$TAG_WORKTREE/Firmware")"
+              add_version_artifacts "$ACTUAL_FW_VERSION" "$TAG_WORKTREE/Firmware/.pio/build/$PIO_ENV" "$tag"
             else
               echo "Skipping tag '$tag' because the build failed."
             fi
