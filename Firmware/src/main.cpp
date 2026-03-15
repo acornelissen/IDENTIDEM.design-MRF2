@@ -19,6 +19,7 @@ namespace
 {
 int bootProgressStep = 0;
 const int BOOT_PROGRESS_TOTAL = 5;
+const char *bootProgressLabel = "";
 
 void drawBootProgress()
 {
@@ -52,12 +53,22 @@ void drawBootProgress()
     display.fillRect(barX + 1, barY + 1, fillWidth, barHeight - 2, SH110X_WHITE);
   }
 
+  // Show which peripheral is being initialised.
+  if (bootProgressLabel[0] != '\0')
+  {
+    u8g2.setFont(u8g2_font_4x6_mf);
+    int labelWidth = static_cast<int>(strlen(bootProgressLabel)) * 4;
+    u8g2.setCursor((SCREEN_WIDTH - labelWidth) / 2, 80);
+    u8g2.print(bootProgressLabel);
+  }
+
   display.display();
 }
 
-void advanceBootProgress()
+void advanceBootProgress(const char *label)
 {
   bootProgressStep++;
+  bootProgressLabel = label;
   drawBootProgress();
 }
 
@@ -239,15 +250,15 @@ void setup()
   initializeMainDisplay();
   drawBootProgress(); // Show initial progress on main display.
   showBootScreenOnExternalDisplay();
-  advanceBootProgress(); // Step 1: displays ready.
+  advanceBootProgress("Displays");
   initializeLidarSensor();
-  advanceBootProgress(); // Step 2: LiDAR ready.
+  advanceBootProgress("LiDAR");
   resetLensMovingAverageState();
-  advanceBootProgress(); // Step 3: lens filter ready.
+  advanceBootProgress("Lens filter");
   initializePowerAndInputPeripherals();
-  advanceBootProgress(); // Step 4: peripherals ready.
+  advanceBootProgress("Peripherals");
   setVoltage(); // Populate bat_per before the first loop tick.
-  advanceBootProgress(); // Step 5: boot complete.
+  advanceBootProgress("Ready");
 
   // Treat end-of-setup as the idle timer baseline.
   lastActivityTime = millis();
