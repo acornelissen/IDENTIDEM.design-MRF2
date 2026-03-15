@@ -1,12 +1,12 @@
 :root {
   --bg: #ffffff;
-  --bg-2: #f7f7f7;
+  --bg-2: #f3f3f3;
   --ink: #121212;
   --muted: #555555;
   --accent: #fce477;
-  --accent-hover: #f5d84e;
-  --panel: rgba(255, 255, 255, 0.85);
-  --line: rgba(18, 18, 18, 0.12);
+  --accent-hover: #f8da5a;
+  --panel: #ffffff;
+  --line: rgba(18, 18, 18, 0.10);
 }
 
 * {
@@ -43,9 +43,9 @@ body {
 
 .logo {
   display: block;
-  height: 32px;
+  height: 20px;
   width: auto;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
 }
 
 .subtitle {
@@ -60,7 +60,6 @@ body {
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--panel);
-  box-shadow: 0 9px 24px rgba(18, 18, 18, 0.06);
 }
 
 .panel {
@@ -92,7 +91,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
-  background: var(--bg);
+  background: var(--bg-2);
   color: var(--ink);
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.88rem;
@@ -229,8 +228,7 @@ button[slot="activate"]:hover {
 .debug-panel {
   border: 1px dashed rgba(18, 18, 18, 0.35);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 9px 24px rgba(18, 18, 18, 0.06);
+  background: var(--panel);
   padding: 1.1rem;
 }
 
