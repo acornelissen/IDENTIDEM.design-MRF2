@@ -16,6 +16,8 @@ void setVoltage();
 void setLightMeter();
 
 void toggleLidar(bool lidarStatus);
+
+void retryLidarInit();
 // ---------------------
 
 #endif // SETFUNCS_H

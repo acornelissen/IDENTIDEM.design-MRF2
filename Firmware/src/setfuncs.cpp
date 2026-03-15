@@ -403,6 +403,29 @@ void setLightMeter()
   prev_aperture = aperture;
 }
 
+void retryLidarInit()
+{
+  if (lidarSensorReady)
+  {
+    return;
+  }
+
+  DTSResult result = lidar.begin(LIDAR_BAUD_RATE, RXD2, TXD2);
+  if (result != DTSError::NONE)
+  {
+    lidarSensorReady = false;
+    lidarEnabled = false;
+    last_lidar_error_code = static_cast<int>(static_cast<DTSError>(result));
+    return;
+  }
+
+  lidarSensorReady = true;
+  lidarEnabled = true;
+  lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
+  lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
+  last_lidar_error_code = 0;
+}
+
 void toggleLidar(bool lidarStatusParam)
 {
   if (!lidarSensorReady)

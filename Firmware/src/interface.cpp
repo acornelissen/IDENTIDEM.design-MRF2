@@ -1055,7 +1055,14 @@ void drawHealthUI()
   u8g2.print(statusPixelReady ? 1 : 0);
 
   u8g2.setCursor(HEALTH_ITEM_X, HEALTH_FOOTER_Y);
-  u8g2.print(F(" (L/R) Back"));
+  if (!lidarSensorReady)
+  {
+    u8g2.print(F(" (L) Back  (R) Retry LiDAR"));
+  }
+  else
+  {
+    u8g2.print(F(" (L/R) Back"));
+  }
 
   display.display();
 }

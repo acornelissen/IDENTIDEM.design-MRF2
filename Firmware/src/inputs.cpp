@@ -354,8 +354,15 @@ void handleRightButtonShortPress()
   }
   else if (ui_mode == UiMode::Health)
   {
-    ui_mode = UiMode::Config;
-    config_step = CONFIG_ROOT_STEP_HEALTH;
+    if (!lidarSensorReady)
+    {
+      retryLidarInit();
+    }
+    else
+    {
+      ui_mode = UiMode::Config;
+      config_step = CONFIG_ROOT_STEP_HEALTH;
+    }
   }
 }
 } // namespace
