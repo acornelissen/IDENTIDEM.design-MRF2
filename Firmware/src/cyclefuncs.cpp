@@ -32,32 +32,12 @@ int clampSleepTimeoutMode(int timeout_mode)
   return constrain(timeout_mode, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);
 }
 
-int cycleSleepTimeoutModeValue(int timeout_mode)
+int cycleValueWrapping(int current, int step, int minVal, int maxVal)
 {
-  timeout_mode++;
-  if (timeout_mode > SLEEP_TIMEOUT_MODE_MAX)
+  current += step;
+  if (current > maxVal)
   {
-    timeout_mode = SLEEP_TIMEOUT_MODE_MIN;
-  }
-  return timeout_mode;
-}
-
-int cycleFrameTuningValue(int current)
-{
-  current++;
-  if (current > FRAME_TUNING_MAX)
-  {
-    current = FRAME_TUNING_MIN;
-  }
-  return current;
-}
-
-int cycleLevelTrimValue(int current)
-{
-  current += LEVEL_TRIM_STEP_DECI_DEG;
-  if (current > LEVEL_TRIM_MAX_DECI_DEG)
-  {
-    current = LEVEL_TRIM_MIN_DECI_DEG;
+    current = minVal;
   }
   return current;
 }
@@ -228,13 +208,13 @@ void cycleCurrentFrame()
 
 void cycleFrameOneOffset()
 {
-  frame_one_offset = cycleFrameTuningValue(frame_one_offset);
+  frame_one_offset = cycleValueWrapping(frame_one_offset, 1, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
   savePrefs(false, PREFS_DIRTY_FILM);
 }
 
 void cycleFrameSpacingOffset()
 {
-  frame_spacing_offset = cycleFrameTuningValue(frame_spacing_offset);
+  frame_spacing_offset = cycleValueWrapping(frame_spacing_offset, 1, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
   savePrefs(false, PREFS_DIRTY_FILM);
 }
 
@@ -271,31 +251,31 @@ void toggleEvReadout()
 
 void cycleLevelTrimLandscape()
 {
-  level_trim_landscape_deci_deg = cycleLevelTrimValue(level_trim_landscape_deci_deg);
+  level_trim_landscape_deci_deg = cycleValueWrapping(level_trim_landscape_deci_deg, LEVEL_TRIM_STEP_DECI_DEG, LEVEL_TRIM_MIN_DECI_DEG, LEVEL_TRIM_MAX_DECI_DEG);
   savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLevelTrimPortraitPos()
 {
-  level_trim_portrait_pos_deci_deg = cycleLevelTrimValue(level_trim_portrait_pos_deci_deg);
+  level_trim_portrait_pos_deci_deg = cycleValueWrapping(level_trim_portrait_pos_deci_deg, LEVEL_TRIM_STEP_DECI_DEG, LEVEL_TRIM_MIN_DECI_DEG, LEVEL_TRIM_MAX_DECI_DEG);
   savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLevelTrimPortraitNeg()
 {
-  level_trim_portrait_neg_deci_deg = cycleLevelTrimValue(level_trim_portrait_neg_deci_deg);
+  level_trim_portrait_neg_deci_deg = cycleValueWrapping(level_trim_portrait_neg_deci_deg, LEVEL_TRIM_STEP_DECI_DEG, LEVEL_TRIM_MIN_DECI_DEG, LEVEL_TRIM_MAX_DECI_DEG);
   savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleSleepTimeoutMode()
 {
-  sleep_timeout_mode = cycleSleepTimeoutModeValue(sleep_timeout_mode);
+  sleep_timeout_mode = cycleValueWrapping(sleep_timeout_mode, 1, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);
   savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
 void cycleLidarIdleTimeoutMode()
 {
-  lidar_idle_timeout_mode = cycleSleepTimeoutModeValue(lidar_idle_timeout_mode);
+  lidar_idle_timeout_mode = cycleValueWrapping(lidar_idle_timeout_mode, 1, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);
   savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
