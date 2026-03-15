@@ -538,11 +538,6 @@ void exitSleepServices()
   resetWakeSchedulerAndActivityBaselines(millis());
 }
 
-void clearLidarUiForStandby()
-{
-  snprintf(distance_cm, sizeof(distance_cm), "Zzz");
-  lidar_quality_level = 0;
-}
 
 void updateLidarIdleStandby(unsigned long nowMs)
 {
@@ -579,7 +574,7 @@ void updateLidarIdleStandby(unsigned long nowMs)
       loopState.lidarIdleStandbyActive = !lidarEnabled;
       if (loopState.lidarIdleStandbyActive)
       {
-        clearLidarUiForStandby();
+        clearLidarDisplay("Zzz");
       }
     }
     return;

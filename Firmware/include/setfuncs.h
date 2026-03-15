@@ -18,6 +18,8 @@ void setLightMeter();
 void toggleLidar(bool lidarStatus);
 
 void retryLidarInit();
+
+void clearLidarDisplay(const char *placeholder);
 // ---------------------
 
 #endif // SETFUNCS_H

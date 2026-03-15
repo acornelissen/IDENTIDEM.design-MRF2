@@ -74,12 +74,13 @@ void setLensDistanceFromCm(int distance_cm)
   cmToReadable(lens_distance_raw, DISTANCE_DECIMAL_PLACES, lens_distance_cm, sizeof(lens_distance_cm));
 }
 
-void clearLidarDisplay()
+} // namespace
+
+void clearLidarDisplay(const char *placeholder)
 {
-  snprintf(distance_cm, sizeof(distance_cm), "...");
+  snprintf(distance_cm, sizeof(distance_cm), "%s", placeholder);
   lidar_quality_level = 0;
 }
-} // namespace
 
 // Functions to read values from sensors and set variables
 // ---------------------
@@ -108,7 +109,7 @@ void setDistance()
       // Keep main-branch behavior: do not force recovery on filtered/noisy frames.
       if ((now - lidarRecoveryState.last_valid_measurement_ms) > LIDAR_NO_DATA_TIMEOUT_MS)
       {
-        clearLidarDisplay();
+        clearLidarDisplay("...");
       }
       return;
     }
@@ -132,7 +133,7 @@ void setDistance()
 
   if (recoveryDecision.clear_display)
   {
-    clearLidarDisplay();
+    clearLidarDisplay("...");
   }
 
   if (!recoveryDecision.attempt_recovery)
