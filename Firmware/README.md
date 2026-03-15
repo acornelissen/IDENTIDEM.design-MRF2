@@ -53,9 +53,12 @@ Firmware/
 │   ├── activity.h        # Shared activity/sleep state helpers
 │   ├── loop_runtime.h    # Runtime scheduler and awake/sleep loop orchestration
 │   ├── lidar_logic.h     # LiDAR fusion and correction logic
+│   ├── lidar_recovery_logic.h # LiDAR error recovery state machine
 │   ├── lens_logic.h      # Lens sensor-to-distance mapping logic
 │   ├── film_counter_logic.h # Film counter interpolation logic
-│   └── lightmeter_logic.h # Shutter speed formatting logic
+│   ├── lightmeter_logic.h # Shutter speed formatting logic
+│   ├── calibration_logic.h # Lens calibration sample validation
+│   └── prefs_migration_logic.h # Preferences schema migration
 ├── src/              # Implementation files
 │   ├── main.cpp          # Main program logic
 │   ├── hardware.cpp      # Hardware instances
@@ -69,9 +72,12 @@ Firmware/
 │   ├── cyclefuncs.cpp    # Cycling logic
 │   ├── setfuncs.cpp      # Sensor orchestration
 │   ├── lidar_logic.cpp   # LiDAR processing pipeline
+│   ├── lidar_recovery_logic.cpp # LiDAR error recovery state machine
 │   ├── lens_logic.cpp    # Lens distance estimation
 │   ├── film_counter_logic.cpp # Film counter estimation
 │   ├── lightmeter_logic.cpp # Light-meter/shutter conversion
+│   ├── calibration_logic.cpp # Lens calibration sample validation
+│   ├── prefs_migration_logic.cpp # Preferences schema migration
 │   └── inputs.cpp        # Button and encoder handling
 ├── platformio.ini    # PlatformIO configuration
 └── README.md         # This file
@@ -85,7 +91,7 @@ Firmware/
    - Disable WiFi/Bluetooth for power saving
    - Load saved preferences
    - Initialize all hardware components
-   - Show "Initialising..." progress bar on main display as each peripheral group comes up
+   - Show "Initialising..." progress bar on main display with a label naming each peripheral group as it comes up
    - Configure displays and show boot screen on external display
    - Start sensor readings
 
@@ -107,7 +113,7 @@ Firmware/
 - **Lens Submenu** (`Setup > Lens`): Lens profile, parallax correction toggle, and lens calibration entry
 - **Light Meter Submenu** (`Setup > Meter`): ISO, EV compensation, smoothing strength, EV readout toggle
 - **UI Settings Submenu** (`Setup > UI`): landscape/portrait horizon trims, sleep timeout, and LiDAR idle timeout
-- **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, and idle timer
+- **Health Screen**: firmware/prefs status, LiDAR error and recovery counters, idle timer, and Retry LiDAR option when LiDAR failed to initialise
 - **Calibration Mode**: Lens calibration interface
 - **Sleep Mode**: Low-power state with minimal display
 

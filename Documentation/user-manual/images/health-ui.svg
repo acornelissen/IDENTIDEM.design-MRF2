@@ -4,10 +4,10 @@
 
   <text x="4" y="30" font-family="monospace" font-size="6" fill="#ffffff">FW: 10.3.0</text>
   <text x="4" y="40" font-family="monospace" font-size="6" fill="#ffffff">Prefs: v2 OK</text>
-  <text x="4" y="50" font-family="monospace" font-size="6" fill="#ffffff">LiDAR: OK On err:0</text>
+  <text x="4" y="50" font-family="monospace" font-size="6" fill="#ffffff">LiDAR: InitErr Off err:0</text>
   <text x="4" y="60" font-family="monospace" font-size="6" fill="#ffffff">Recoveries: 0</text>
   <text x="4" y="70" font-family="monospace" font-size="6" fill="#ffffff">HW D1 X1 A1 M1</text>
   <text x="4" y="80" font-family="monospace" font-size="6" fill="#ffffff">HW L1 B1 E1 P1</text>
 
-  <text x="4" y="112" font-family="monospace" font-size="6" fill="#ffffff"> (L/R) Back</text>
+  <text x="4" y="112" font-family="monospace" font-size="6" fill="#ffffff"> (L) Back  (R) Retry LiDAR</text>
 </svg>

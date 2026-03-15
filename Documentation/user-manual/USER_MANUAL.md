@@ -19,7 +19,7 @@ If this is your first time using the camera, this sequence keeps things simple a
 
 ## Quick start (after initial setup)
 
-1. Power on the camera. The main display shows an "Initialising..." progress bar while peripherals start up, the external display shows a short boot screen, and then the main UI appears.
+1. Power on the camera. The main display shows an "Initialising..." progress bar with a label naming each peripheral group as it starts up, the external display shows a short boot screen, and then the main UI appears.
 2. Check the **main screen** for ISO, aperture, shutter speed, LiDAR distance, LiDAR quality blocks, and lens distance.
 3. Long-press **Right (R)** for 3 seconds to enter **Setup** and make changes.
 4. Use the **advance lever** to move the film; the external display shows the frame counter and progress bar.
@@ -221,6 +221,11 @@ Shows quick diagnostics:
   - `D` main display, `X` external display, `A` lens ADC (ADS1015), `M` accelerometer (MPU6050)
   - `L` light meter (BH1750), `B` battery gauge (MAX17048), `E` encoder, `P` status pixel
 
+Controls:
+
+- **L**: return to Setup.
+- **R**: if LiDAR failed to initialise (`InitErr`), re-attempts LiDAR initialisation without a power cycle. Otherwise returns to Setup.
+
 ### ISO list
 
 Available ISO values:
@@ -274,7 +279,7 @@ For each target distance:
 2. Hold the ring steady.
 3. Press **L** to capture. The LED flashes green to confirm a successful reading.
 
-If a capture fails, the screen shows a specific error:
+If a capture fails, the screen shows a specific error and holds it for at least 2 seconds so you can read it:
 
 - **"Unstable reading / Hold lens still and retry"** — the sensor values varied too much during sampling. Keep the ring stationary and press **L** again.
 - **"Out of sequence / Increase focus distance"** — the new reading was not higher than the previous one. The focus ring must move progressively from near to far. Turn it further towards infinity and retry.
