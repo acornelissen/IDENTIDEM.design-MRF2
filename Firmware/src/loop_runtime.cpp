@@ -45,10 +45,18 @@ struct UiRenderCache
   unsigned long lastHealthDrawMs = 0;
 };
 
+struct DisplayFadeState
+{
+  bool active = false;
+  int brightness = 0xFF;
+  unsigned long lastStepMs = 0;
+};
+
 struct LoopRuntimeState
 {
   LoopScheduler scheduler;
   UiRenderCache uiRenderCache;
+  DisplayFadeState fade;
   bool sleepServicesActive = false;
   bool sleepWakeBaselinesInitialized = false;
   bool lightMeterSleeping = false;
@@ -400,19 +408,49 @@ void resetWakeSchedulerAndActivityBaselines(unsigned long nowMs)
   loopState.lastMeterChangeMs = nowMs;
 }
 
-void fadeOutMainDisplay()
+void beginFadeOutMainDisplay(unsigned long nowMs)
 {
   if (!mainDisplayReady)
   {
     return;
   }
 
-  // SH1107 contrast command: 0x81 followed by contrast value (0x00..0xFF).
-  for (int brightness = 0xFF; brightness >= 0; brightness -= 0x20)
+  loopState.fade.active = true;
+  loopState.fade.brightness = 0xFF;
+  loopState.fade.lastStepMs = nowMs;
+}
+
+bool isFadeComplete()
+{
+  return !loopState.fade.active;
+}
+
+void stepFadeOutMainDisplay(unsigned long nowMs)
+{
+  if (!loopState.fade.active || !mainDisplayReady)
   {
-    display.oled_command(0x81);
-    display.oled_command(static_cast<uint8_t>(max(0, brightness)));
-    delay(25);
+    return;
+  }
+
+  if ((nowMs - loopState.fade.lastStepMs) < FADE_STEP_INTERVAL_MS)
+  {
+    return;
+  }
+
+  loopState.fade.lastStepMs = nowMs;
+  loopState.fade.brightness -= FADE_STEP_DECREMENT;
+  if (loopState.fade.brightness < 0)
+  {
+    loopState.fade.brightness = 0;
+  }
+
+  // SH1107 contrast command: 0x81 followed by contrast value (0x00..0xFF).
+  display.oled_command(0x81);
+  display.oled_command(static_cast<uint8_t>(loopState.fade.brightness));
+
+  if (loopState.fade.brightness <= 0)
+  {
+    loopState.fade.active = false;
   }
 }
 
@@ -428,17 +466,18 @@ void restoreMainDisplayBrightness()
   display.oled_command(0xFF);
 }
 
-void enterSleepServices()
+void beginSleepFade(unsigned long nowMs)
 {
   toggleLidar(false);
   loopState.lidarIdleStandbyActive = false;
   loopState.uiRenderCache.initialized = false;
   powerDownLightMeterForSleep();
-
-  // Fade out main display before blanking.
-  fadeOutMainDisplay();
   drawSleepUI();
+  beginFadeOutMainDisplay(nowMs);
+}
 
+void finaliseSleepServices()
+{
   // Keep external sleep text visible while turning the main display fully off.
   if (mainDisplayReady)
   {
@@ -494,6 +533,7 @@ void exitSleepServices()
   loopState.lidarIdleStandbyActive = false;
   loopState.uiRenderCache.initialized = false;
   loopState.sleepWakeBaselinesInitialized = false;
+  loopState.fade.active = false;
   resetWakeSchedulerAndActivityBaselines(millis());
 }
 
@@ -613,12 +653,27 @@ void initializeSchedulerIfNeeded(unsigned long nowMs)
   loopState.lastMeterChangeMs = nowMs;
 }
 
-void runSleepTasks([[maybe_unused]] unsigned long nowMs)
+void runSleepTasks(unsigned long nowMs)
 {
   if (!loopState.sleepServicesActive)
   {
-    enterSleepServices();
+    beginSleepFade(nowMs);
     loopState.sleepServicesActive = true;
+  }
+
+  // Non-blocking fade: step contrast down each iteration until complete.
+  // Buttons are still polled so user input can wake the device mid-fade.
+  if (!isFadeComplete())
+  {
+    stepFadeOutMainDisplay(nowMs);
+    checkButtons();
+    return;
+  }
+
+  // Fade finished — finalise sleep peripherals once before first light sleep.
+  if (!loopState.sleepWakeBaselinesInitialized)
+  {
+    finaliseSleepServices();
   }
 
   // Sleep the CPU until a button GPIO fires or the sensor-poll timer expires.

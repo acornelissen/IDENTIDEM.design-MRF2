@@ -78,6 +78,8 @@ const int SHARED_I2C_FREQUENCY_HZ  = 400000;           // Standard I2C speed res
 const int DISPLAY_COMMAND_FLIP = 0xC8;                 // SH1107 vertical flip command.
 const uint8_t OLED_CMD_DISPLAY_OFF = 0xAE;             // SH1107 command to blank the display.
 const uint8_t OLED_CMD_DISPLAY_ON  = 0xAF;             // SH1107 command to enable the display.
+const unsigned long FADE_STEP_INTERVAL_MS = 25;        // Delay between non-blocking fade steps.
+const int FADE_STEP_DECREMENT = 0x20;                  // Contrast decrement per fade step.
 
 // ---------------------------------------------------------------------------
 // Lens ADC filtering, snap logic, and focus-ring rendering
