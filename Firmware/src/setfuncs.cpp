@@ -355,10 +355,6 @@ void setVoltage()
     bat_per = BATTERY_PERCENT_MAX;
   }
 
-  if (bat_per != prev_bat_per)
-  {
-    prev_bat_per = bat_per;
-  }
 }
 
 void setLightMeter()
@@ -399,7 +395,6 @@ void setLightMeter()
   }
 
   formatShutterSpeed(lux, aperture, iso, shutter_speed, sizeof(shutter_speed));
-  prev_lux = lux;
   prev_iso = iso;
   prev_aperture = aperture;
 }
