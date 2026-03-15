@@ -905,6 +905,19 @@ void drawCalibProgressBar(int current, int total)
   }
 }
 
+void drawCalibCompleteUI()
+{
+  preparePrimaryDisplayTextMode();
+
+  u8g2.setFont(u8g2_font_6x10_mf);
+  u8g2.setCursor(16, 58);
+  u8g2.print(F("Calibration"));
+  u8g2.setCursor(28, 72);
+  u8g2.print(F("complete!"));
+
+  display.display();
+}
+
 void drawCalibUI()
 {
   preparePrimaryDisplayTextMode();
@@ -987,11 +1000,6 @@ void drawCalibUI()
         u8g2.print(F(" Out of sequence"));
         u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y2);
         u8g2.print(F(" Increase focus distance"));
-      }
-      else if (calib_capture_status == CALIB_CAPTURE_STATUS_COMPLETE)
-      {
-        u8g2.setCursor(CALIB_ITEM_X, CALIB_STATUS_Y1);
-        u8g2.print(F(" Calibration complete!"));
       }
     }
   }

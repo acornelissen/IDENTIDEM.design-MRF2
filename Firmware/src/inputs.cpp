@@ -178,10 +178,8 @@ void handleLeftButtonShortPress()
             selected_lens = calib_lens;
             savePrefs(true);
 
-            // Show success message and pulse LED before leaving calibration.
-            calib_capture_status = CALIB_CAPTURE_STATUS_COMPLETE;
-            calib_capture_status_ms = millis();
-            drawCalibUI();
+            // Show full-screen success and pulse LED before leaving calibration.
+            drawCalibCompleteUI();
 
             if (statusPixelReady)
             {
@@ -200,7 +198,7 @@ void handleLeftButtonShortPress()
               prev_frame_progress = -1.0f;
             }
 
-            calib_capture_status = CALIB_CAPTURE_STATUS_NONE;
+            delay(CALIB_COMPLETE_HOLD_MS);
             config_step = CONFIG_LENS_STEP_CALIB;
             ui_mode = UiMode::ConfigLens;
           }

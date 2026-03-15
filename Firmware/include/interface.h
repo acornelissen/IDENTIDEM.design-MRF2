@@ -10,6 +10,7 @@ void drawLensConfigUI();
 void drawMeterConfigUI();
 void drawUiConfigUI();
 void drawCalibUI();
+void drawCalibCompleteUI();
 void drawResetConfirmUI();
 void drawFactoryResetConfirmUI();
 void drawHealthUI();

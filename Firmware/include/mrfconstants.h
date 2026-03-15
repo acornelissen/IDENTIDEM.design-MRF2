@@ -479,11 +479,11 @@ const int CALIB_MONOTONIC_MIN_STEP = 1;      // Minimum monotonic step between c
 const int CALIB_CAPTURE_STATUS_NONE = 0;     // Calibration capture status: no error.
 const int CALIB_CAPTURE_STATUS_UNSTABLE = 1; // Calibration capture status: unstable reading.
 const int CALIB_CAPTURE_STATUS_NON_MONOTONIC = 2; // Calibration capture status: invalid sequence.
-const int CALIB_CAPTURE_STATUS_COMPLETE = 3; // Calibration capture status: all points captured.
 const unsigned long CALIB_ERROR_HOLD_MS = 2000; // Minimum display time for calibration errors.
 const int CALIB_COMPLETE_LED_PULSES = 3;     // Number of green LED pulses on calibration complete.
 const unsigned long CALIB_COMPLETE_LED_ON_MS = 80;  // LED on duration per pulse.
 const unsigned long CALIB_COMPLETE_LED_OFF_MS = 80; // LED off duration between pulses.
+const unsigned long CALIB_COMPLETE_HOLD_MS = 1500;  // Hold success screen after LED pulses.
 const int CALIB_STATUS_Y1 = 98;              // Calibration status line 1 Y.
 const int CALIB_STATUS_Y2 = 106;             // Calibration status line 2 Y.
 
