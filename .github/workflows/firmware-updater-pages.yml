@@ -36,31 +36,53 @@ jobs:
       - name: Build firmware
         run: pio run -d Firmware -e "$PIO_ENV"
 
-      - name: Download previous Pages artifact
-        id: prev-artifact
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: github-pages
-          path: prev-site-archive
-
-      - name: Extract previous firmware versions
+      - name: Download previous firmware versions from last successful run
         id: prev-versions
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           PREV_VERSIONS_DIR="prev-firmware-versions"
           mkdir -p "$PREV_VERSIONS_DIR"
 
-          if [ -f prev-site-archive/artifact.tar ]; then
-            echo "Extracting previous site artifact..."
-            EXTRACT_DIR="$(mktemp -d)"
-            tar xf prev-site-archive/artifact.tar -C "$EXTRACT_DIR"
-            if [ -d "$EXTRACT_DIR/firmware/versions" ]; then
-              cp -R "$EXTRACT_DIR/firmware/versions/." "$PREV_VERSIONS_DIR/"
-              echo "Restored previous versions: $(ls "$PREV_VERSIONS_DIR" | tr '\n' ' ')"
+          # Find the most recent successful run of this workflow (excluding current)
+          PREV_RUN_ID=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/firmware-updater-pages.yml/runs?status=success&per_page=5" \
+            --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }})][0].id // empty" 2>/dev/null || true)
+
+          if [ -n "$PREV_RUN_ID" ]; then
+            echo "Found previous successful run: $PREV_RUN_ID"
+
+            # Download the github-pages artifact from that run
+            ARTIFACT_URL=$(gh api \
+              "repos/${{ github.repository }}/actions/runs/$PREV_RUN_ID/artifacts?name=github-pages" \
+              --jq '.artifacts[0].archive_download_url // empty' 2>/dev/null || true)
+
+            if [ -n "$ARTIFACT_URL" ]; then
+              echo "Downloading previous Pages artifact..."
+              ARCHIVE="$(mktemp)"
+              gh api "$ARTIFACT_URL" > "$ARCHIVE" 2>/dev/null || true
+
+              if [ -s "$ARCHIVE" ]; then
+                EXTRACT_DIR="$(mktemp -d)"
+                # GitHub wraps artifacts in a zip; inside is artifact.tar
+                unzip -q -o "$ARCHIVE" -d "$EXTRACT_DIR" 2>/dev/null || true
+                if [ -f "$EXTRACT_DIR/artifact.tar" ]; then
+                  TAR_DIR="$(mktemp -d)"
+                  tar xf "$EXTRACT_DIR/artifact.tar" -C "$TAR_DIR" 2>/dev/null || true
+                  if [ -d "$TAR_DIR/firmware/versions" ]; then
+                    cp -R "$TAR_DIR/firmware/versions/." "$PREV_VERSIONS_DIR/"
+                    echo "Restored previous versions: $(ls "$PREV_VERSIONS_DIR" | tr '\n' ' ')"
+                  fi
+                  rm -rf "$TAR_DIR"
+                fi
+                rm -rf "$EXTRACT_DIR"
+              fi
+              rm -f "$ARCHIVE"
+            else
+              echo "No artifact found in previous run."
             fi
-            rm -rf "$EXTRACT_DIR"
           else
-            echo "No previous artifact found, building all versions from scratch."
+            echo "No previous successful run found, building all versions from scratch."
           fi
 
           echo "dir=$PREV_VERSIONS_DIR" >> "$GITHUB_OUTPUT"
