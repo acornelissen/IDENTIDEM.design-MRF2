@@ -294,46 +294,80 @@ const int SLEEP_WAKE_LENS_DELTA = 8;                      // Lens ADC delta to w
 // ---------------------------------------------------------------------------
 // Config menu indexes: setup root
 // ---------------------------------------------------------------------------
-const int CONFIG_ROOT_STEP_FILM_MENU = 0;  // Enter Film submenu.
-const int CONFIG_ROOT_STEP_LENS_MENU = 1;  // Enter Lens submenu.
-const int CONFIG_ROOT_STEP_METER_MENU = 2; // Enter Light Meter submenu.
-const int CONFIG_ROOT_STEP_UI_MENU = 3;    // Enter UI Settings submenu.
-const int CONFIG_ROOT_STEP_RESET = 4;      // Enter reset-frame confirmation.
-const int CONFIG_ROOT_STEP_HEALTH = 5;     // Enter health diagnostics screen.
-const int CONFIG_ROOT_STEP_EXIT = 6;       // Exit setup to main UI.
-const int CONFIG_ROOT_STEP_MAX = CONFIG_ROOT_STEP_EXIT; // Last valid root step index.
+// Config menu indexes are plain enums so they remain int-compatible with
+// config_step.  Each menu declares a COUNT sentinel so that _MAX is
+// derived automatically — adding a new item without updating the list
+// triggers a compile error from the static_assert below.
+enum ConfigRootStep
+{
+  CONFIG_ROOT_STEP_FILM_MENU = 0,  // Enter Film submenu.
+  CONFIG_ROOT_STEP_LENS_MENU,      // Enter Lens submenu.
+  CONFIG_ROOT_STEP_METER_MENU,     // Enter Light Meter submenu.
+  CONFIG_ROOT_STEP_UI_MENU,        // Enter UI Settings submenu.
+  CONFIG_ROOT_STEP_RESET,          // Enter reset-frame confirmation.
+  CONFIG_ROOT_STEP_HEALTH,         // Enter health diagnostics screen.
+  CONFIG_ROOT_STEP_EXIT,           // Exit setup to main UI.
+  CONFIG_ROOT_STEP_COUNT
+};
+const int CONFIG_ROOT_STEP_MAX = CONFIG_ROOT_STEP_EXIT;
+static_assert(CONFIG_ROOT_STEP_COUNT - 1 == CONFIG_ROOT_STEP_MAX,
+              "CONFIG_ROOT_STEP_MAX does not match enum count");
 
 // Config menu indexes: Film submenu.
-const int CONFIG_FILM_STEP_FORMAT = 0;          // Film format selector.
-const int CONFIG_FILM_STEP_CURRENT_FRAME = 1;   // Current frame selector.
-const int CONFIG_FILM_STEP_FRAME_ONE_OFFSET = 2; // Frame-1 offset tuning.
-const int CONFIG_FILM_STEP_FRAME_SPACING = 3;   // Frame spacing tuning.
-const int CONFIG_FILM_STEP_BACK = 4;            // Back to setup root.
-const int CONFIG_FILM_STEP_MAX = CONFIG_FILM_STEP_BACK; // Last valid film step.
+enum ConfigFilmStep
+{
+  CONFIG_FILM_STEP_FORMAT = 0,          // Film format selector.
+  CONFIG_FILM_STEP_CURRENT_FRAME,       // Current frame selector.
+  CONFIG_FILM_STEP_FRAME_ONE_OFFSET,    // Frame-1 offset tuning.
+  CONFIG_FILM_STEP_FRAME_SPACING,       // Frame spacing tuning.
+  CONFIG_FILM_STEP_BACK,                // Back to setup root.
+  CONFIG_FILM_STEP_COUNT
+};
+const int CONFIG_FILM_STEP_MAX = CONFIG_FILM_STEP_BACK;
+static_assert(CONFIG_FILM_STEP_COUNT - 1 == CONFIG_FILM_STEP_MAX,
+              "CONFIG_FILM_STEP_MAX does not match enum count");
 
 // Config menu indexes: Lens submenu.
-const int CONFIG_LENS_STEP_LENS = 0;      // Lens selector.
-const int CONFIG_LENS_STEP_PARALLAX = 1;  // Parallax toggle.
-const int CONFIG_LENS_STEP_CALIB = 2;     // Enter lens calibration.
-const int CONFIG_LENS_STEP_BACK = 3;      // Back to setup root.
-const int CONFIG_LENS_STEP_MAX = CONFIG_LENS_STEP_BACK; // Last valid lens step.
+enum ConfigLensStep
+{
+  CONFIG_LENS_STEP_LENS = 0,      // Lens selector.
+  CONFIG_LENS_STEP_PARALLAX,      // Parallax toggle.
+  CONFIG_LENS_STEP_CALIB,         // Enter lens calibration.
+  CONFIG_LENS_STEP_BACK,          // Back to setup root.
+  CONFIG_LENS_STEP_COUNT
+};
+const int CONFIG_LENS_STEP_MAX = CONFIG_LENS_STEP_BACK;
+static_assert(CONFIG_LENS_STEP_COUNT - 1 == CONFIG_LENS_STEP_MAX,
+              "CONFIG_LENS_STEP_MAX does not match enum count");
 
 // Config menu indexes: Meter submenu.
-const int CONFIG_METER_STEP_ISO = 0;       // ISO selector.
-const int CONFIG_METER_STEP_EV_COMP = 1;   // EV compensation selector.
-const int CONFIG_METER_STEP_SMOOTHING = 2; // Smoothing selector.
-const int CONFIG_METER_STEP_EV_READOUT = 3; // EV readout toggle.
-const int CONFIG_METER_STEP_BACK = 4;      // Back to setup root.
-const int CONFIG_METER_STEP_MAX = CONFIG_METER_STEP_BACK; // Last valid meter step.
+enum ConfigMeterStep
+{
+  CONFIG_METER_STEP_ISO = 0,       // ISO selector.
+  CONFIG_METER_STEP_EV_COMP,       // EV compensation selector.
+  CONFIG_METER_STEP_SMOOTHING,     // Smoothing selector.
+  CONFIG_METER_STEP_EV_READOUT,    // EV readout toggle.
+  CONFIG_METER_STEP_BACK,          // Back to setup root.
+  CONFIG_METER_STEP_COUNT
+};
+const int CONFIG_METER_STEP_MAX = CONFIG_METER_STEP_BACK;
+static_assert(CONFIG_METER_STEP_COUNT - 1 == CONFIG_METER_STEP_MAX,
+              "CONFIG_METER_STEP_MAX does not match enum count");
 
 // Config menu indexes: UI Settings submenu.
-const int CONFIG_UI_STEP_HORIZON_LANDSCAPE = 0;  // Landscape horizon trim.
-const int CONFIG_UI_STEP_HORIZON_PORTRAIT_POS = 1; // Portrait + horizon trim.
-const int CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG = 2; // Portrait - horizon trim.
-const int CONFIG_UI_STEP_SLEEP_TIMEOUT = 3;       // Sleep timeout selector.
-const int CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT = 4;  // LiDAR idle-timeout selector.
-const int CONFIG_UI_STEP_BACK = 5;                // Back to setup root.
-const int CONFIG_UI_STEP_MAX = CONFIG_UI_STEP_BACK; // Last valid UI settings step.
+enum ConfigUiStep
+{
+  CONFIG_UI_STEP_HORIZON_LANDSCAPE = 0,  // Landscape horizon trim.
+  CONFIG_UI_STEP_HORIZON_PORTRAIT_POS,   // Portrait + horizon trim.
+  CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG,   // Portrait - horizon trim.
+  CONFIG_UI_STEP_SLEEP_TIMEOUT,          // Sleep timeout selector.
+  CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT,     // LiDAR idle-timeout selector.
+  CONFIG_UI_STEP_BACK,                   // Back to setup root.
+  CONFIG_UI_STEP_COUNT
+};
+const int CONFIG_UI_STEP_MAX = CONFIG_UI_STEP_BACK;
+static_assert(CONFIG_UI_STEP_COUNT - 1 == CONFIG_UI_STEP_MAX,
+              "CONFIG_UI_STEP_MAX does not match enum count");
 
 // ---------------------------------------------------------------------------
 // Main UI numeric formatting and level-aid tuning
