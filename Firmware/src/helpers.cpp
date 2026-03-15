@@ -109,6 +109,15 @@ void writePrefsNow(uint8_t dirtyMask)
   prefs.end();
 }
 
+void markPrefsClean()
+{
+  prefsDirty = false;
+  prefsDirtyMask = 0;
+  prefsSchemaVersionLoaded = PREFS_SCHEMA_VERSION;
+  prefsSchemaValid = true;
+  prefsLoadedLegacy = false;
+}
+
 void clampLoadedState()
 {
   if (iso_index < 0 || iso_index >= static_cast<int>(sizeof(ISOS) / sizeof(ISOS[0])))
@@ -339,11 +348,7 @@ void savePrefs(bool force, uint8_t dirtyMask)
   if (force)
   {
     writePrefsNow(prefsDirtyMask);
-    prefsDirty = false;
-    prefsDirtyMask = 0;
-    prefsSchemaVersionLoaded = PREFS_SCHEMA_VERSION;
-    prefsSchemaValid = true;
-    prefsLoadedLegacy = false;
+    markPrefsClean();
   }
 }
 
@@ -361,11 +366,7 @@ void flushPrefsIfDirty()
   }
 
   writePrefsNow(prefsDirtyMask);
-  prefsDirty = false;
-  prefsDirtyMask = 0;
-  prefsSchemaVersionLoaded = PREFS_SCHEMA_VERSION;
-  prefsSchemaValid = true;
-  prefsLoadedLegacy = false;
+  markPrefsClean();
 }
 
 void cmToReadable(int cm, int places, char *buffer, size_t bufferSize)
@@ -400,14 +401,6 @@ int calcMovingAvg(int sensorVal)
 
 int_fast16_t getFocusRadius()
 {
-  int minRadius = FOCUS_RADIUS_MIN;
-  int maxRadius = FOCUS_RADIUS_MAX;
-
-  // Arduino.h usually provides min/max macros or functions
-  // and abs. If not, <algorithm> for std::min/max or manual.
-  // Assuming Arduino's min/max/abs are available.
-  int radius = min(maxRadius, max(minRadius, abs(distance - lens_distance_raw)));
-
-  return radius;
+  return constrain(abs(distance - lens_distance_raw), FOCUS_RADIUS_MIN, FOCUS_RADIUS_MAX);
 }
 // ---------------------
