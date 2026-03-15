@@ -37,15 +37,21 @@ body {
   letter-spacing: -0.02em;
 }
 
+.hero-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .hero h1 {
   font-size: clamp(2rem, 5vw, 3.3rem);
+  margin: 0;
 }
 
 .logo {
   display: block;
-  height: 20px;
+  height: clamp(2rem, 5vw, 3.3rem);
   width: auto;
-  margin-bottom: 0.5rem;
 }
 
 .subtitle {
