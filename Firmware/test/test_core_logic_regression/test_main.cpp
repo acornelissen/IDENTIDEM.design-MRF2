@@ -270,7 +270,7 @@ void test_lidar_candidate_selection_and_blend()
 
   TEST_ASSERT_EQUAL_INT(200, blendLidarDistance(100, 200, 80));
   TEST_ASSERT_EQUAL_INT(135, blendLidarDistance(100, 200, 60));
-  TEST_ASSERT_EQUAL_INT(124, blendLidarDistance(100, 200, 40));
+  TEST_ASSERT_EQUAL_INT(131, blendLidarDistance(100, 200, 40));
 }
 
 void test_lidar_invalid_and_display_formatting()

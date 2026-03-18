@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.3.0
+**Firmware version:** 10.3.1
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -110,10 +110,10 @@ You can tune horizon trim offsets independently for **Horizon Landscape**, **Hor
   - Confidence accounts for ambient sunlight relative to return intensity. Thresholds are tuned for outdoor use in bright conditions, and the sensor falls back to low-confidence tracking at all ranges when primary filtering rejects a return.
   - Measurement range: 5 cm to 18 m.
   - Displays values below 1 meter in centimeters (for example, `75cm`), and 1 meter and above in meters.
-  - Displays `...` if the sensor has no valid data for 750 ms.
+  - Displays `Inf.` when the subject is beyond sensor range (last reading was above 3 m and signal is lost), or for readings above 10.5 metres.
+  - Displays `...` if the sensor has no valid data for 1 second at close range.
   - Displays `Zzz` when LiDAR is in idle standby (wake by focusing or pressing a button).
   - Displays `<15cm` for near readings below display threshold.
-  - Displays `Inf.` for readings above 10.5 meters.
 - **Lens distance (Lens)**
   - Based on calibration and the lens position sensor.
   - Displays `Inf.` when beyond the calibrated infinity threshold.
@@ -127,7 +127,7 @@ The four tiny squares at the right edge of the top status bar show return qualit
 - **3 squares**: Good
 - **4 squares**: Excellent
 
-When no valid recent LiDAR data is available (`Dist: ...`) or LiDAR is in idle standby (`Dist: Zzz`), the quality indicator clears.
+When no valid recent LiDAR data is available (`Dist: ...` or `Dist: Inf.`) or LiDAR is in idle standby (`Dist: Zzz`), the quality indicator clears.
 
 ### Light meter / shutter speed
 
@@ -163,8 +163,8 @@ The ring radius is the absolute difference between the LiDAR distance and the le
 
 - **Use the LiDAR number first, then fine-tune with the ring.** Glance at the `Dist` readout to get a ballpark, dial the focus ring close, then watch the ring shrink for the last adjustment.
 - **Calibrate your lens** before relying on Lens distance. Without calibration the Lens readout is inactive and the ring defaults to maximum size. See [Lens calibration](#lens-calibration).
-- **In bright sunlight** the LiDAR may occasionally drop to `...`. The last valid reading is held for 750 ms, so brief dropouts are hidden. If `...` persists, the subject may be too far, too reflective, or at a steep angle — fall back to the distance markings on the lens barrel.
-- **At infinity** the Lens readout shows `Inf.` and the LiDAR readout shows `Inf.` above 10.5 m. The focus ring is irrelevant at infinity — just set the ring to the ∞ mark.
+- **In bright sunlight** the LiDAR may occasionally lose signal. The last valid reading is held for 1 second, so brief dropouts are hidden. When the subject is beyond sensor range the display switches to `Inf.` If `...` persists at close range, check wiring or try a different target angle.
+- **At infinity** the Lens readout shows `Inf.` and the LiDAR readout shows `Inf.` above 10.5 m or when far-range signal is lost. The focus ring is irrelevant at infinity — just set the ring to the ∞ mark.
 - **Parallax correction** shifts the framelines based on focus distance. Keep it enabled (default) for accurate framing at close range. It has no effect at infinity.
 
 ## Setup menus
@@ -391,8 +391,10 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 
 ## Troubleshooting
 
+- **LiDAR distance shows `Inf.`**
+  - The subject is beyond the sensor's effective range. This is normal for distances above ~8–10 m or targets with very low reflectivity. Use the lens barrel distance markings instead.
 - **LiDAR distance shows `...`**
-  - Verify LiDAR wiring and power. The UI updates only with valid sensor data.
+  - At close range, verify LiDAR wiring and power. The UI updates only with valid sensor data.
 - **LiDAR distance shows `Zzz`**
   - LiDAR is in idle standby. Turn the focus ring or press a button to wake it, or increase/disable **LiDAR idle timeout** in **Setup > UI Settings >**.
 - **LiDAR quality stays at 1 square (Poor)**

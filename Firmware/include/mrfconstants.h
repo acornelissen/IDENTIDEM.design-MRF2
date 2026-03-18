@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity and boot behavior
 // ---------------------------------------------------------------------------
-#define FWVERSION "10.3.0"                  // Version shown in UI and release metadata.
+#define FWVERSION "10.3.1"                  // Version shown in UI and release metadata.
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
 // ---------------------------------------------------------------------------
@@ -116,43 +116,44 @@ const int CM_PER_METER = 100; // Centimeters per meter.
 #define RETICLE_OFFSET_X -5 // Main reticle X offset for optical alignment.
 #define RETICLE_OFFSET_Y 0  // Main reticle Y offset for optical alignment.
 const int LIDAR_DISTANCE_DIVISOR = 10;           // Raw LiDAR millimeter-to-centimeter divisor.
-const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 750; // Hide stale LiDAR data after this timeout.
+const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 1000; // Hold last reading before showing placeholder.
+const int LIDAR_FAR_SIGNAL_LOSS_CM = 300;         // Show "Inf." instead of "..." when signal lost above this distance.
 const int LIDAR_RECOVERY_ERROR_THRESHOLD = 3;    // Errors before recovery path escalates.
 const unsigned long LIDAR_RECOVERY_TIMEOUT_MS = 1500; // Timeout window triggering recovery.
 const unsigned long LIDAR_RECOVERY_RETRY_BASE_MS = 250; // Initial retry backoff.
 const unsigned long LIDAR_RECOVERY_RETRY_MAX_MS = 2000; // Max retry backoff.
 const float LIDAR_LIBRARY_DISTANCE_SCALE = 1.0f; // Library-side linear distance scale.
 const int LIDAR_LIBRARY_DISTANCE_OFFSET_MM = 400; // Library-side linear distance offset.
-const int LIDAR_LIBRARY_MIN_INTENSITY_THRESHOLD = 80; // Library reject threshold for weak returns.
-const int LIDAR_FUSION_MIN_INTENSITY = 40;       // Fusion-stage baseline minimum intensity.
-const int LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM = 220; // Near-range boundary for intensity gating.
-const int LIDAR_FUSION_INTENSITY_MID_RANGE_CM = 500;  // Mid-range boundary for intensity gating.
-const int LIDAR_FUSION_INTENSITY_FAR_RANGE_CM = 1000; // Far-range boundary for intensity gating.
-const int LIDAR_FUSION_MIN_INTENSITY_MID = 10;   // Mid-range minimum intensity.
-const int LIDAR_FUSION_MIN_INTENSITY_FAR = 6;    // Far-range minimum intensity.
-const int LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE = 3; // Very-far minimum intensity.
-const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 300;  // Target SNR (permille) for near returns.
-const int LIDAR_SNR_PERMILLE_TARGET_MID = 200;   // Target SNR (permille) for mid returns.
-const int LIDAR_SNR_PERMILLE_TARGET_FAR = 180;   // Target SNR (permille) for far returns.
-const int LIDAR_SNR_PERMILLE_TARGET_MAX_RANGE = 120; // Target SNR (permille) at max range.
-const int LIDAR_SNR_PERMILLE_HARD_REJECT = 25;   // SNR hard-reject floor.
+const int LIDAR_LIBRARY_MIN_INTENSITY_THRESHOLD = 20; // Library quality tier base; tiers are distance-scaled in v2.1.2+.
+const int LIDAR_FUSION_MIN_INTENSITY = 40;       // Near-range (≤3m) minimum intensity — strict for accuracy.
+const int LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM = 300; // Near-range boundary (≤3m): high accuracy.
+const int LIDAR_FUSION_INTENSITY_MID_RANGE_CM = 700;  // Mid-range boundary (≤7m): relaxed.
+const int LIDAR_FUSION_INTENSITY_FAR_RANGE_CM = 1200; // Far-range boundary (≤12m): very lax.
+const int LIDAR_FUSION_MIN_INTENSITY_MID = 5;    // Mid-range minimum intensity (4–7m).
+const int LIDAR_FUSION_MIN_INTENSITY_FAR = 1;    // Far-range minimum intensity (8–12m).
+const int LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE = 1; // Beyond-far minimum intensity (>12m).
+const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 300;  // Target SNR (permille) for near returns — strict.
+const int LIDAR_SNR_PERMILLE_TARGET_MID = 100;   // Target SNR (permille) for mid returns — relaxed.
+const int LIDAR_SNR_PERMILLE_TARGET_FAR = 25;    // Target SNR (permille) for far returns — very lax.
+const int LIDAR_SNR_PERMILLE_TARGET_MAX_RANGE = 10; // Target SNR (permille) at max range — near-zero.
+const int LIDAR_SNR_PERMILLE_HARD_REJECT = 8;    // SNR hard-reject floor (global).
 const int LIDAR_SNR_HARD_REJECT_INTENSITY_MULTIPLIER = 2; // Extra rejection guard in low intensity.
-const int LIDAR_SNR_PENALTY_DIVISOR = 18;        // Maps SNR deficit to confidence penalty.
-const int LIDAR_SNR_PENALTY_MAX = 14;            // Max SNR-based confidence penalty.
-const int LIDAR_SNR_FALLBACK_PENALTY_MAX = 8;    // Max SNR penalty in fallback path.
-const int LIDAR_FALLBACK_MIN_INTENSITY = 2;      // Minimum intensity accepted in fallback.
-const int LIDAR_FALLBACK_BASE_CONFIDENCE = 14;   // Base confidence for fallback candidate.
-const int LIDAR_FALLBACK_MAX_CONFIDENCE = 28;    // Ceiling confidence for fallback candidate.
+const int LIDAR_SNR_PENALTY_DIVISOR = 30;        // Maps SNR deficit to confidence penalty (larger = gentler).
+const int LIDAR_SNR_PENALTY_MAX = 8;             // Max SNR-based confidence penalty.
+const int LIDAR_SNR_FALLBACK_PENALTY_MAX = 3;    // Max SNR penalty in fallback path.
+const int LIDAR_FALLBACK_MIN_INTENSITY = 1;      // Minimum intensity accepted in fallback.
+const int LIDAR_FALLBACK_BASE_CONFIDENCE = 25;   // Base confidence for fallback candidate.
+const int LIDAR_FALLBACK_MAX_CONFIDENCE = 50;    // Ceiling confidence for fallback candidate.
 const int LIDAR_CONFIDENCE_HIGH = 75;            // High-confidence threshold.
 const int LIDAR_CONFIDENCE_MEDIUM = 55;          // Medium-confidence threshold.
 const float LIDAR_MEDIUM_CONF_BLEND = 0.35f;     // Blend factor when confidence is medium.
-const float LIDAR_LOW_CONF_BLEND_MIN = 0.12f;    // Minimum blend at low confidence.
-const float LIDAR_LOW_CONF_BLEND_MAX = 0.28f;    // Maximum blend at low confidence.
-const int LIDAR_LOW_CONF_MAX_STEP_CM = 60;       // Max accepted per-frame distance step at low confidence.
+const float LIDAR_LOW_CONF_BLEND_MIN = 0.20f;    // Minimum blend at low confidence.
+const float LIDAR_LOW_CONF_BLEND_MAX = 0.35f;    // Maximum blend at low confidence.
+const int LIDAR_LOW_CONF_MAX_STEP_CM = 300;      // Max accepted per-frame distance step at low confidence.
 const int LIDAR_FUSION_AGREE_DELTA_CM = 30;      // Agreement delta between primary/secondary returns.
 const int LIDAR_FUSION_CONF_BONUS = 6;           // Confidence bonus when candidates agree.
-const int LIDAR_TEMPORAL_PENALTY_DIVISOR = 20;   // Maps temporal jump size to confidence penalty.
-const int LIDAR_TEMPORAL_PENALTY_MAX = 14;       // Max temporal confidence penalty.
+const int LIDAR_TEMPORAL_PENALTY_DIVISOR = 25;   // Maps temporal jump size to confidence penalty (larger = gentler).
+const int LIDAR_TEMPORAL_PENALTY_MAX = 10;       // Max temporal confidence penalty.
 const int LIDAR_PRIOR_PENALTY_MAX_POOR = 3;      // Prior penalty cap for poor candidate quality.
 const int LIDAR_PRIOR_PENALTY_MAX_FAIR = 4;      // Prior penalty cap for fair candidate quality.
 const int LIDAR_PRIOR_PENALTY_MAX_GOOD = 5;      // Prior penalty cap for good candidate quality.

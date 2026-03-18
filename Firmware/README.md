@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.3.0
+**Version**: 10.3.1
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -25,7 +25,7 @@ The project uses PlatformIO with the following libraries (declared in `platformi
 - Adafruit GFX Library (^1.11.9)
 - U8g2_for_Adafruit_GFX (^1.8.0)
 - Adafruit MAX1704X (^1.0.3)
-- DTS6012M_UART (^2.1.1)
+- DTS6012M_UART (^2.2.1)
 - BH1750 (^1.3.0)
 - Bounce2 (^2.72)
 - Adafruit SH110X (^2.1.10)
@@ -127,7 +127,7 @@ Firmware/
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
 - In Main mode, LiDAR idle standby timeout is user-configurable (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
 - While LiDAR is in idle standby, the distance readout shows `Zzz`
-- Distance display uses `cm` below `1m`, with `<15cm` near clamp and `Inf.` above `10.5m`
+- Distance display uses `cm` below `1m`, with `<15cm` near clamp, `Inf.` above `10.5m` or when far-range signal is lost
 - Range: 5cm to 18m
 
 #### Light Metering
@@ -190,9 +190,10 @@ pio test -e native_core_tests
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
 - `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor
 - `LIDAR_LIBRARY_DISTANCE_OFFSET_MM`: LiDAR library distance offset in mm
-- `LIDAR_NO_DATA_TIMEOUT_MS`: Timeout before showing unavailable distance (`750ms`)
+- `LIDAR_NO_DATA_TIMEOUT_MS`: Hold timeout before showing placeholder (`1000ms`)
+- `LIDAR_FAR_SIGNAL_LOSS_CM`: Show `Inf.` instead of `...` when signal lost above this distance (`300cm`)
 - `LIDAR_FUSION_MIN_INTENSITY`: Near-range minimum intensity gate (`40`)
-- `LIDAR_SNR_PERMILLE_HARD_REJECT`: SNR hard-reject floor (`25‰`)
+- `LIDAR_SNR_PERMILLE_HARD_REJECT`: SNR hard-reject floor (`8‰`)
 - `LIDAR_CONFIDENCE_HIGH` / `LIDAR_CONFIDENCE_MEDIUM`: Confidence thresholds for smoothing behavior
 - `LIDAR_CAL_CUTOFF_CM` / `LIDAR_CAL_REF_RAW_CM` / `LIDAR_CAL_REF_TRUE_CM`: Near-range calibration curve parameters
 - `LIDAR_RESIDUAL_DIST_CM` / `LIDAR_RESIDUAL_DELTA_CM`: Piecewise residual correction table

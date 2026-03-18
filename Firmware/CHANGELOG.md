@@ -2,6 +2,24 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.3.1 - 2026-03-18
+
+- LiDAR range and library update:
+  - Updated DTS6012M_UART library to v2.2.1. Library now exposes IIC register access (`writeIICRegister`/`readIICRegister`), diagnostic histogram and SPAD heatmap streams, CRC AUTO mode with configurable auto-switch threshold, and `getTemperatureCode()`. `assessDataQuality()` scales the intensity threshold by inverse-square-law distance for fairer far-range quality assessment. Test stub updated to match v2.2.1 struct layout and enum values.
+  - Retuned LiDAR fusion pipeline into three accuracy tiers: strict ≤3m (high accuracy), relaxed 4–7m, and very lax 8m+ (accept almost any return signal). Range boundaries widened from 2.2/5/10m to 3/7/12m.
+  - Far-range intensity gates significantly lowered: mid 10→5, far 3→1, max-range unchanged at 1.
+  - SNR targets relaxed at range: mid 200→100‰, far 120→25‰, max-range 80→10‰. Hard-reject floor 15→8‰.
+  - Gentler SNR penalty: divisor 25→30, max 10→8 (fallback 5→3).
+  - Fallback path: min intensity 2→1, base confidence 20→25, ceiling 40→50.
+  - Temporal penalty reduced: divisor 20→25, max 14→10 — less suppression of noisy far-range frame-to-frame jumps.
+  - Reset `prev_distance` to 0 when the display clears so the next valid reading is not penalised by a stale temporal jump.
+  - Low-confidence per-frame step limit raised from 60→300cm for faster recovery after dropout.
+  - Low-confidence blend weights widened 0.12–0.28→0.20–0.35.
+- LiDAR UX improvements:
+  - Signal loss at far range (last reading >3m) now shows "Inf." instead of "..." — tells the photographer the subject is beyond range, not that the sensor has failed.
+  - Hold timeout increased from 750ms to 1000ms to bridge intermittent dropouts at the range boundary.
+- Removed diagnostic serial logging from LiDAR pipeline.
+
 ## 10.3.0 - 2026-03-15
 
 - Usability improvements:

@@ -109,7 +109,7 @@ void setDistance()
       // Keep main-branch behavior: do not force recovery on filtered/noisy frames.
       if ((now - lidarRecoveryState.last_valid_measurement_ms) > LIDAR_NO_DATA_TIMEOUT_MS)
       {
-        clearLidarDisplay("...");
+        clearLidarDisplay(prev_distance >= LIDAR_FAR_SIGNAL_LOSS_CM ? "Inf." : "...");
       }
       return;
     }
