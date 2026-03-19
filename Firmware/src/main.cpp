@@ -177,6 +177,8 @@ void initializeLidarSensor()
   {
     lidarSensorReady = true;
     lidarEnabled = true;
+    // Lower frame rate for longer per-frame integration time (improves far-range).
+    lidar.setFrameRate(LIDAR_FRAME_RATE_FPS);
     // Stage 1 correction: global linear scale/offset in library space (mm).
     lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
     lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);

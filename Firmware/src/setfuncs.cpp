@@ -47,7 +47,8 @@ LidarRecoveryState lidarRecoveryState = {};
 
 void applyLidarCalibrationProfile()
 {
-  // Re-apply library-side distance correction after sensor state changes.
+  // Re-apply frame rate and library-side distance correction after sensor state changes.
+  lidar.setFrameRate(LIDAR_FRAME_RATE_FPS);
   lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
   lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
 }
@@ -94,9 +95,9 @@ void setDistance()
 
   const unsigned long now = millis();
 
-  DTSError lidarUpdateError = static_cast<DTSError>(lidar.update());
-  last_lidar_error_code = static_cast<int>(lidarUpdateError);
-  if (lidarUpdateError == DTSError::NONE)
+  DTSResult lidarUpdateResult = lidar.update();
+  last_lidar_error_code = static_cast<int>(static_cast<DTSError>(lidarUpdateResult));
+  if (lidar.newDataAvailable())
   {
     DTSMeasurement measurement = lidar.getMeasurement();
 
@@ -118,7 +119,7 @@ void setDistance()
     lidar_quality_level = chosen.quality_level;
 
     distance = static_cast<int16_t>(blendLidarDistance(prev_distance, chosen.distance_cm, chosen.confidence));
-    if (distance != prev_distance || strcmp(distance_cm, "...") == 0 || strcmp(distance_cm, "Zzz") == 0)
+    if (distance != prev_distance || strcmp(distance_cm, "...") == 0 || strcmp(distance_cm, "Inf.") == 0 || strcmp(distance_cm, "Zzz") == 0)
     {
       formatDistanceDisplay(distance, distance_cm, sizeof(distance_cm));
       prev_distance = distance;
@@ -126,6 +127,7 @@ void setDistance()
     return;
   }
 
+  DTSError lidarUpdateError = static_cast<DTSError>(lidarUpdateResult);
   LidarRecoveryEvent event = (lidarUpdateError == DTSError::TIMEOUT)
                                  ? LidarRecoveryEvent::TIMEOUT
                                  : LidarRecoveryEvent::ERROR;
@@ -417,6 +419,7 @@ void retryLidarInit()
 
   lidarSensorReady = true;
   lidarEnabled = true;
+  lidar.setFrameRate(LIDAR_FRAME_RATE_FPS);
   lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
   lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
   last_lidar_error_code = 0;
