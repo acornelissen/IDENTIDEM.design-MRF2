@@ -101,6 +101,13 @@ void setDistance()
   {
     DTSMeasurement measurement = lidar.getMeasurement();
 
+    // Use the library's median-filtered distance to reduce jitter at near/mid range.
+    uint16_t filtered_mm = lidar.getFilteredDistance();
+    if (filtered_mm != DTS_INVALID_DISTANCE && measurement.primaryDistance_mm != DTS_INVALID_DISTANCE)
+    {
+      measurement.primaryDistance_mm = filtered_mm;
+    }
+
     int lens_prior_cm = 0;
     bool has_lens_prior = getLensPriorCm(lens_prior_cm);
 
