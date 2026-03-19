@@ -81,6 +81,7 @@ void clearLidarDisplay(const char *placeholder)
 {
   snprintf(distance_cm, sizeof(distance_cm), "%s", placeholder);
   lidar_quality_level = 0;
+  prev_distance = 0; // Reset so the next valid reading is not penalised against a stale value.
 }
 
 // Functions to read values from sensors and set variables
