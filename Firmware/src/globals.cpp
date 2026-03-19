@@ -80,6 +80,7 @@ bool prefsLoadedLegacy = false;
 uint16_t prefsSchemaVersionLoaded = 0;
 int last_lidar_error_code = 0;
 int lidar_recovery_count = 0;
+char lidar_sensor_fw_version[16] = "?";
 bool adsReady = false;
 bool mpuReady = false;
 bool mainDisplayReady = false;

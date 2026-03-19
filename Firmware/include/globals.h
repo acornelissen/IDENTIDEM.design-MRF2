@@ -97,6 +97,7 @@ extern bool prefsLoadedLegacy;
 extern uint16_t prefsSchemaVersionLoaded;
 extern int last_lidar_error_code;
 extern int lidar_recovery_count;
+extern char lidar_sensor_fw_version[16];
 extern bool adsReady;
 extern bool mpuReady;
 extern bool mainDisplayReady;
