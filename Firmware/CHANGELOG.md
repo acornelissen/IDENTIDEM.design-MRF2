@@ -2,6 +2,10 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.3.2 - 2026-03-20
+
+- Updated DTS6012M_UART library to v2.5.1. Fixes response interleaving in one-shot commands (`getFirmwareVersion`, `getFrameRate`) and routes `setFrameRate()`/`writeIICRegister()` through `sendOneShot()` to prevent ack frames from polluting the measurement stream. Improves reliability of calibration profile application and health-screen firmware version queries.
+
 ## 10.3.1 - 2026-03-18
 
 - LiDAR range and library update:
