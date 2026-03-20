@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity and boot behavior
 // ---------------------------------------------------------------------------
-#define FWVERSION "10.3.1"                  // Version shown in UI and release metadata.
+#define FWVERSION "10.3.2"                  // Version shown in UI and release metadata.
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
 // ---------------------------------------------------------------------------
@@ -115,7 +115,8 @@ const int CM_PER_METER = 100; // Centimeters per meter.
 // ---------------------------------------------------------------------------
 #define RETICLE_OFFSET_X -5 // Main reticle X offset for optical alignment.
 #define RETICLE_OFFSET_Y 0  // Main reticle Y offset for optical alignment.
-const int LIDAR_DISTANCE_DIVISOR = 10;           // Raw LiDAR millimeter-to-centimeter divisor.
+const int LIDAR_DISTANCE_DIVISOR = 10;           // Raw LiDAR millimetre-to-centimetre divisor.
+const uint16_t LIDAR_FRAME_RATE_FPS = 50;        // Sensor frame rate — lower = more integration time per frame.
 const unsigned long LIDAR_NO_DATA_TIMEOUT_MS = 1000; // Hold last reading before showing placeholder.
 const int LIDAR_FAR_SIGNAL_LOSS_CM = 300;         // Show "Inf." instead of "..." when signal lost above this distance.
 const int LIDAR_RECOVERY_ERROR_THRESHOLD = 3;    // Errors before recovery path escalates.

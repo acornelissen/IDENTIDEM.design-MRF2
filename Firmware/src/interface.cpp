@@ -1073,6 +1073,8 @@ void drawHealthUI()
   u8g2.print(lidarEnabled ? F("On") : F("Off"));
   u8g2.print(F(" err:"));
   u8g2.print(last_lidar_error_code);
+  u8g2.print(F(" v"));
+  u8g2.print(lidar_sensor_fw_version);
 
   u8g2.setCursor(HEALTH_ITEM_X, HEALTH_ITEM_Y_START + (HEALTH_ITEM_Y_STEP * 3));
   u8g2.print(F("Recoveries: "));

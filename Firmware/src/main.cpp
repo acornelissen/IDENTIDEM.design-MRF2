@@ -177,7 +177,21 @@ void initializeLidarSensor()
   {
     lidarSensorReady = true;
     lidarEnabled = true;
-    // Stage 1 correction: global linear scale/offset in library space (mm).
+
+    // Query sensor firmware version for diagnostics display.
+    byte versionBuf[8] = {};
+    uint8_t versionLen = 0;
+    if (lidar.getFirmwareVersion(versionBuf, sizeof(versionBuf), versionLen) == DTSError::NONE && versionLen > 0)
+    {
+      int written = 0;
+      for (uint8_t i = 0; i < versionLen && written < static_cast<int>(sizeof(lidar_sensor_fw_version)) - 1; i++)
+      {
+        written += snprintf(lidar_sensor_fw_version + written,
+                            sizeof(lidar_sensor_fw_version) - written, "%02X", versionBuf[i]);
+      }
+    }
+
+    lidar.setFrameRate(LIDAR_FRAME_RATE_FPS);
     lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
     lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
   }

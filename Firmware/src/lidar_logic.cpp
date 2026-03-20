@@ -386,12 +386,6 @@ LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,
                                         bool has_lens_prior,
                                         int lens_prior_cm)
 {
-  DataQuality secondary_quality = measurement.secondaryQuality;
-  if (secondary_quality == DataQuality::INVALID && measurement.secondaryDistance_mm != DTS_INVALID_DISTANCE)
-  {
-    secondary_quality = measurement.primaryQuality;
-  }
-
   LidarCandidate primary = buildLidarCandidate(measurement.primaryDistance_mm,
                                                measurement.primaryIntensity,
                                                measurement.sunlightBase,
@@ -401,14 +395,28 @@ LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,
                                                has_lens_prior,
                                                lens_prior_cm);
 
-  LidarCandidate secondary = buildLidarCandidate(measurement.secondaryDistance_mm,
-                                                 measurement.secondaryIntensity,
-                                                 measurement.sunlightBase,
-                                                 secondary_quality,
-                                                 true,
-                                                 previous_distance_cm,
-                                                 has_lens_prior,
-                                                 lens_prior_cm);
+  // Only build secondary candidate when a dual-peak target is present
+  // (valid distance AND non-zero intensity, matching library hasSecondaryTarget() logic).
+  bool has_secondary = measurement.secondaryDistance_mm != DTS_INVALID_DISTANCE &&
+                       measurement.secondaryIntensity > 0;
+
+  LidarCandidate secondary = {};
+  if (has_secondary)
+  {
+    DataQuality secondary_quality = measurement.secondaryQuality;
+    if (secondary_quality == DataQuality::INVALID)
+    {
+      secondary_quality = measurement.primaryQuality;
+    }
+    secondary = buildLidarCandidate(measurement.secondaryDistance_mm,
+                                    measurement.secondaryIntensity,
+                                    measurement.sunlightBase,
+                                    secondary_quality,
+                                    true,
+                                    previous_distance_cm,
+                                    has_lens_prior,
+                                    lens_prior_cm);
+  }
 
   if (primary.valid && secondary.valid &&
       abs(primary.distance_cm - secondary.distance_cm) <= LIDAR_FUSION_AGREE_DELTA_CM)
@@ -432,10 +440,20 @@ LidarCandidate chooseBestLidarCandidate(const DTSMeasurement &measurement,
                                                                measurement.sunlightBase,
                                                                measurement.primaryQuality,
                                                                previous_distance_cm);
+  if (!has_secondary)
+  {
+    return fallbackPrimary;
+  }
+
+  DataQuality fb_secondary_quality = measurement.secondaryQuality;
+  if (fb_secondary_quality == DataQuality::INVALID)
+  {
+    fb_secondary_quality = measurement.primaryQuality;
+  }
   LidarCandidate fallbackSecondary = buildFallbackLidarCandidate(measurement.secondaryDistance_mm,
                                                                  measurement.secondaryIntensity,
                                                                  measurement.sunlightBase,
-                                                                 secondary_quality,
+                                                                 fb_secondary_quality,
                                                                  previous_distance_cm);
 
   if (fallbackPrimary.valid && fallbackSecondary.valid &&

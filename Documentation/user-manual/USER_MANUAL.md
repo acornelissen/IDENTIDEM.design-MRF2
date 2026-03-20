@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.3.1
+**Firmware version:** 10.3.2
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 

@@ -48,6 +48,7 @@ LidarRecoveryState lidarRecoveryState = {};
 void applyLidarCalibrationProfile()
 {
   // Re-apply library-side distance correction after sensor state changes.
+  // Frame rate is set once at boot; the sensor retains it across enable/disable cycles.
   lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
   lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
 }
@@ -80,6 +81,7 @@ void clearLidarDisplay(const char *placeholder)
 {
   snprintf(distance_cm, sizeof(distance_cm), "%s", placeholder);
   lidar_quality_level = 0;
+  prev_distance = 0; // Reset so the next valid reading is not penalised against a stale value.
 }
 
 // Functions to read values from sensors and set variables
@@ -94,11 +96,18 @@ void setDistance()
 
   const unsigned long now = millis();
 
-  DTSError lidarUpdateError = static_cast<DTSError>(lidar.update());
-  last_lidar_error_code = static_cast<int>(lidarUpdateError);
-  if (lidarUpdateError == DTSError::NONE)
+  DTSResult lidarUpdateResult = lidar.update();
+  last_lidar_error_code = static_cast<int>(static_cast<DTSError>(lidarUpdateResult));
+  if (lidar.newDataAvailable())
   {
     DTSMeasurement measurement = lidar.getMeasurement();
+
+    // Use the library's median-filtered distance to reduce jitter at near/mid range.
+    uint16_t filtered_mm = lidar.getFilteredDistance();
+    if (filtered_mm != DTS_INVALID_DISTANCE && measurement.primaryDistance_mm != DTS_INVALID_DISTANCE)
+    {
+      measurement.primaryDistance_mm = filtered_mm;
+    }
 
     int lens_prior_cm = 0;
     bool has_lens_prior = getLensPriorCm(lens_prior_cm);
@@ -118,7 +127,7 @@ void setDistance()
     lidar_quality_level = chosen.quality_level;
 
     distance = static_cast<int16_t>(blendLidarDistance(prev_distance, chosen.distance_cm, chosen.confidence));
-    if (distance != prev_distance || strcmp(distance_cm, "...") == 0 || strcmp(distance_cm, "Zzz") == 0)
+    if (distance != prev_distance || strcmp(distance_cm, "...") == 0 || strcmp(distance_cm, "Inf.") == 0 || strcmp(distance_cm, "Zzz") == 0)
     {
       formatDistanceDisplay(distance, distance_cm, sizeof(distance_cm));
       prev_distance = distance;
@@ -126,6 +135,7 @@ void setDistance()
     return;
   }
 
+  DTSError lidarUpdateError = static_cast<DTSError>(lidarUpdateResult);
   LidarRecoveryEvent event = (lidarUpdateError == DTSError::TIMEOUT)
                                  ? LidarRecoveryEvent::TIMEOUT
                                  : LidarRecoveryEvent::ERROR;
