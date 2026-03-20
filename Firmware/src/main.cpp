@@ -177,15 +177,8 @@ void initializeLidarSensor()
   {
     lidarSensorReady = true;
     lidarEnabled = true;
-    // Lower frame rate for longer per-frame integration time (improves far-range).
-    lidar.setFrameRate(LIDAR_FRAME_RATE_FPS);
-    // Stage 1 correction: global linear scale/offset in library space (mm).
-    lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
-    lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);
 
     // Query sensor firmware version for diagnostics display.
-    lidar.disableSensor();
-    delay(50);
     byte versionBuf[8] = {};
     uint8_t versionLen = 0;
     if (lidar.getFirmwareVersion(versionBuf, sizeof(versionBuf), versionLen) == DTSError::NONE && versionLen > 0)
@@ -197,7 +190,7 @@ void initializeLidarSensor()
                             sizeof(lidar_sensor_fw_version) - written, "%02X", versionBuf[i]);
       }
     }
-    lidar.enableSensor();
+
     lidar.setFrameRate(LIDAR_FRAME_RATE_FPS);
     lidar.setDistanceScale(LIDAR_LIBRARY_DISTANCE_SCALE);
     lidar.setDistanceOffset(LIDAR_LIBRARY_DISTANCE_OFFSET_MM);

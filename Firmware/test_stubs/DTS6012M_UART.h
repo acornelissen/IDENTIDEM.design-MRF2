@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-// Error codes — matches library v2.5.1
+// Error codes — matches library v2.5.3
 enum class DTSError : uint8_t
 {
   NONE = 0x00,
@@ -17,7 +17,7 @@ enum class DTSError : uint8_t
   UNSUPPORTED_OPERATION = 0x08
 };
 
-// Data quality indicators — matches library v2.5.1
+// Data quality indicators — matches library v2.5.3
 enum class DataQuality : uint8_t
 {
   EXCELLENT = 0,
@@ -27,7 +27,7 @@ enum class DataQuality : uint8_t
   INVALID = 4
 };
 
-// Measurement structure — matches library v2.5.1
+// Measurement structure — matches library v2.5.3
 struct DTSMeasurement
 {
   uint16_t primaryDistance_mm = 0;

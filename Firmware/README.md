@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.3.1
+**Version**: 10.3.2
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -25,7 +25,7 @@ The project uses PlatformIO with the following libraries (declared in `platformi
 - Adafruit GFX Library (^1.11.9)
 - U8g2_for_Adafruit_GFX (^1.8.0)
 - Adafruit MAX1704X (^1.0.3)
-- DTS6012M_UART (^2.2.1)
+- DTS6012M_UART (^2.5.3)
 - BH1750 (^1.3.0)
 - Bounce2 (^2.72)
 - Adafruit SH110X (^2.1.10)

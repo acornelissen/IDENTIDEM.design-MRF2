@@ -4,7 +4,13 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
 
 ## 10.3.2 - 2026-03-20
 
-- Updated DTS6012M_UART library to v2.5.1. Fixes response interleaving in one-shot commands (`getFirmwareVersion`, `getFrameRate`) and routes `setFrameRate()`/`writeIICRegister()` through `sendOneShot()` to prevent ack frames from polluting the measurement stream. Improves reliability of calibration profile application and health-screen firmware version queries.
+- Updated DTS6012M_UART library to v2.5.3 (from v2.2.1). v2.5.2–2.5.3 fix stale circular buffer and `_lastValidFrameTime` not updating on `sendOneShot` timeout — both caused `getFirmwareVersion`/`setFrameRate` to starve the measurement stream. All `setFrameRate`/`getFirmwareVersion` calls now use the library API directly.
+- Display sensor firmware version in system health screen.
+- Use library `newDataAvailable()` flag and `getFilteredDistance()` median filter for jitter reduction.
+- Set LiDAR frame rate to 50 fps for improved far-range integration time.
+- Skip secondary candidate when no dual-peak target detected.
+- Reset `prev_distance` on display clear to prevent stale temporal penalty.
+- Show "Inf." instead of "..." when signal lost above 3 m.
 
 ## 10.3.1 - 2026-03-18
 
