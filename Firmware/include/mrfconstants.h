@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity and boot behavior
 // ---------------------------------------------------------------------------
-#define FWVERSION "10.3.3"                  // Version shown in UI and release metadata.
+#define FWVERSION "10.3.4"                  // Version shown in UI and release metadata.
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
 // ---------------------------------------------------------------------------
@@ -126,17 +126,17 @@ const unsigned long LIDAR_RECOVERY_RETRY_MAX_MS = 2000; // Max retry backoff.
 const float LIDAR_LIBRARY_DISTANCE_SCALE = 1.0f; // Library-side linear distance scale.
 const int LIDAR_LIBRARY_DISTANCE_OFFSET_MM = 400; // Library-side linear distance offset.
 const int LIDAR_LIBRARY_MIN_INTENSITY_THRESHOLD = 20; // Library quality tier base; tiers are distance-scaled in v2.1.2+.
-const int LIDAR_FUSION_MIN_INTENSITY = 40;       // Near-range (≤3m) minimum intensity — strict for accuracy.
-const int LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM = 300; // Near-range boundary (≤3m): high accuracy.
-const int LIDAR_FUSION_INTENSITY_MID_RANGE_CM = 700;  // Mid-range boundary (≤7m): relaxed.
-const int LIDAR_FUSION_INTENSITY_FAR_RANGE_CM = 1200; // Far-range boundary (≤12m): very lax.
-const int LIDAR_FUSION_MIN_INTENSITY_MID = 5;    // Mid-range minimum intensity (4–7m).
-const int LIDAR_FUSION_MIN_INTENSITY_FAR = 1;    // Far-range minimum intensity (8–12m).
-const int LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE = 1; // Beyond-far minimum intensity (>12m).
-const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 300;  // Target SNR (permille) for near returns — strict.
-const int LIDAR_SNR_PERMILLE_TARGET_MID = 100;   // Target SNR (permille) for mid returns — relaxed.
-const int LIDAR_SNR_PERMILLE_TARGET_FAR = 25;    // Target SNR (permille) for far returns — very lax.
-const int LIDAR_SNR_PERMILLE_TARGET_MAX_RANGE = 10; // Target SNR (permille) at max range — near-zero.
+const int LIDAR_FUSION_MIN_INTENSITY = 40;       // Near-range (≤2m) minimum intensity — strict for accuracy.
+const int LIDAR_FUSION_INTENSITY_NEAR_RANGE_CM = 200; // Near-range boundary (≤2m): super accurate.
+const int LIDAR_FUSION_INTENSITY_MID_RANGE_CM = 500;  // Mid-range boundary (≤5m): less accurate.
+const int LIDAR_FUSION_INTENSITY_FAR_RANGE_CM = 700;  // Far-range boundary (≤7m): even less accurate.
+const int LIDAR_FUSION_MIN_INTENSITY_MID = 10;   // Mid-range minimum intensity (2–5m).
+const int LIDAR_FUSION_MIN_INTENSITY_FAR = 3;    // Far-range minimum intensity (5–7m).
+const int LIDAR_FUSION_MIN_INTENSITY_MAX_RANGE = 1; // Beyond-far minimum intensity (8m+): just get a value.
+const int LIDAR_SNR_PERMILLE_TARGET_NEAR = 300;  // Target SNR (permille) for near returns (≤2m) — strict.
+const int LIDAR_SNR_PERMILLE_TARGET_MID = 150;   // Target SNR (permille) for mid returns (2–5m) — moderate.
+const int LIDAR_SNR_PERMILLE_TARGET_FAR = 40;    // Target SNR (permille) for far returns (5–7m) — relaxed.
+const int LIDAR_SNR_PERMILLE_TARGET_MAX_RANGE = 10; // Target SNR (permille) at max range (8m+) — accept anything.
 const int LIDAR_SNR_PERMILLE_HARD_REJECT = 8;    // SNR hard-reject floor (global).
 const int LIDAR_SNR_HARD_REJECT_INTENSITY_MULTIPLIER = 2; // Extra rejection guard in low intensity.
 const int LIDAR_SNR_PENALTY_DIVISOR = 30;        // Maps SNR deficit to confidence penalty (larger = gentler).
@@ -160,13 +160,13 @@ const int LIDAR_PRIOR_PENALTY_MAX_FAIR = 4;      // Prior penalty cap for fair c
 const int LIDAR_PRIOR_PENALTY_MAX_GOOD = 5;      // Prior penalty cap for good candidate quality.
 const int LIDAR_PRIOR_PENALTY_MAX_EXCELLENT = 4; // Prior penalty cap for excellent candidate quality.
 const int LIDAR_PRIOR_DEADBAND_CM = 25;          // No prior penalty inside this distance error band.
-const int LIDAR_PRIOR_RANGE_NEAR_CM = 300;       // Near band for prior scaling.
-const int LIDAR_PRIOR_RANGE_MID_CM = 500;        // Mid band for prior scaling.
-const int LIDAR_PRIOR_RANGE_FAR_CM = 1000;       // Far band for prior scaling.
-const float LIDAR_PRIOR_RANGE_SCALE_NEAR = 1.0f; // Prior penalty scale at near range.
-const float LIDAR_PRIOR_RANGE_SCALE_MID = 0.75f; // Prior penalty scale at mid range.
-const float LIDAR_PRIOR_RANGE_SCALE_FAR = 0.5f;  // Prior penalty scale at far range.
-const float LIDAR_PRIOR_RANGE_SCALE_VERY_FAR = 0.35f; // Prior penalty scale at very far range.
+const int LIDAR_PRIOR_RANGE_NEAR_CM = 200;       // Near band for prior scaling (≤2m).
+const int LIDAR_PRIOR_RANGE_MID_CM = 500;        // Mid band for prior scaling (≤5m).
+const int LIDAR_PRIOR_RANGE_FAR_CM = 700;        // Far band for prior scaling (≤7m).
+const float LIDAR_PRIOR_RANGE_SCALE_NEAR = 1.0f; // Prior penalty scale at near range (≤2m) — full influence.
+const float LIDAR_PRIOR_RANGE_SCALE_MID = 0.6f;  // Prior penalty scale at mid range (2–5m).
+const float LIDAR_PRIOR_RANGE_SCALE_FAR = 0.35f; // Prior penalty scale at far range (5–7m).
+const float LIDAR_PRIOR_RANGE_SCALE_VERY_FAR = 0.2f; // Prior penalty scale at max range (8m+) — minimal influence.
 const float LIDAR_LENS_PRIOR_WEIGHT_GOOD = 0.025f;    // Lens-prior pull when confidence is good.
 const float LIDAR_LENS_PRIOR_WEIGHT_EXCELLENT = 0.012f; // Lens-prior pull when confidence is excellent.
 

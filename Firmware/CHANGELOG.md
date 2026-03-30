@@ -2,6 +2,14 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.3.4 - 2026-03-30
+
+- Retune LiDAR accuracy tiers to match subject distance importance:
+  - ≤2m (was ≤3m): super accurate — intensity gate 40, SNR target 300‰, full prior influence.
+  - 2–5m (was 3–7m): less accurate — intensity gate 10, SNR target 150‰, 60% prior influence.
+  - 5–7m (new tier): even less accurate — intensity gate 3, SNR target 40‰, 35% prior influence.
+  - 8m+ (was 7–12m): just get a value — intensity gate 1, SNR target 10‰, 20% prior influence.
+
 ## 10.3.3 - 2026-03-30
 
 - Fix buffer overflow in lightmeter when exposure time reaches very large second values (uncapped `dtostrf` into a 10-byte buffer).
