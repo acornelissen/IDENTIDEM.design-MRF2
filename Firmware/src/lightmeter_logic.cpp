@@ -135,12 +135,33 @@ void formatShutterSpeed(float lux, float aperture, int iso, char *buffer, size_t
     return;
   }
 
+  // Cap at 25 minutes to prevent buffer overflow and absurd display values.
+  if (speed > LIGHTMETER_MAX_SPEED_SECONDS)
+  {
+    speed = LIGHTMETER_MAX_SPEED_SECONDS;
+  }
+
   if (speed >= SPEED_SECONDS_THRESHOLD)
   {
-    char speed_raw[SPEED_TEXT_BUFFER_LEN];
-    dtostrf(speed, SPEED_TEXT_WIDTH, SPEED_TEXT_DECIMALS_LONG, speed_raw);
-    trimLeadingSpaces(speed_raw);
-    snprintf(buffer, bufferSize, "%s sec.", speed_raw);
+    // Round to nearest 0.5 second for display.
+    float rounded = roundf(speed * 2.0f) / 2.0f;
+
+    if (rounded >= 60.0f)
+    {
+      // Show as minutes and seconds.
+      int total_secs = static_cast<int>(roundf(rounded));
+      snprintf(buffer, bufferSize, "%dm%ds", total_secs / 60, total_secs % 60);
+    }
+    else
+    {
+      // Show as whole or half seconds.
+      int whole = static_cast<int>(rounded);
+      bool isHalf = (rounded - static_cast<float>(whole)) >= 0.4f;
+      if (isHalf)
+        snprintf(buffer, bufferSize, "%d.5 sec.", whole);
+      else
+        snprintf(buffer, bufferSize, "%d sec.", whole);
+    }
     return;
   }
 

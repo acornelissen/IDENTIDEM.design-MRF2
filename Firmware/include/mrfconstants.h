@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity and boot behavior
 // ---------------------------------------------------------------------------
-#define FWVERSION "10.3.2"                  // Version shown in UI and release metadata.
+#define FWVERSION "10.3.3"                  // Version shown in UI and release metadata.
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
 // ---------------------------------------------------------------------------
@@ -219,10 +219,10 @@ const int DISTANCE_DECIMAL_PLACES = 1;        // Decimal precision for meter dis
 // ---------------------------------------------------------------------------
 const float LIGHTMETER_SPEED_ROUND_SCALE = 1000.0f; // Round shutter speed to 1/1000s precision.
 const float SPEED_SECONDS_THRESHOLD = 1.0f;         // Threshold between fractional and second display styles.
-const int SPEED_TEXT_BUFFER_LEN = 10;               // Buffer size for shutter-speed text.
+const float LIGHTMETER_MAX_SPEED_SECONDS = 1500.0f; // Cap shutter display at 25 minutes (25 * 60).
+const int SPEED_TEXT_BUFFER_LEN = 10;               // Buffer size for shutter-speed text (sub-1s fallthrough path).
 const int SPEED_TEXT_WIDTH = 4;                     // Max digit width for integer speed formatting.
 const int SPEED_TEXT_DECIMALS_SHORT = 1;            // Decimals for shorter second values.
-const int SPEED_TEXT_DECIMALS_LONG = 2;             // Decimals for longer second values.
 const int LIGHTMETER_EV_COMP_MIN_THIRDS = -9;       // EV compensation lower bound (-3 EV).
 const int LIGHTMETER_EV_COMP_MAX_THIRDS = 9;        // EV compensation upper bound (+3 EV).
 const int LIGHTMETER_SMOOTHING_MODE_MIN = 0;        // Smoothing enum minimum.

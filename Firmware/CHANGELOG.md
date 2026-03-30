@@ -2,6 +2,12 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.3.3 - 2026-03-30
+
+- Fix buffer overflow in lightmeter when exposure time reaches very large second values (uncapped `dtostrf` into a 10-byte buffer).
+- Lightmeter exposure display now shows seconds in 0.5s increments (1, 1.5, 2, 2.5 …) and switches to minutes+seconds format (e.g. 1m30s) at one minute.
+- Cap lightmeter exposure display at 25 minutes.
+
 ## 10.3.2 - 2026-03-20
 
 - Updated DTS6012M_UART library to v2.5.3 (from v2.2.1). v2.5.2–2.5.3 fix stale circular buffer and `_lastValidFrameTime` not updating on `sendOneShot` timeout — both caused `getFirmwareVersion`/`setFrameRate` to starve the measurement stream. All `setFrameRate`/`getFirmwareVersion` calls now use the library API directly.

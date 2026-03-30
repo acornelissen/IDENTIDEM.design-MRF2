@@ -576,8 +576,21 @@ void test_lightmeter_dark_bright_fraction_and_seconds()
   TEST_ASSERT_EQUAL_STRING("Bright!", formattedShutter);
   formatShutterSpeed(320.0f, 8.0f, 400, formattedShutter, sizeof(formattedShutter));
   TEST_ASSERT_EQUAL_STRING("1/125 sec.", formattedShutter);
+  // speed = 3.2s → rounds to 3s
   formatShutterSpeed(0.5f, 2.0f, 50, formattedShutter, sizeof(formattedShutter));
-  TEST_ASSERT_EQUAL_STRING("3.20 sec.", formattedShutter);
+  TEST_ASSERT_EQUAL_STRING("3 sec.", formattedShutter);
+  // speed = 2.0s → whole seconds
+  formatShutterSpeed(0.4f, 2.0f, 100, formattedShutter, sizeof(formattedShutter));
+  TEST_ASSERT_EQUAL_STRING("2 sec.", formattedShutter);
+  // speed = 1.6s → rounds to 1.5s
+  formatShutterSpeed(0.5f, 2.0f, 100, formattedShutter, sizeof(formattedShutter));
+  TEST_ASSERT_EQUAL_STRING("1.5 sec.", formattedShutter);
+  // speed = 800s → 13m20s
+  formatShutterSpeed(0.001f, 2.0f, 100, formattedShutter, sizeof(formattedShutter));
+  TEST_ASSERT_EQUAL_STRING("13m20s", formattedShutter);
+  // absurdly dark → capped at 25m0s
+  formatShutterSpeed(0.00001f, 2.0f, 100, formattedShutter, sizeof(formattedShutter));
+  TEST_ASSERT_EQUAL_STRING("25m0s", formattedShutter);
 }
 
 int main(int, char **)
