@@ -2,6 +2,10 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.3.5 - 2026-03-31
+
+- Reduce focus ring granularity from 1cm to 5cm steps so the ring locks when lidar and lens distances visually match, without snapping too early.
+
 ## 10.3.4 - 2026-03-30
 
 - Retune LiDAR accuracy tiers to match subject distance importance:
