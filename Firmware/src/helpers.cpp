@@ -411,6 +411,10 @@ int calcMovingAvg(int sensorVal)
 
 int_fast16_t getFocusRadius()
 {
-  return constrain(abs(distance - lens_distance_raw), FOCUS_RADIUS_MIN, FOCUS_RADIUS_MAX);
+  // Compare distances in 5 cm steps to reduce focus ring granularity
+  // without snapping too early.
+  int lidar_5cm = (distance + 2) / 5;
+  int lens_5cm  = (lens_distance_raw + 2) / 5;
+  return constrain(abs(lidar_5cm - lens_5cm), FOCUS_RADIUS_MIN, FOCUS_RADIUS_MAX);
 }
 // ---------------------

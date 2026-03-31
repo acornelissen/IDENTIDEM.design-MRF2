@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity and boot behavior
 // ---------------------------------------------------------------------------
-#define FWVERSION "10.3.4"                  // Version shown in UI and release metadata.
+#define FWVERSION "10.3.5"                  // Version shown in UI and release metadata.
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
 // ---------------------------------------------------------------------------
