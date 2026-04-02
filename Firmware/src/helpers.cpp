@@ -66,7 +66,7 @@ void writeSettingsPrefs()
   prefs.putInt("meter_smooth", meter_smoothing_mode);
   prefs.putBool("show_ev", show_ev_readout);
   prefs.putInt("sleep_to_mode", sleep_timeout_mode);
-  prefs.putInt("lidar_idle_to_mode", lidar_idle_timeout_mode);
+  prefs.putInt("lidar_idle_to", lidar_idle_timeout_mode);
   prefs.putInt("lvl_trim_l10", level_trim_landscape_deci_deg);
   prefs.putInt("lvl_trim_pp10", level_trim_portrait_pos_deci_deg);
   prefs.putInt("lvl_trim_pn10", level_trim_portrait_neg_deci_deg);
@@ -293,7 +293,7 @@ void loadPrefs()
   meter_smoothing_mode = prefs.getInt("meter_smooth", DEFAULT_METER_SMOOTHING_MODE);
   show_ev_readout = prefs.getBool("show_ev", DEFAULT_SHOW_EV_READOUT);
   sleep_timeout_mode = prefs.getInt("sleep_to_mode", DEFAULT_SLEEP_TIMEOUT_MODE);
-  lidar_idle_timeout_mode = prefs.getInt("lidar_idle_to_mode", DEFAULT_LIDAR_IDLE_TIMEOUT_MODE);
+  lidar_idle_timeout_mode = prefs.getInt("lidar_idle_to", DEFAULT_LIDAR_IDLE_TIMEOUT_MODE);
   int legacy_trim_l = prefs.getInt("lvl_trim_l", DEFAULT_LEVEL_TRIM_LANDSCAPE_DECI_DEG / 10);
   int legacy_trim_pp = prefs.getInt("lvl_trim_pp", DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DECI_DEG / 10);
   int legacy_trim_pn = prefs.getInt("lvl_trim_pn", DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DECI_DEG / 10);
