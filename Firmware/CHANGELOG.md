@@ -2,9 +2,11 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
-## 10.3.5 - 2026-03-31
+## 10.3.5 - 2026-04-02
 
 - Reduce focus ring granularity from 1cm to 5cm steps so the ring locks when lidar and lens distances visually match, without snapping too early.
+- Fix LiDAR idle timeout setting not persisting across reboots (NVS key exceeded ESP32 15-char limit).
+- Change default sleep timeout to 1m30s and default LiDAR idle timeout to 1m.
 
 ## 10.3.4 - 2026-03-30
 
