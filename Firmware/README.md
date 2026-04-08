@@ -184,7 +184,7 @@ pio test -e native_core_tests
 ### Constants (mrfconstants.h)
 
 - `FWVERSION`: Firmware version string
-- `DEFAULT_SLEEP_TIMEOUT_MODE` / `SLEEP_TIMEOUT_MODE_*`: Auto-sleep options (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`)
+- `DEFAULT_SLEEP_TIMEOUT_MODE` / `SLEEP_TIMEOUT_MODE_*`: Auto-sleep options (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m30s`)
 - `DEFAULT_LIDAR_IDLE_TIMEOUT_MODE`: Awake-main LiDAR standby timeout default (`1m`)
 - `SMOOTHING_WINDOW_SIZE`: Filter window (13 samples)
 - `LENS_INF_THRESHOLD`: Infinity focus threshold

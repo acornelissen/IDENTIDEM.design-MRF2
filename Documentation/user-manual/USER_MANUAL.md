@@ -155,9 +155,9 @@ The focus ring is a circle drawn around the centre reticle. Its size and thickne
 
 - **Large ring** — the lens is focused far from the subject. Keep turning.
 - **Small, thin ring** — the lens and LiDAR distances are close. You are in focus or very near it.
-- **Minimum size (tight dot)** — the two distances match within a few centimetres. Focus is confirmed.
+- **Minimum size (tight dot)** — the two distances match within 5 cm. Focus is confirmed.
 
-The ring radius is the absolute difference between the LiDAR distance and the lens distance, clamped to the display area. The thickness scales with the radius so it stays visible at all sizes.
+The ring radius is based on the difference between the LiDAR distance and the lens distance, compared in 5 cm steps and clamped to the display area. The thickness scales with the radius so it stays visible at all sizes.
 
 #### Tips
 
@@ -238,7 +238,7 @@ Current frame ranges are format-bound:
 1. **Horizon Landscape**: landscape trim offset (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
 2. **Horizon Portrait+**: portrait trim offset for one portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
 3. **Horizon Portrait-**: portrait trim offset for the opposite portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
-4. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`.
+4. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m30s`).
 5. **LiDAR idle timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m`).
 6. **Back <<**: return to setup root menu.
 
@@ -369,7 +369,7 @@ The external display shows:
 
 In Main mode, LiDAR enters low-power standby after the configured **LiDAR idle timeout** period (default **1 minute**) and wakes automatically on user activity. While idle standby is active, the main display shows `Dist: Zzz`.
 
-After the configured **Sleep timeout** period of inactivity (default **1 minute**, set in **Setup > UI Settings >**), the firmware enters sleep mode:
+After the configured **Sleep timeout** period of inactivity (default **1 minute 30 seconds**, set in **Setup > UI Settings >**), the firmware enters sleep mode:
 
 - Main display fades to black over ~200 ms, then powers off.
 - LiDAR turns off.
