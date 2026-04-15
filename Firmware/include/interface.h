@@ -14,6 +14,7 @@ void drawCalibCompleteUI();
 void drawResetConfirmUI();
 void drawFactoryResetConfirmUI();
 void drawHealthUI();
+void drawReticleAdjustUI();
 void drawExternalUI();
 void drawSleepUI();
 // ---------------------

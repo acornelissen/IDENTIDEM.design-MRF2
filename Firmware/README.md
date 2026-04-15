@@ -186,6 +186,7 @@ pio test -e native_core_tests
 - `FWVERSION`: Firmware version string
 - `DEFAULT_SLEEP_TIMEOUT_MODE` / `SLEEP_TIMEOUT_MODE_*`: Auto-sleep options (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m30s`)
 - `DEFAULT_LIDAR_IDLE_TIMEOUT_MODE`: Awake-main LiDAR standby timeout default (`1m`)
+- `DEFAULT_RETICLE_OFFSET_X` / `DEFAULT_RETICLE_OFFSET_Y`: Reticle position offsets (default `-5`, `0`; range `-20` to `+20` px)
 - `SMOOTHING_WINDOW_SIZE`: Filter window (13 samples)
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
 - `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor

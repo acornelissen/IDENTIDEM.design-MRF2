@@ -2,6 +2,14 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.4.0 - 2026-04-15
+
+- Add visual focus reticle offset adjustment (Setup > UI Settings > Focus reticle).
+  - Step 1: L/R moves reticle horizontally; long press either button advances to step 2.
+  - Step 2: L/R moves reticle vertically; long press either button saves and exits.
+  - Offsets persisted to NVS and survive reboots. Range: -20 to +20 px.
+- Reticle offset X/Y converted from compile-time constants to user-configurable settings.
+
 ## 10.3.5 - 2026-04-02
 
 - Reduce focus ring granularity from 1cm to 5cm steps so the ring locks when lidar and lens distances visually match, without snapping too early.

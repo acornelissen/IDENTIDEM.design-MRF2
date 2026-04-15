@@ -16,7 +16,8 @@ enum class UiMode : uint8_t
   Calib,
   ResetConfirm,
   Health,
-  FactoryResetConfirm
+  FactoryResetConfirm,
+  ReticleAdjust
 };
 
 // Preferences
@@ -43,6 +44,8 @@ extern int lidar_idle_timeout_mode;
 extern int level_trim_landscape_deci_deg;
 extern int level_trim_portrait_pos_deci_deg;
 extern int level_trim_portrait_neg_deci_deg;
+extern int reticle_offset_x;
+extern int reticle_offset_y;
 
 // Filter algorithm
 extern int samples[SMOOTHING_WINDOW_SIZE];
@@ -70,6 +73,7 @@ extern int bat_per;
 extern UiMode ui_mode;
 extern int config_step;
 extern int calib_step;
+extern int reticle_adjust_step; // 0 = horizontal, 1 = vertical
 extern int selected_lens;
 extern int selected_format;
 extern int calib_lens;

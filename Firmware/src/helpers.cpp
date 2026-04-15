@@ -70,6 +70,8 @@ void writeSettingsPrefs()
   prefs.putInt("lvl_trim_l10", level_trim_landscape_deci_deg);
   prefs.putInt("lvl_trim_pp10", level_trim_portrait_pos_deci_deg);
   prefs.putInt("lvl_trim_pn10", level_trim_portrait_neg_deci_deg);
+  prefs.putInt("reticle_x", reticle_offset_x);
+  prefs.putInt("reticle_y", reticle_offset_y);
 }
 
 void writeFilmPrefs()
@@ -198,6 +200,9 @@ void clampLoadedState()
   level_trim_portrait_pos_deci_deg = snapLevelTrimDeciDeg(level_trim_portrait_pos_deci_deg);
   level_trim_portrait_neg_deci_deg = snapLevelTrimDeciDeg(level_trim_portrait_neg_deci_deg);
 
+  reticle_offset_x = constrain(reticle_offset_x, RETICLE_OFFSET_MIN, RETICLE_OFFSET_MAX);
+  reticle_offset_y = constrain(reticle_offset_y, RETICLE_OFFSET_MIN, RETICLE_OFFSET_MAX);
+
   frame_one_offset = constrain(frame_one_offset, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
   frame_spacing_offset = constrain(frame_spacing_offset, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
 }
@@ -300,6 +305,8 @@ void loadPrefs()
   level_trim_landscape_deci_deg = prefs.getInt("lvl_trim_l10", legacy_trim_l * 10);
   level_trim_portrait_pos_deci_deg = prefs.getInt("lvl_trim_pp10", legacy_trim_pp * 10);
   level_trim_portrait_neg_deci_deg = prefs.getInt("lvl_trim_pn10", legacy_trim_pn * 10);
+  reticle_offset_x = prefs.getInt("reticle_x", DEFAULT_RETICLE_OFFSET_X);
+  reticle_offset_y = prefs.getInt("reticle_y", DEFAULT_RETICLE_OFFSET_Y);
   film_counter = prefs.getInt("film_counter", 0);
   encoder_value = prefs.getInt("encoder_value", 0);
   prev_encoder_value = prefs.getInt("prev_encoder_value", 0);
