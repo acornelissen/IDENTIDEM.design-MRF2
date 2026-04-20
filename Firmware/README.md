@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.3.2
+**Version**: 10.4.0
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -213,6 +213,7 @@ The system saves:
 - Sleep timeout mode
 - LiDAR idle timeout mode
 - UI horizon trim offsets (landscape, portrait `P+`, portrait `P-`)
+- Reticle offset X/Y
 - Light-meter EV/smoothing/readout settings
 - Lens calibration data
 
