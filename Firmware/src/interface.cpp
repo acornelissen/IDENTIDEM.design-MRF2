@@ -900,7 +900,7 @@ void drawReticleAdjustUI()
   // Draw only the reticle dot at its current offset position.
   int cx = (SCREEN_WIDTH / 2) + reticle_offset_x;
   int cy = (SCREEN_HEIGHT / 2) - MAIN_RETICLE_CENTER_Y_OFFSET + reticle_offset_y;
-  display.fillCircle(cx, cy, MAIN_RETICLE_CENTER_RADIUS, INVERSE);
+  display.fillCircle(cx, cy, MAIN_RETICLE_CENTER_RADIUS, WHITE);
 
   // Draw button labels at the bottom.
   u8g2.setFont(u8g2_font_4x6_mf);

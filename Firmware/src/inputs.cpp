@@ -247,6 +247,15 @@ void handleReticleAdjustLongPress()
   }
 }
 
+void handleLeftButtonLongPress()
+{
+  registerActivity();
+  if (ui_mode == UiMode::ReticleAdjust)
+  {
+    handleReticleAdjustLongPress();
+  }
+}
+
 void handleRightButtonLongPress()
 {
   registerActivity();
@@ -453,12 +462,10 @@ void checkButtons()
   static bool rbuttonLongHandled = false;
 
   lbutton.update();
-  if (lbutton.isPressed() && lbutton.currentDuration() >= BUTTON_LONG_PRESS_MIN_MS &&
-      ui_mode == UiMode::ReticleAdjust && !lbuttonLongHandled)
+  if (lbutton.isPressed() && lbutton.currentDuration() >= BUTTON_LONG_PRESS_MIN_MS && !lbuttonLongHandled)
   {
     lbuttonLongHandled = true;
-    registerActivity();
-    handleReticleAdjustLongPress();
+    handleLeftButtonLongPress();
   }
   else if (lbutton.rose())
   {

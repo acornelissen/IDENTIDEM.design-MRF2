@@ -9,6 +9,7 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
   - Step 2: L/R moves reticle vertically; long press either button saves and exits.
   - Offsets persisted to NVS and survive reboots. Range: -20 to +20 px.
 - Reticle offset X/Y converted from compile-time constants to user-configurable settings.
+- Fix right-button long press firing repeatedly on every loop iteration; it now fires exactly once per hold across all modes.
 
 ## 10.3.5 - 2026-04-02
 
