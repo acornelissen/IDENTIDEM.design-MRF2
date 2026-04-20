@@ -120,6 +120,17 @@ void handleLeftButtonShortPress()
   {
     advanceMenuStep(CONFIG_UI_STEP_MAX);
   }
+  else if (ui_mode == UiMode::ReticleAdjust)
+  {
+    if (reticle_adjust_step == 0)
+    {
+      reticle_offset_x = constrain(reticle_offset_x - 1, RETICLE_OFFSET_MIN, RETICLE_OFFSET_MAX);
+    }
+    else
+    {
+      reticle_offset_y = constrain(reticle_offset_y - 1, RETICLE_OFFSET_MIN, RETICLE_OFFSET_MAX);
+    }
+  }
   else if (ui_mode == UiMode::Calib)
   {
     if (calib_step == 0)
@@ -222,6 +233,29 @@ void handleLeftButtonShortPress()
   }
 }
 
+void handleReticleAdjustLongPress()
+{
+  if (reticle_adjust_step == 0)
+  {
+    reticle_adjust_step = 1;
+  }
+  else
+  {
+    savePrefs(false, PREFS_DIRTY_SETTINGS);
+    config_step = CONFIG_UI_STEP_RETICLE_ADJUST;
+    ui_mode = UiMode::ConfigUi;
+  }
+}
+
+void handleLeftButtonLongPress()
+{
+  registerActivity();
+  if (ui_mode == UiMode::ReticleAdjust)
+  {
+    handleReticleAdjustLongPress();
+  }
+}
+
 void handleRightButtonLongPress()
 {
   registerActivity();
@@ -232,6 +266,10 @@ void handleRightButtonLongPress()
   else if (ui_mode == UiMode::Health)
   {
     ui_mode = UiMode::FactoryResetConfirm;
+  }
+  else if (ui_mode == UiMode::ReticleAdjust)
+  {
+    handleReticleAdjustLongPress();
   }
 }
 
@@ -359,9 +397,24 @@ void handleRightButtonShortPress()
     else if (config_step == CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT) {
       cycleLidarIdleTimeoutMode();
     }
+    else if (config_step == CONFIG_UI_STEP_RETICLE_ADJUST) {
+      reticle_adjust_step = 0;
+      ui_mode = UiMode::ReticleAdjust;
+    }
     else if (config_step == CONFIG_UI_STEP_BACK) {
       config_step = CONFIG_ROOT_STEP_UI_MENU;
       ui_mode = UiMode::Config;
+    }
+  }
+  else if (ui_mode == UiMode::ReticleAdjust)
+  {
+    if (reticle_adjust_step == 0)
+    {
+      reticle_offset_x = constrain(reticle_offset_x + 1, RETICLE_OFFSET_MIN, RETICLE_OFFSET_MAX);
+    }
+    else
+    {
+      reticle_offset_y = constrain(reticle_offset_y + 1, RETICLE_OFFSET_MIN, RETICLE_OFFSET_MAX);
     }
   }
   else if (ui_mode == UiMode::Calib)
@@ -405,20 +458,37 @@ void handleRightButtonShortPress()
 
 void checkButtons()
 {
+  static bool lbuttonLongHandled = false;
+  static bool rbuttonLongHandled = false;
+
   lbutton.update();
-  if (lbutton.rose() && lbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
+  if (lbutton.isPressed() && lbutton.currentDuration() >= BUTTON_LONG_PRESS_MIN_MS && !lbuttonLongHandled)
   {
-    handleLeftButtonShortPress();
+    lbuttonLongHandled = true;
+    handleLeftButtonLongPress();
+  }
+  else if (lbutton.rose())
+  {
+    lbuttonLongHandled = false;
+    if (lbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
+    {
+      handleLeftButtonShortPress();
+    }
   }
 
   rbutton.update();
-  if (rbutton.isPressed() && rbutton.currentDuration() >= BUTTON_LONG_PRESS_MIN_MS)
+  if (rbutton.isPressed() && rbutton.currentDuration() >= BUTTON_LONG_PRESS_MIN_MS && !rbuttonLongHandled)
   {
+    rbuttonLongHandled = true;
     handleRightButtonLongPress();
   }
-  else if (rbutton.rose() && rbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
+  else if (rbutton.rose())
   {
-    handleRightButtonShortPress();
+    rbuttonLongHandled = false;
+    if (rbutton.previousDuration() < BUTTON_SHORT_PRESS_MAX_MS)
+    {
+      handleRightButtonShortPress();
+    }
   }
 }
 // ---------------------

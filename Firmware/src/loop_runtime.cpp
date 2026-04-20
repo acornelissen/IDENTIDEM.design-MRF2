@@ -126,6 +126,8 @@ uint32_t buildMainUiSignature()
   hash = hashInt(hash, lens_distance_raw);
   hash = hashInt(hash, lidar_quality_level);
   hash = hashBool(hash, parallaxEnabled);
+  hash = hashInt(hash, reticle_offset_x);
+  hash = hashInt(hash, reticle_offset_y);
   return hash;
 }
 
@@ -153,6 +155,9 @@ uint32_t buildMenuUiSignature()
   hash = hashInt(hash, level_trim_landscape_deci_deg);
   hash = hashInt(hash, level_trim_portrait_pos_deci_deg);
   hash = hashInt(hash, level_trim_portrait_neg_deci_deg);
+  hash = hashInt(hash, reticle_offset_x);
+  hash = hashInt(hash, reticle_offset_y);
+  hash = hashInt(hash, reticle_adjust_step);
   hash = hashInt(hash, frame_one_offset);
   hash = hashInt(hash, frame_spacing_offset);
   hash = hashInt(hash, film_counter);
@@ -624,6 +629,9 @@ void drawPrimaryUiForCurrentMode()
     break;
   case UiMode::FactoryResetConfirm:
     drawFactoryResetConfirmUI();
+    break;
+  case UiMode::ReticleAdjust:
+    drawReticleAdjustUI();
     break;
   }
 }

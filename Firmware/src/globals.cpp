@@ -26,6 +26,8 @@ int lidar_idle_timeout_mode = DEFAULT_LIDAR_IDLE_TIMEOUT_MODE;
 int level_trim_landscape_deci_deg = DEFAULT_LEVEL_TRIM_LANDSCAPE_DECI_DEG;
 int level_trim_portrait_pos_deci_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DECI_DEG;
 int level_trim_portrait_neg_deci_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DECI_DEG;
+int reticle_offset_x = DEFAULT_RETICLE_OFFSET_X;
+int reticle_offset_y = DEFAULT_RETICLE_OFFSET_Y;
 
 // Filter algorithm
 int samples[SMOOTHING_WINDOW_SIZE];
@@ -53,6 +55,7 @@ int bat_per = 0;
 UiMode ui_mode = UiMode::Main;
 int config_step = 0;
 int calib_step = 0;
+int reticle_adjust_step = 0;
 int selected_lens = DEFAULT_SELECTED_LENS;
 int selected_format = DEFAULT_SELECTED_FORMAT;
 int calib_lens = 0;

@@ -405,8 +405,8 @@ MainFramelineLayout buildMainFramelineLayout()
   layout.innerX = static_cast<int>(roundf(frameCenterX - (scaledWidth / 2.0f)));
   layout.innerY = static_cast<int>(roundf(frameCenterY - (scaledHeight / 2.0f)));
 
-  layout.reticleCenterX = (layout.baseX + (layout.width / 2)) + RETICLE_OFFSET_X;
-  layout.reticleCenterY = (layout.baseY + (layout.height / 2) - MAIN_RETICLE_CENTER_Y_OFFSET) + RETICLE_OFFSET_Y;
+  layout.reticleCenterX = (layout.baseX + (layout.width / 2)) + reticle_offset_x;
+  layout.reticleCenterY = (layout.baseY + (layout.height / 2) - MAIN_RETICLE_CENTER_Y_OFFSET) + reticle_offset_y;
 
   return layout;
 }
@@ -884,8 +884,36 @@ void drawUiConfigUI()
   u8g2.print(getSleepTimeoutModeLabel(lidar_idle_timeout_mode));
   u8g2.print(F(" "));
 
+  selectConfigMenuRow(CONFIG_UI_STEP_RETICLE_ADJUST, config_step == CONFIG_UI_STEP_RETICLE_ADJUST);
+  u8g2.print(F(" Focus reticle > "));
+
   selectConfigMenuRow(CONFIG_UI_STEP_BACK, config_step == CONFIG_UI_STEP_BACK);
   u8g2.print(F(" Back << "));
+
+  display.display();
+}
+
+void drawReticleAdjustUI()
+{
+  preparePrimaryDisplayTextMode();
+
+  // Draw only the reticle dot at its current offset position.
+  int cx = (SCREEN_WIDTH / 2) + reticle_offset_x;
+  int cy = (SCREEN_HEIGHT / 2) - MAIN_RETICLE_CENTER_Y_OFFSET + reticle_offset_y;
+  display.fillCircle(cx, cy, MAIN_RETICLE_CENTER_RADIUS, WHITE);
+
+  // Draw button labels at the bottom.
+  u8g2.setFont(u8g2_font_4x6_mf);
+  if (reticle_adjust_step == 0)
+  {
+    u8g2.setCursor(2, 122);
+    u8g2.print(F("(L)<  >(R)  hold:next"));
+  }
+  else
+  {
+    u8g2.setCursor(2, 122);
+    u8g2.print(F("(L)^  v(R)  hold:save"));
+  }
 
   display.display();
 }

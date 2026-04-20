@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.3.2
+**Firmware version:** 10.4.0
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -240,7 +240,19 @@ Current frame ranges are format-bound:
 3. **Horizon Portrait-**: portrait trim offset for the opposite portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
 4. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m30s`).
 5. **LiDAR idle timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m`).
-6. **Back <<**: return to setup root menu.
+6. **Focus reticle >**: enter visual reticle offset adjustment (see below).
+7. **Back <<**: return to setup root menu.
+
+#### Focus reticle adjustment
+
+![Focus reticle adjustment](images/config-reticle-adjust.svg)
+
+This screen lets you visually align the focus reticle to the camera's optical centre. Only the reticle dot is shown on an otherwise blank screen.
+
+1. **Horizontal**: press **L** to move left, **R** to move right. **Long press either button** to advance to vertical adjustment.
+2. **Vertical**: press **L** to move up, **R** to move down. **Long press either button** to save the new offsets and return to UI Settings.
+
+Offsets are stored in non-volatile memory and survive reboots. Range: -20 to +20 pixels in each axis.
 
 ### System Health screen
 
