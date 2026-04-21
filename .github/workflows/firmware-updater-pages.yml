@@ -153,7 +153,7 @@ jobs:
           write_manifest() {
             local output_dir="$1"
             local fw_version="$2"
-            python3 -c 'import json,pathlib,sys; out_path=pathlib.Path(sys.argv[1]); fw_version=sys.argv[2]; payload={"name":"IDENTIDEM MRF2","version":fw_version,"new_install_prompt_erase":False,"new_install_improv_wait_time":0,"builds":[{"chipFamily":"ESP32-S3","parts":[{"path":"bootloader.bin","offset":0},{"path":"partitions.bin","offset":32768},{"path":"boot_app0.bin","offset":57344},{"path":"tinyuf2.bin","offset":2949120},{"path":"firmware.bin","offset":65536}]}]}; out_path.write_text(json.dumps(payload, indent=2)+"\n", encoding="utf-8")' "$output_dir/manifest.json" "$fw_version"
+            python3 -c 'import json,pathlib,sys; out_path=pathlib.Path(sys.argv[1]); fw_version=sys.argv[2]; payload={"name":"IDENTIDEM MRF2","version":fw_version,"new_install_prompt_erase":False,"new_install_improv_wait_time":0,"builds":[{"chipFamily":"ESP32-S3","parts":[{"path":"firmware.bin","offset":65536}],"new_install_parts":[{"path":"bootloader.bin","offset":0},{"path":"partitions.bin","offset":32768},{"path":"boot_app0.bin","offset":57344},{"path":"tinyuf2.bin","offset":2949120}]}]}; out_path.write_text(json.dumps(payload, indent=2)+"\n", encoding="utf-8")' "$output_dir/manifest.json" "$fw_version"
           }
 
           declare -A VERSION_SEEN=()

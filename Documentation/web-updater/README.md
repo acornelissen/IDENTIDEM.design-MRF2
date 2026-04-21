@@ -13,7 +13,7 @@ This repo includes a static firmware updater site in `docs/` that uses Web Seria
 ## How it works
 
 1. The GitHub Actions workflow `.github/workflows/firmware-updater-pages.yml` builds firmware from `Firmware/` using PlatformIO.
-2. The workflow copies required ESP32-S3 images into `firmware/latest/` inside the Pages artifact:
+2. The workflow copies all required ESP32-S3 images into each version directory:
    - `bootloader.bin` @ `0x0000` (Adafruit TinyUF2 bootloader)
    - `partitions.bin` @ `0x8000`
    - `boot_app0.bin` @ `0xE000`
@@ -26,6 +26,15 @@ This repo includes a static firmware updater site in `docs/` that uses Web Seria
    - `firmware/versions.json` catalog (used by the UI dropdown)
 5. The static app in `docs/` loads `firmware/versions.json`, defaults the selector to the latest entry, and points ESP Web Tools to the selected manifest.
 6. The release notes panel shows notes for the selected version and the immediately previous version, with a link to the full changelog.
+
+## Flash behaviour: updates vs new installs
+
+The manifest uses ESP Web Tools' `new_install_parts` feature to preserve camera settings on firmware updates:
+
+- **Firmware update** (device already has MRF2 firmware): only `firmware.bin` is flashed. The bootloader, partition table, and NVS storage are untouched, so all saved settings survive.
+- **New install** (first-time setup or blank device): ESP Web Tools detects no valid firmware and additionally flashes `new_install_parts` (bootloader, partitions, boot_app0, tinyuf2) before flashing `firmware.bin`.
+
+If you need to do a full re-flash of a device that already has firmware (e.g. to recover from a corrupted partition table), use the PlatformIO method described in `Documentation/flash-firmware/README.md`.
 
 ## Browser requirements
 
