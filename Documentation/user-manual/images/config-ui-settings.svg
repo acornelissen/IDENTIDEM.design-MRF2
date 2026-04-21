@@ -7,8 +7,11 @@
 
   <text x="4" y="35" font-family="monospace" font-size="6" fill="#ffffff"> Horizon Portrait+:0deg </text>
   <text x="4" y="44" font-family="monospace" font-size="6" fill="#ffffff"> Horizon Portrait-:0deg </text>
-  <text x="4" y="53" font-family="monospace" font-size="6" fill="#ffffff"> Sleep timeout: 1m30s</text>
-  <text x="4" y="62" font-family="monospace" font-size="6" fill="#ffffff"> LiDAR idle: 1m </text>
-  <text x="4" y="71" font-family="monospace" font-size="6" fill="#ffffff"> Focus reticle &gt; </text>
-  <text x="4" y="80" font-family="monospace" font-size="6" fill="#ffffff"> Back &lt;&lt; </text>
+  <text x="4" y="53" font-family="monospace" font-size="6" fill="#ffffff"> Horizon line: On </text>
+  <text x="4" y="62" font-family="monospace" font-size="6" fill="#ffffff"> Bright mode: Auto </text>
+  <text x="4" y="71" font-family="monospace" font-size="6" fill="#ffffff"> Bright top: 100% </text>
+  <text x="4" y="80" font-family="monospace" font-size="6" fill="#ffffff"> Sleep timeout: 1m30s</text>
+  <text x="4" y="89" font-family="monospace" font-size="6" fill="#ffffff"> LiDAR idle: 1m </text>
+  <text x="4" y="98" font-family="monospace" font-size="6" fill="#ffffff"> Focus reticle &gt; </text>
+  <text x="4" y="107" font-family="monospace" font-size="6" fill="#ffffff"> Back &lt;&lt; </text>
 </svg>

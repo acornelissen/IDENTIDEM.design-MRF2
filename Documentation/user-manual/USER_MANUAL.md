@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.4.0
+**Firmware version:** 10.4.5
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -109,7 +109,7 @@ You can tune horizon trim offsets independently for **Horizon Landscape**, **Hor
   - Uses LiDAR v2 primary/secondary returns with confidence scoring and correction for more stable readings.
   - Confidence accounts for ambient sunlight relative to return intensity. Thresholds are tuned for outdoor use in bright conditions, and the sensor falls back to low-confidence tracking at all ranges when primary filtering rejects a return.
   - Measurement range: 5 cm to 18 m.
-  - Displays values below 1 meter in centimeters (for example, `75cm`), and 1 meter and above in meters.
+  - Displays values below 1 meter in centimeters (for example, `75cm`), 1m to below 2m in meters with two decimal places (for example, `1.85m`), and 2m and above with one decimal place (for example, `2.5m`).
   - Displays `Inf.` when the subject is beyond sensor range (last reading was above 3 m and signal is lost), or for readings above 10.5 metres.
   - Displays `...` if the sensor has no valid data for 1 second at close range.
   - Displays `Zzz` when LiDAR is in idle standby (wake by focusing or pressing a button).
@@ -238,10 +238,13 @@ Current frame ranges are format-bound:
 1. **Horizon Landscape**: landscape trim offset (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
 2. **Horizon Portrait+**: portrait trim offset for one portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
 3. **Horizon Portrait-**: portrait trim offset for the opposite portrait side (`-30deg` to `+30deg`, `2.5deg` steps, default `0deg`).
-4. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m30s`).
-5. **LiDAR idle timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m`).
-6. **Focus reticle >**: enter visual reticle offset adjustment (see below).
-7. **Back <<**: return to setup root menu.
+4. **Horizon line**: toggle the horizon/level indicator on the main viewfinder screen (`On`/`Off`, default `On`).
+5. **Bright mode**: display brightness mode (`Auto` scales with ambient light from the light meter; `Manual` sets a fixed level; default `Auto`).
+6. **Bright top** (if Auto): maximum brightness ceiling (`50%`–`100%` in `10%` steps, default `100%`). Displayed as **Bright level** if Manual: fixed brightness (`5%`–`100%` in `5%` steps, default `100%`).
+7. **Sleep timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m30s`).
+8. **LiDAR idle timeout**: cycles `Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m` (default `1m`).
+9. **Focus reticle >**: enter visual reticle offset adjustment (see below).
+10. **Back <<**: return to setup root menu.
 
 #### Focus reticle adjustment
 

@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.4.0
+**Version**: 10.4.5
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -127,7 +127,7 @@ Firmware/
 - Confidence-aware temporal smoothing (accept, blend, or hold previous reading)
 - In Main mode, LiDAR idle standby timeout is user-configurable (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m`)
 - While LiDAR is in idle standby, the distance readout shows `Zzz`
-- Distance display uses `cm` below `1m`, with `<15cm` near clamp, `Inf.` above `10.5m` or when far-range signal is lost
+- Distance display uses `cm` below `1m`, two decimal places from `1m` to below `2m` (e.g. `1.85m`), one decimal place at `2m` and above, `<15cm` near clamp, `Inf.` above `10.5m` or when far-range signal is lost
 - Range: 5cm to 18m
 
 #### Light Metering
@@ -187,6 +187,12 @@ pio test -e native_core_tests
 - `DEFAULT_SLEEP_TIMEOUT_MODE` / `SLEEP_TIMEOUT_MODE_*`: Auto-sleep options (`Off`, `15s`, `30sec`, `1m`, `1m30s`, `2m`; default `1m30s`)
 - `DEFAULT_LIDAR_IDLE_TIMEOUT_MODE`: Awake-main LiDAR standby timeout default (`1m`)
 - `DEFAULT_RETICLE_OFFSET_X` / `DEFAULT_RETICLE_OFFSET_Y`: Reticle position offsets (default `-5`, `0`; range `-20` to `+20` px)
+- `DEFAULT_BRIGHTNESS_AUTO` / `DEFAULT_BRIGHTNESS_MANUAL_PCT` / `DEFAULT_BRIGHTNESS_AUTO_TOP_PCT`: Display brightness defaults (Auto mode on; manual level `100%`; auto top `100%`)
+- `BRIGHTNESS_MANUAL_MIN_PCT` / `BRIGHTNESS_MANUAL_STEP_PCT`: Manual brightness range (`5%`–`100%` in `5%` steps)
+- `BRIGHTNESS_AUTO_TOP_MIN_PCT` / `BRIGHTNESS_AUTO_TOP_STEP_PCT`: Auto top brightness range (`50%`–`100%` in `10%` steps)
+- `BRIGHTNESS_AUTO_LUX_MAX`: Lux ceiling for auto brightness scaling (`500 lux`)
+- `DEFAULT_SHOW_HORIZON_LINE`: Horizon line visibility default (`true`)
+- `DISTANCE_NEAR_THRESHOLD_CM` / `DISTANCE_DECIMAL_PLACES_NEAR`: Two-decimal-place threshold and precision (`200cm`, `2` places)
 - `SMOOTHING_WINDOW_SIZE`: Filter window (13 samples)
 - `LENS_INF_THRESHOLD`: Infinity focus threshold
 - `LIDAR_LIBRARY_DISTANCE_SCALE`: LiDAR library distance scaling factor
@@ -213,6 +219,8 @@ The system saves:
 - Sleep timeout mode
 - LiDAR idle timeout mode
 - UI horizon trim offsets (landscape, portrait `P+`, portrait `P-`)
+- Horizon line visibility
+- Display brightness mode (Auto/Manual), auto top brightness, manual brightness level
 - Reticle offset X/Y
 - Light-meter EV/smoothing/readout settings
 - Lens calibration data
