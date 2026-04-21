@@ -32,6 +32,7 @@ struct LoopScheduler
   unsigned long lastBatteryMs = 0;
   unsigned long lastUiMs = 0;
   unsigned long lastPrefsFlushMs = 0;
+  unsigned long lastBrightnessMs = 0;
 };
 
 struct UiRenderCache
@@ -128,6 +129,7 @@ uint32_t buildMainUiSignature()
   hash = hashBool(hash, parallaxEnabled);
   hash = hashInt(hash, reticle_offset_x);
   hash = hashInt(hash, reticle_offset_y);
+  hash = hashBool(hash, show_horizon_line);
   return hash;
 }
 
@@ -158,6 +160,10 @@ uint32_t buildMenuUiSignature()
   hash = hashInt(hash, reticle_offset_x);
   hash = hashInt(hash, reticle_offset_y);
   hash = hashInt(hash, reticle_adjust_step);
+  hash = hashBool(hash, brightness_auto);
+  hash = hashInt(hash, brightness_manual_pct);
+  hash = hashInt(hash, brightness_auto_top_pct);
+  hash = hashBool(hash, show_horizon_line);
   hash = hashInt(hash, frame_one_offset);
   hash = hashInt(hash, frame_spacing_offset);
   hash = hashInt(hash, film_counter);
@@ -460,16 +466,39 @@ void stepFadeOutMainDisplay(unsigned long nowMs)
   }
 }
 
+uint8_t computeTargetBrightnessByte()
+{
+  if (brightness_auto)
+  {
+    float topFraction = static_cast<float>(brightness_auto_top_pct) / 100.0f;
+    float minFraction = static_cast<float>(BRIGHTNESS_AUTO_MIN_PCT) / 100.0f * topFraction;
+    uint8_t topByte = static_cast<uint8_t>(topFraction * 0xFF);
+    uint8_t minByte = static_cast<uint8_t>(minFraction * 0xFF);
+    float clampedLux = constrain(lux, 0.0f, BRIGHTNESS_AUTO_LUX_MAX);
+    float scaled = clampedLux / BRIGHTNESS_AUTO_LUX_MAX;
+    return static_cast<uint8_t>(minByte + scaled * (topByte - minByte));
+  }
+  return static_cast<uint8_t>(brightness_manual_pct * 0xFF / 100);
+}
+
+void applyDisplayBrightness()
+{
+  if (!mainDisplayReady || loopState.fade.active)
+  {
+    return;
+  }
+  display.oled_command(OLED_CMD_SET_CONTRAST);
+  display.oled_command(computeTargetBrightnessByte());
+}
+
 void restoreMainDisplayBrightness()
 {
   if (!mainDisplayReady)
   {
     return;
   }
-
-  // Restore default contrast after wake.
-  display.oled_command(0x81);
-  display.oled_command(0xFF);
+  display.oled_command(OLED_CMD_SET_CONTRAST);
+  display.oled_command(computeTargetBrightnessByte());
 }
 
 void beginSleepFade(unsigned long nowMs)
@@ -825,6 +854,10 @@ void runAwakeTasks(unsigned long nowMs)
   updateLightMeterTask(nowMs);
   updateBatteryTask(nowMs);
   updateUiTask(nowMs);
+  if (shouldRunTask(nowMs, loopState.scheduler.lastBrightnessMs, BRIGHTNESS_UPDATE_INTERVAL_MS))
+  {
+    applyDisplayBrightness();
+  }
 }
 
 void flushPrefsTask(unsigned long nowMs)

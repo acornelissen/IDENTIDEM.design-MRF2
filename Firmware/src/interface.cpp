@@ -718,7 +718,10 @@ void drawMainUI()
   MainFramelineLayout framelineLayout = buildMainFramelineLayout();
   drawMainFrameline(framelineLayout);
   drawReticleAndFocusRing(framelineLayout);
-  drawLevelIndicator(framelineLayout.reticleCenterX, framelineLayout.reticleCenterY);
+  if (show_horizon_line)
+  {
+    drawLevelIndicator(framelineLayout.reticleCenterX, framelineLayout.reticleCenterY);
+  }
 
   display.display();
 }
@@ -873,6 +876,28 @@ void drawUiConfigUI()
   u8g2.print(F(" Horizon Portrait-:"));
   printSignedDeciDegrees(level_trim_portrait_neg_deci_deg);
   u8g2.print(F("deg "));
+
+  selectConfigMenuRow(CONFIG_UI_STEP_HORIZON_ENABLE, config_step == CONFIG_UI_STEP_HORIZON_ENABLE);
+  u8g2.print(F(" Horizon line: "));
+  u8g2.print(show_horizon_line ? F("On ") : F("Off"));
+
+  selectConfigMenuRow(CONFIG_UI_STEP_BRIGHTNESS_MODE, config_step == CONFIG_UI_STEP_BRIGHTNESS_MODE);
+  u8g2.print(F(" Bright mode: "));
+  u8g2.print(brightness_auto ? F("Auto  ") : F("Manual"));
+
+  selectConfigMenuRow(CONFIG_UI_STEP_BRIGHTNESS_VALUE, config_step == CONFIG_UI_STEP_BRIGHTNESS_VALUE);
+  if (brightness_auto)
+  {
+    u8g2.print(F(" Bright top: "));
+    u8g2.print(brightness_auto_top_pct);
+    u8g2.print(F("% "));
+  }
+  else
+  {
+    u8g2.print(F(" Bright level: "));
+    u8g2.print(brightness_manual_pct);
+    u8g2.print(F("% "));
+  }
 
   selectConfigMenuRow(CONFIG_UI_STEP_SLEEP_TIMEOUT, config_step == CONFIG_UI_STEP_SLEEP_TIMEOUT);
   u8g2.print(F(" Sleep timeout: "));

@@ -2,6 +2,16 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.4.5 - 2026-04-16
+
+- Distance display below 2m now shows two decimal places (e.g. `1.85m`) instead of one.
+- Add display brightness control to Setup > UI Settings:
+  - **Brightness mode**: Auto (scales with ambient light from BH1750) or Manual.
+  - **Brightness top** (Auto): sets the maximum brightness ceiling from 50% to 100% in 10% steps.
+  - **Brightness level** (Manual): sets a fixed brightness from 5% to 100% in 5% steps.
+  - Both settings persisted to NVS and survive reboots.
+- Add **Horizon line** toggle to Setup > UI Settings (On/Off), persisted to NVS.
+
 ## 10.4.0 - 2026-04-15
 
 - Add visual focus reticle offset adjustment (Setup > UI Settings > Focus reticle).

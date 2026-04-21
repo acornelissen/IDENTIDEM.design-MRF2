@@ -28,6 +28,10 @@ int level_trim_portrait_pos_deci_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_POS_DECI_DEG;
 int level_trim_portrait_neg_deci_deg = DEFAULT_LEVEL_TRIM_PORTRAIT_NEG_DECI_DEG;
 int reticle_offset_x = DEFAULT_RETICLE_OFFSET_X;
 int reticle_offset_y = DEFAULT_RETICLE_OFFSET_Y;
+bool brightness_auto = DEFAULT_BRIGHTNESS_AUTO;
+int brightness_manual_pct = DEFAULT_BRIGHTNESS_MANUAL_PCT;
+int brightness_auto_top_pct = DEFAULT_BRIGHTNESS_AUTO_TOP_PCT;
+bool show_horizon_line = DEFAULT_SHOW_HORIZON_LINE;
 
 // Filter algorithm
 int samples[SMOOTHING_WINDOW_SIZE];

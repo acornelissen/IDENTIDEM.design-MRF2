@@ -267,6 +267,39 @@ void cycleLevelTrimPortraitNeg()
   savePrefs(false, PREFS_DIRTY_SETTINGS);
 }
 
+void toggleHorizonLine()
+{
+  show_horizon_line = !show_horizon_line;
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
+}
+
+void cycleBrightnessMode()
+{
+  brightness_auto = !brightness_auto;
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
+}
+
+void cycleBrightnessValue()
+{
+  if (brightness_auto)
+  {
+    brightness_auto_top_pct = cycleValueWrapping(
+        brightness_auto_top_pct,
+        BRIGHTNESS_AUTO_TOP_STEP_PCT,
+        BRIGHTNESS_AUTO_TOP_MIN_PCT,
+        BRIGHTNESS_PCT_MAX);
+  }
+  else
+  {
+    brightness_manual_pct = cycleValueWrapping(
+        brightness_manual_pct,
+        BRIGHTNESS_MANUAL_STEP_PCT,
+        BRIGHTNESS_MANUAL_MIN_PCT,
+        BRIGHTNESS_PCT_MAX);
+  }
+  savePrefs(false, PREFS_DIRTY_SETTINGS);
+}
+
 void cycleSleepTimeoutMode()
 {
   sleep_timeout_mode = cycleValueWrapping(sleep_timeout_mode, 1, SLEEP_TIMEOUT_MODE_MIN, SLEEP_TIMEOUT_MODE_MAX);

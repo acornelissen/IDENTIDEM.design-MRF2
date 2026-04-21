@@ -25,6 +25,9 @@ void cycleLidarIdleTimeoutMode();
 void cycleLevelTrimLandscape();
 void cycleLevelTrimPortraitPos();
 void cycleLevelTrimPortraitNeg();
+void toggleHorizonLine();
+void cycleBrightnessMode();
+void cycleBrightnessValue();
 const char *getSleepTimeoutModeLabel(int timeout_mode);
 unsigned long getSleepTimeoutModeMs(int timeout_mode);
 // ---------------------

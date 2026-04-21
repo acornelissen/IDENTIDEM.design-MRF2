@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity and boot behavior
 // ---------------------------------------------------------------------------
-#define FWVERSION "10.4.0"                  // Version shown in UI and release metadata.
+#define FWVERSION "10.4.5"                  // Version shown in UI and release metadata.
 const unsigned long SLEEP_BOOT_GRACE_MS = 15000; // Ignore sleep timer immediately after boot.
 
 // ---------------------------------------------------------------------------
@@ -78,8 +78,20 @@ const int SHARED_I2C_FREQUENCY_HZ  = 400000;           // Standard I2C speed res
 const int DISPLAY_COMMAND_FLIP = 0xC8;                 // SH1107 vertical flip command.
 const uint8_t OLED_CMD_DISPLAY_OFF = 0xAE;             // SH1107 command to blank the display.
 const uint8_t OLED_CMD_DISPLAY_ON  = 0xAF;             // SH1107 command to enable the display.
+const uint8_t OLED_CMD_SET_CONTRAST = 0x81;            // SH1107 set-contrast command byte.
 const unsigned long FADE_STEP_INTERVAL_MS = 25;        // Delay between non-blocking fade steps.
 const int FADE_STEP_DECREMENT = 0x20;                  // Contrast decrement per fade step.
+const unsigned long BRIGHTNESS_UPDATE_INTERVAL_MS = 1000; // How often auto-brightness re-evaluates.
+const int BRIGHTNESS_MANUAL_MIN_PCT = 5;               // Minimum manual brightness (%).
+const int BRIGHTNESS_MANUAL_STEP_PCT = 5;              // Manual brightness step size (%).
+const int BRIGHTNESS_AUTO_TOP_MIN_PCT = 50;            // Minimum settable auto top brightness (%).
+const int BRIGHTNESS_AUTO_TOP_STEP_PCT = 10;           // Auto top brightness step size (%).
+const int BRIGHTNESS_PCT_MAX = 100;                    // Maximum brightness (%).
+const int BRIGHTNESS_AUTO_MIN_PCT = 10;                // Auto floor brightness (% of top).
+const float BRIGHTNESS_AUTO_LUX_MAX = 500.0f;          // Lux ceiling for auto scaling.
+const bool DEFAULT_BRIGHTNESS_AUTO = true;             // Default brightness mode (true = auto).
+const int DEFAULT_BRIGHTNESS_MANUAL_PCT = 100;         // Default manual brightness level (%).
+const int DEFAULT_BRIGHTNESS_AUTO_TOP_PCT = 100;       // Default auto top brightness (%).
 
 // ---------------------------------------------------------------------------
 // Lens ADC filtering, snap logic, and focus-ring rendering
@@ -214,7 +226,9 @@ const int LIDAR_DISPLAY_INF_THRESHOLD_CM = 1050; // Display "Inf." above this th
 // ---------------------------------------------------------------------------
 const int BATTERY_PERCENT_MAX = 100;          // Clamp battery percentage upper bound.
 const int BATTERY_PERCENT_LOW_THRESHOLD = 10; // Low-battery threshold used by external UI layout.
-const int DISTANCE_DECIMAL_PLACES = 1;        // Decimal precision for meter display text.
+const int DISTANCE_DECIMAL_PLACES = 1;        // Decimal precision for meter display text (>= 2m).
+const int DISTANCE_DECIMAL_PLACES_NEAR = 2;   // Decimal precision below DISTANCE_NEAR_THRESHOLD_CM.
+const int DISTANCE_NEAR_THRESHOLD_CM = 200;   // Show extra decimal below this distance (2m).
 
 // ---------------------------------------------------------------------------
 // Light meter and shutter text formatting
@@ -365,6 +379,9 @@ enum ConfigUiStep
   CONFIG_UI_STEP_HORIZON_LANDSCAPE = 0,  // Landscape horizon trim.
   CONFIG_UI_STEP_HORIZON_PORTRAIT_POS,   // Portrait + horizon trim.
   CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG,   // Portrait - horizon trim.
+  CONFIG_UI_STEP_HORIZON_ENABLE,         // Horizon line on/off toggle.
+  CONFIG_UI_STEP_BRIGHTNESS_MODE,        // Display brightness mode (Auto/Manual).
+  CONFIG_UI_STEP_BRIGHTNESS_VALUE,       // Display brightness level.
   CONFIG_UI_STEP_SLEEP_TIMEOUT,          // Sleep timeout selector.
   CONFIG_UI_STEP_LIDAR_IDLE_TIMEOUT,     // LiDAR idle-timeout selector.
   CONFIG_UI_STEP_RETICLE_ADJUST,         // Enter reticle offset adjustment.
@@ -392,6 +409,7 @@ const float LEVEL_PORTRAIT_ENTER_RAD = 1.00f; // Enter portrait mode threshold.
 const float LEVEL_PORTRAIT_EXIT_RAD = 0.75f;  // Exit portrait mode threshold.
 const int LEVEL_LINE_MARGIN_PX = 10;        // Horizon line horizontal margin.
 const int LEVEL_VERTICAL_LINE_LENGTH = 30;  // Center marker vertical line length.
+const bool DEFAULT_SHOW_HORIZON_LINE = true; // Default horizon line visibility.
 
 // ---------------------------------------------------------------------------
 // Main display layout coordinates

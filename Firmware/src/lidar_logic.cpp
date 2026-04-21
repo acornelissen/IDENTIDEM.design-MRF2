@@ -527,9 +527,12 @@ void formatDistanceDisplay(int corrected_cm, char *buffer, size_t bufferSize)
     snprintf(buffer, bufferSize, "%dcm", corrected_cm);
     return;
   }
+  int decimalPlaces = (corrected_cm < DISTANCE_NEAR_THRESHOLD_CM)
+                          ? DISTANCE_DECIMAL_PLACES_NEAR
+                          : DISTANCE_DECIMAL_PLACES;
   snprintf(buffer,
            bufferSize,
            "%.*fm",
-           DISTANCE_DECIMAL_PLACES,
+           decimalPlaces,
            static_cast<float>(corrected_cm) / static_cast<float>(CM_PER_METER));
 }

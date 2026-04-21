@@ -391,6 +391,15 @@ void handleRightButtonShortPress()
     else if (config_step == CONFIG_UI_STEP_HORIZON_PORTRAIT_NEG) {
       cycleLevelTrimPortraitNeg();
     }
+    else if (config_step == CONFIG_UI_STEP_HORIZON_ENABLE) {
+      toggleHorizonLine();
+    }
+    else if (config_step == CONFIG_UI_STEP_BRIGHTNESS_MODE) {
+      cycleBrightnessMode();
+    }
+    else if (config_step == CONFIG_UI_STEP_BRIGHTNESS_VALUE) {
+      cycleBrightnessValue();
+    }
     else if (config_step == CONFIG_UI_STEP_SLEEP_TIMEOUT) {
       cycleSleepTimeoutMode();
     }

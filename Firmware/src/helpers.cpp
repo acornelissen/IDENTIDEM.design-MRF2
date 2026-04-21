@@ -72,6 +72,10 @@ void writeSettingsPrefs()
   prefs.putInt("lvl_trim_pn10", level_trim_portrait_neg_deci_deg);
   prefs.putInt("reticle_x", reticle_offset_x);
   prefs.putInt("reticle_y", reticle_offset_y);
+  prefs.putBool("bright_auto", brightness_auto);
+  prefs.putInt("bright_man_pct", brightness_manual_pct);
+  prefs.putInt("bright_top_pct", brightness_auto_top_pct);
+  prefs.putBool("show_horizon", show_horizon_line);
 }
 
 void writeFilmPrefs()
@@ -202,6 +206,8 @@ void clampLoadedState()
 
   reticle_offset_x = constrain(reticle_offset_x, RETICLE_OFFSET_MIN, RETICLE_OFFSET_MAX);
   reticle_offset_y = constrain(reticle_offset_y, RETICLE_OFFSET_MIN, RETICLE_OFFSET_MAX);
+  brightness_manual_pct = constrain(brightness_manual_pct, BRIGHTNESS_MANUAL_MIN_PCT, BRIGHTNESS_PCT_MAX);
+  brightness_auto_top_pct = constrain(brightness_auto_top_pct, BRIGHTNESS_AUTO_TOP_MIN_PCT, BRIGHTNESS_PCT_MAX);
 
   frame_one_offset = constrain(frame_one_offset, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
   frame_spacing_offset = constrain(frame_spacing_offset, FRAME_TUNING_MIN, FRAME_TUNING_MAX);
@@ -307,6 +313,10 @@ void loadPrefs()
   level_trim_portrait_neg_deci_deg = prefs.getInt("lvl_trim_pn10", legacy_trim_pn * 10);
   reticle_offset_x = prefs.getInt("reticle_x", DEFAULT_RETICLE_OFFSET_X);
   reticle_offset_y = prefs.getInt("reticle_y", DEFAULT_RETICLE_OFFSET_Y);
+  brightness_auto = prefs.getBool("bright_auto", DEFAULT_BRIGHTNESS_AUTO);
+  brightness_manual_pct = prefs.getInt("bright_man_pct", DEFAULT_BRIGHTNESS_MANUAL_PCT);
+  brightness_auto_top_pct = prefs.getInt("bright_top_pct", DEFAULT_BRIGHTNESS_AUTO_TOP_PCT);
+  show_horizon_line = prefs.getBool("show_horizon", DEFAULT_SHOW_HORIZON_LINE);
   film_counter = prefs.getInt("film_counter", 0);
   encoder_value = prefs.getInt("encoder_value", 0);
   prev_encoder_value = prefs.getInt("prev_encoder_value", 0);
