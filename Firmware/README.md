@@ -200,6 +200,17 @@ pio run --target monitor
 pio test -e native_core_tests
 ```
 
+### User-manual screenshots
+```bash
+# Regenerate the pixel-exact UI mockups in
+# Documentation/user-manual/images/ from the real draw code.
+scripts/generate-screenshots.sh
+```
+
+The `native_screenshots` env compiles `interface.cpp` /
+`interface_config_screens.cpp` against software display canvases and emits an
+SVG per screen. Rerun after any UI change so the manual stays in sync.
+
 ## Configuration
 
 ### Constants (mrfconstants.h)

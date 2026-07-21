@@ -2,6 +2,22 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## Unreleased
+
+### Documentation tooling
+
+- The user-manual UI mockups are now generated from the real firmware draw
+  code instead of being hand-drawn, so they render exactly like the device.
+  A new `native_screenshots` build env compiles `interface.cpp` /
+  `interface_config_screens.cpp` against software display canvases and writes
+  a pixel-exact SVG per screen; `scripts/generate-screenshots.sh` regenerates
+  them after any UI change. No firmware behavior change (the device build
+  excludes the new `src/screenshots/` sources).
+- User-manual accuracy and readability pass: distance-state and troubleshooting
+  tables, plus previously undocumented details (backward-wired calibration
+  error, EV Readout main-screen behavior, Health "Prefs" states, Factory Reset
+  screen, uncalibrated-lens glyph).
+
 ## 10.7.0 - 2026-07-15
 
 ### Repo-wide review: LiDAR recovery fixes, regression guards, delivery-pipeline hardening
