@@ -6,7 +6,7 @@ namespace
 // scale the manual displays them that harshness reads as jagged. A small
 // Gaussian blur (fraction of a device pixel) softens the edges just enough to
 // suggest an OLED without smearing 1px text strokes into illegibility.
-constexpr const char *kSoftenStdDeviation = "0.35";
+constexpr const char *kSoftenStdDeviation = "0.22";
 
 // A set bit in the GFXcanvas1 buffer means the pixel is lit (white). Bits are
 // packed MSB-first within each byte, one row after another.

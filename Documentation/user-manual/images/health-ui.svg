@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128">
-  <defs><filter id="soften" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation="0.35"/></filter></defs>
+  <defs><filter id="soften" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation="0.22"/></filter></defs>
   <rect x="0" y="0" width="128" height="128" fill="#000000" shape-rendering="crispEdges"/>
   <g filter="url(#soften)">
   <rect x="4" y="8" width="3" height="1" fill="#ffffff"/>
