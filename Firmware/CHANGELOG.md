@@ -4,6 +4,14 @@ All notable firmware changes by released `FWVERSION`, reconstructed from git his
 
 ## Unreleased
 
+### Firmware
+
+- Config-screen titles now autoscale. The longest breadcrumbs (`Setup >
+  Display`, `Display > Horizon`, `Factory Reset?`) overflowed the 128px display
+  at the 9x15 header font and clipped on the right edge; they now drop to the
+  6x10 font when the larger one would not fit, so the full title stays on
+  screen. Shorter headers are unchanged. Backed by a unit test.
+
 ### Documentation tooling
 
 - The user-manual UI mockups are now generated from the real firmware draw

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "activity.h"
+#include "config_header_logic.h"
 #include "cyclefuncs.h"
 #include "formats.h"
 #include "frameline_layout_logic.h"
@@ -250,7 +251,20 @@ int getConfigMenuRowY(int step)
 void beginConfigMenuScreen(const __FlashStringHelper *title)
 {
   preparePrimaryDisplayTextMode();
-  u8g2.setFont(u8g2_font_9x15_mf);
+
+  // Autoscale the title font so long breadcrumbs fit instead of clipping at the
+  // right edge. ESP32 flash is memory-mapped, so the F()-tagged pointer reads
+  // as a normal string.
+  const std::size_t titleChars = strlen(reinterpret_cast<const char *>(title));
+  if (configHeaderNeedsSmallFont(titleChars, SCREEN_WIDTH - CONFIG_TITLE_X))
+  {
+    u8g2.setFont(u8g2_font_6x10_mf);
+  }
+  else
+  {
+    u8g2.setFont(u8g2_font_9x15_mf);
+  }
+
   u8g2.setCursor(CONFIG_TITLE_X, CONFIG_TITLE_Y);
   u8g2.print(title);
   u8g2.setFont(u8g2_font_4x6_mf);
