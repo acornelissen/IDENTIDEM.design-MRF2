@@ -2,6 +2,30 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
+## 10.7.1 - 2026-07-21
+
+### Firmware
+
+- Config-screen titles now autoscale. The longest breadcrumbs (`Setup >
+  Display`, `Display > Horizon`, `Factory Reset?`) overflowed the 128px display
+  at the 9x15 header font and clipped on the right edge; they now drop to the
+  6x10 font when the larger one would not fit, so the full title stays on
+  screen. Shorter headers are unchanged. Backed by a unit test.
+
+### Documentation tooling
+
+- The user-manual UI mockups are now generated from the real firmware draw
+  code instead of being hand-drawn, so they render exactly like the device.
+  A new `native_screenshots` build env compiles `interface.cpp` /
+  `interface_config_screens.cpp` against software display canvases and writes
+  a pixel-exact SVG per screen; `scripts/generate-screenshots.sh` regenerates
+  them after any UI change. No firmware behavior change (the device build
+  excludes the new `src/screenshots/` sources).
+- User-manual accuracy and readability pass: distance-state and troubleshooting
+  tables, plus previously undocumented details (backward-wired calibration
+  error, EV Readout main-screen behavior, Health "Prefs" states, Factory Reset
+  screen, uncalibrated-lens glyph).
+
 ## 10.7.0 - 2026-07-15
 
 ### Repo-wide review: LiDAR recovery fixes, regression guards, delivery-pipeline hardening

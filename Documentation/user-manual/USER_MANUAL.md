@@ -1,6 +1,6 @@
 # MRF2 User Manual
 
-**Firmware version:** 10.7.0
+**Firmware version:** 10.7.1
 
 This manual covers how to operate the MRF2 firmware user interface, including the on-device displays, buttons, calibration flow, and film counter behavior. It is written for everyday use, not just for builders.
 
@@ -24,6 +24,7 @@ This manual covers how to operate the MRF2 firmware user interface, including th
   - [LiDAR submenu](#lidar-submenu)
   - [Display submenu](#display-submenu)
   - [System Health screen](#system-health-screen)
+    - [Factory Reset](#factory-reset)
   - [ISO list](#iso-list)
   - [Film formats](#film-formats)
 - [Lens calibration](#lens-calibration)
@@ -106,20 +107,30 @@ You can tune horizon trim offsets independently for **Landscape**, **Portrait+**
 
 ### Distance readouts
 
-- **LiDAR distance (Dist)**
-  - Uses LiDAR v2 primary/secondary returns with confidence scoring and correction for more stable readings.
-  - Confidence accounts for ambient sunlight relative to return intensity. Thresholds are tuned for outdoor use in bright conditions, and the sensor falls back to low-confidence tracking at all ranges when primary filtering rejects a return.
-  - Measurement range: 5 cm to 18 m.
-  - Displays values below 1 meter in centimeters (for example, `75cm`), 1m to below 2m in meters with two decimal places (for example, `1.85m`), and 2m and above with one decimal place (for example, `2.5m`).
-  - Displays `Inf.` for measured readings above 18 metres (the display's infinity cutoff; the sensor itself is rated to 20 m).
-  - Displays `Inf?` when the signal is lost and the last reading was above 3 m — usually the camera is now aimed at the sky or something beyond sensor range. The question mark marks it as a guess, not a measurement.
-  - Displays `...` if the sensor has no valid data for 1 second at close range.
-  - Displays `Zzz` when LiDAR is in idle standby (wake by focusing or pressing a button).
-  - Displays `<15cm` for near readings below display threshold.
-  - The label changes from `Dist:` to `Held:` in two cases: when the lens is focused close and the LiDAR briefly reports something much farther away (usually the beam slipping past your subject to the background), or briefly during the first moment of a signal dropout before it falls back to `...`/`Inf?`. Either way the previous reading is held rather than jumping or blanking. For the beam-slip case, aim deliberately at the farther subject for a moment and it releases to the live value.
-- **Lens distance (Lens)**
-  - Based on calibration and the lens position sensor.
-  - Displays `Inf.` when beyond the calibrated infinity threshold.
+**LiDAR distance (Dist)** is the measured distance to whatever the sensor is aimed at. It uses primary and secondary returns with confidence scoring and a correction curve for stable readings. Confidence accounts for ambient sunlight relative to return strength; thresholds are tuned for bright outdoor use, and the sensor falls back to low-confidence tracking at all ranges when a return is rejected. Measurement range is 5 cm to 18 m.
+
+Normal numeric readings are formatted by distance:
+
+| Distance | Shown as | Example |
+| --- | --- | --- |
+| Below 1 m | centimetres | `75cm` |
+| 1 m to below 2 m | metres, two decimals | `1.85m` |
+| 2 m and above | metres, one decimal | `2.5m` |
+
+The readout also uses these special states:
+
+| Readout | What it means | What to do |
+| --- | --- | --- |
+| `Inf.` | Measured reading above 18 m, the display's infinity cutoff (the sensor is rated to 20 m). | Use the lens barrel markings; set the ring to ∞. |
+| `Inf?` | Signal lost while the last reading was beyond 3 m — usually aimed at sky or something too far or dark to return a pulse. A guess, not a measurement. | Use the lens barrel markings. |
+| `...` | No valid data for 1 second at close range. | Check LiDAR wiring/power, or try a different target angle. |
+| `Zzz` | LiDAR is in idle standby. | Focus or press a button to wake it. |
+| `<15cm` | A near reading below the display threshold. | Move back if you need an exact figure. |
+| `Held:` | The last good reading is being held instead of jumping or blanking (see below). | For a beam slip, aim at the farther subject briefly to release it. |
+
+The label reads `Held:` instead of `Dist:` in two cases. First, when the lens is focused close and the LiDAR briefly reports something much farther away — usually the beam slipping past your subject onto the background. Second, for a moment at the very start of a signal dropout, before the readout falls back to `...` or `Inf?`. In both cases the previous reading is held.
+
+**Lens distance (Lens)** is read from the focus-ring position sensor, using the lens's calibration table. It shows `Inf.` beyond the calibrated infinity threshold, and `--.-` when the mounted lens has not been calibrated (the readout is inactive until you calibrate it).
 
 ### LiDAR quality indicator
 
@@ -193,6 +204,8 @@ Enter Setup by **long-pressing Right (R)** from the main screen.
 6. **System Health >**: opens diagnostics screen.
 7. **Exit >>**: return to the main screen.
 
+The footer at the bottom of this screen shows `IDENTIDEM.design MRF` followed by the firmware version — the quickest way to read your version if a maintainer asks.
+
 ### Film submenu
 
 ![Film settings menu](images/config-film-ui.svg)
@@ -236,9 +249,9 @@ Current frame ranges are format-bound:
 ![Light meter settings menu](images/config-meter-ui.svg)
 
 1. **ISO**: cycles ISO values.
-2. **EV Comp**: adjust exposure compensation in 1/3-stop steps.
+2. **EV Comp**: adjust exposure compensation in 1/3-stop steps, up to +/-3 EV.
 3. **Smoothing**: cycles `Off`, `Low`, `Medium`, `High`.
-4. **EV Readout**: toggle EV display on/off on main screen.
+4. **EV Readout**: toggle the EV value on the main screen. When on, the shutter field switches to a compact form and appends the metered EV (for example `1/125 EV12.0`); the value reads `EV--.-` when no EV is available.
 5. **Back <<**: return to setup root menu.
 
 ### LiDAR submenu
@@ -295,7 +308,7 @@ This screen lets you visually align the focus reticle to the camera's optical ce
 1. **Horizontal**: press **L** to move left, **R** to move right. **Long press either button** to advance to vertical adjustment.
 2. **Vertical**: press **L** to move up, **R** to move down. **Long press either button** to save the new offsets and return to the Display submenu.
 
-Offsets are stored in non-volatile memory and survive reboots. Range: -20 to +20 pixels in each axis.
+Offsets are stored in non-volatile memory and survive reboots. Range: -20 to +20 pixels in each axis. The factory default is X = -5, Y = 0.
 
 ##### Calibrating the reticle position
 
@@ -315,7 +328,11 @@ Only do this if the reticle and LiDAR dot disagree noticeably; the factory defau
 Shows quick diagnostics:
 
 - Firmware version (`FW`)
-- Preferences schema status (`Prefs`)
+- Preferences schema status (`Prefs`), one of:
+  - `Ok` — settings loaded cleanly at the current schema.
+  - `Defaults` — no saved settings were found, so factory defaults are in use.
+  - `Legacy migrated` — older settings were found and upgraded to the current schema.
+  - `vN newer` — the saved settings came from a newer firmware than the one now running (you flashed an older build). Settings load best-effort; reflash the newer firmware or factory-reset if anything looks wrong.
 - LiDAR sensor and enabled status, plus last error code
 - LiDAR recovery count
 - Hardware peripheral flags — `1` = ready, `0` = not detected:
@@ -326,7 +343,16 @@ Controls:
 
 - **L**: return to Setup.
 - **R short**: if LiDAR failed to initialise (`InitErr`), re-attempts LiDAR initialisation without a power cycle. Otherwise returns to Setup.
-- **R long** (3s): enters the **Factory Reset** confirmation screen. Confirming clears all saved settings (lens calibrations, film counter, ISO, sleep timeouts, etc.) and reboots the device with defaults. This is useful for troubleshooting corrupted preferences or preparing the camera for a new user.
+- **R long** (3s): enters the **Factory Reset** confirmation screen (see below).
+
+#### Factory Reset
+
+![Factory reset confirmation](images/factory-reset-confirm-ui.svg)
+
+Reached by long-pressing **R** on the System Health screen. Confirming clears all saved settings — lens calibrations, film counter, ISO, sleep timeouts, and the rest — and reboots the device with defaults. This is useful for troubleshooting corrupted preferences or preparing the camera for a new user.
+
+- **L**: cancel and return to System Health.
+- **R**: confirm the reset and reboot with defaults.
 
 ### ISO list
 
@@ -389,6 +415,7 @@ If a capture fails, the screen shows a specific error and holds it for at least 
 
 - **"Unstable reading / Hold lens still and retry"** — the sensor values varied too much during sampling. Keep the ring stationary and press **L** again.
 - **"Out of sequence / Increase focus distance"** — the new reading was not higher than the previous one. The focus ring must move progressively from near to far. Turn it further towards infinity and retry.
+- **"Readings decreasing / Sensor wired backward?"** — the sensor value moved the wrong way as you turned towards infinity, which usually means the position-sensor wiring is reversed. Check the sensor cable orientation before retrying.
 
 Controls during capture:
 
@@ -457,26 +484,15 @@ Wake the device by pressing any button or moving the lens/advance lever (any act
 
 ## Troubleshooting
 
-- **LiDAR distance shows `Inf.`**
-  - The sensor measured a distance above 18 m, the display's infinity cutoff (the sensor itself is rated to 20 m). Use the lens barrel distance markings instead.
-- **LiDAR distance shows `Inf?`**
-  - The signal was lost while the last reading was beyond 3 m — usually the camera is aimed at the sky or at something too far or too dark to return a pulse. It is a guess, not a measurement. Use the lens barrel distance markings instead.
-- **LiDAR distance shows `...`**
-  - At close range, verify LiDAR wiring and power. The UI updates only with valid sensor data.
-- **LiDAR only reads close objects — nothing at distance, worse outdoors or in bright light**
-  - Open **Setup > LiDAR > Diagnostics** and aim at a distant target. If Intensity stays very low and Quality stays at 0–1 while SunBase is high, the sensor is not getting a usable return.
-  - This pattern (close reads fine, distance/bright-light fails) is commonly a sensor power-supply problem: the LiDAR's pulsed laser briefly starves its 3.3 V rail because the board has no local decoupling capacitor at the connector. There is a documented hardware fix — see [LiDAR power decoupling errata](../hardware-errata/lidar-stage1-decoupling.md).
-  - To gather data for a maintainer, follow the [LiDAR field test protocol](../hardware-errata/lidar-field-test.md).
-- **LiDAR distance shows `Zzz`**
-  - LiDAR is in idle standby. Turn the focus ring or press a button to wake it, or increase/disable **Idle timeout** in **Setup > LiDAR >**.
-- **LiDAR quality stays at 1 square (Poor)**
-  - Check subject reflectivity/angle and ambient interference; low-SNR returns under strong sunlight are accepted at lower confidence and may update more slowly through temporal blending.
-- **Shutter speed reads `Bright!` or `Dark!`**
-  - Adjust ISO and/or aperture, or verify the light meter sensor.
-- **Lens option does not show your lens**
-  - Only calibrated lenses are selectable. Run Lens Calibration first.
-- **Film counter does not increment**
-  - Verify the advance lever mechanism and that it is registering motion from lever strokes.
+The `Dist` readouts `Inf.`, `Inf?`, `...`, `Zzz`, and `<15cm` are normal states, not faults — see the [distance readouts table](#distance-readouts) for what each means and what to do. The problems below are the ones worth chasing:
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| LiDAR only reads close objects — nothing at distance, worse outdoors or in bright light | The pulsed laser briefly starves its 3.3 V rail because the connector has no local decoupling capacitor. Confirm in **Setup > LiDAR > Diagnostics**: distant target shows very low Intensity and Quality 0–1 while SunBase is high. | Apply the [LiDAR power decoupling errata](../hardware-errata/lidar-stage1-decoupling.md). To gather data for a maintainer first, follow the [field test protocol](../hardware-errata/lidar-field-test.md). |
+| LiDAR quality stays at 1 square (Poor) | Low subject reflectivity, a glancing angle, or bright ambient interference. Low-SNR returns in strong sun are accepted at lower confidence and update more slowly. | Face the subject more squarely, choose a more reflective target, or shade the shot. |
+| Shutter speed reads `Bright!` or `Dark!` | The computed speed is off the ends of the meter's range for the current ISO and aperture. | Adjust ISO and/or aperture. If it never changes, verify the light meter sensor on the Health screen. |
+| Lens option does not show your lens | Only calibrated lenses are selectable. | Run [Lens calibration](#lens-calibration) for that lens first. |
+| Film counter does not increment | The advance lever is not registering strokes. | Verify the advance-lever mechanism and that each stroke is detected (watch the progress bar on the external display). |
 
 ## Firmware updates
 

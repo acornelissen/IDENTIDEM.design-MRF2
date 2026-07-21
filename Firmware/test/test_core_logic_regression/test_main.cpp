@@ -25,6 +25,7 @@
 #include "../../src/boot_animation_logic.cpp"
 #include "../../src/prefs_clamp_logic.cpp"
 #include "../../src/calibration_logic.cpp"
+#include "../../src/config_header_logic.cpp"
 #include "../../src/film_counter_logic.cpp"
 #include "../../src/formats.cpp"
 #include "../../src/formatting_logic.cpp"
@@ -181,6 +182,25 @@ void test_format_3x6_supports_21_frames()
   // exposure on 120. Real 120 formats have a leader-paper offset of ~130+.
   TEST_ASSERT_GREATER_OR_EQUAL_INT(120, format->sensor[1]);
   TEST_ASSERT_EQUAL_INT(550, format->sensor[getFilmFormatPointCount(*format) - 1]);
+}
+
+void test_config_header_autoscales_only_when_9x15_overflows()
+{
+  // Available width for the title is SCREEN_WIDTH - CONFIG_TITLE_X = 128 - 3.
+  const int available = 128 - 3;
+
+  // Headers that fit at 9x15 keep the large font.
+  TEST_ASSERT_FALSE(configHeaderNeedsSmallFont(5, available));  // "Setup"
+  TEST_ASSERT_FALSE(configHeaderNeedsSmallFont(13, available)); // "Setup > LiDAR" (117px)
+
+  // Headers that would clip fall back to 6x10.
+  TEST_ASSERT_TRUE(configHeaderNeedsSmallFont(14, available));  // "Factory Reset?" (126px)
+  TEST_ASSERT_TRUE(configHeaderNeedsSmallFont(15, available));  // "Setup > Display" (135px)
+  TEST_ASSERT_TRUE(configHeaderNeedsSmallFont(17, available));  // "Display > Horizon" (153px)
+
+  // Boundary: 13 chars fit (117 <= 125), 14 do not (126 > 125).
+  TEST_ASSERT_EQUAL_INT(117, configHeaderTextWidthPx(13, 9));
+  TEST_ASSERT_EQUAL_INT(126, configHeaderTextWidthPx(14, 9));
 }
 
 void test_encoder_filter_forward_hysteresis_and_debounce()
@@ -2173,6 +2193,7 @@ int main(int, char **)
   RUN_TEST(test_frame_counter_snap_and_roll_end);
   RUN_TEST(test_frame_counter_frame_offset_and_spacing);
   RUN_TEST(test_format_3x6_supports_21_frames);
+  RUN_TEST(test_config_header_autoscales_only_when_9x15_overflows);
   RUN_TEST(test_encoder_filter_forward_hysteresis_and_debounce);
   RUN_TEST(test_encoder_filter_reverse_requires_rewind_mode);
   RUN_TEST(test_lidar_timeout_recovery_and_backoff);

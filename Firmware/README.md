@@ -1,6 +1,6 @@
 # MRF2 Firmware - Medium Format Rangefinder System
 
-**Version**: 10.7.0
+**Version**: 10.7.1
 **Platform**: ESP32-S3  
 **Framework**: Arduino (PlatformIO)
 
@@ -199,6 +199,17 @@ pio run --target monitor
 # lens distance calibration logic, and light meter output.
 pio test -e native_core_tests
 ```
+
+### User-manual screenshots
+```bash
+# Regenerate the pixel-exact UI mockups in
+# Documentation/user-manual/images/ from the real draw code.
+scripts/generate-screenshots.sh
+```
+
+The `native_screenshots` env compiles `interface.cpp` /
+`interface_config_screens.cpp` against software display canvases and emits an
+SVG per screen. Rerun after any UI change so the manual stays in sync.
 
 ## Configuration
 
