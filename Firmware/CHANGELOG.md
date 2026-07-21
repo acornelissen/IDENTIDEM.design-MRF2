@@ -2,7 +2,7 @@
 
 All notable firmware changes by released `FWVERSION`, reconstructed from git history.
 
-## Unreleased
+## 10.7.1 - 2026-07-21
 
 ### Firmware
 

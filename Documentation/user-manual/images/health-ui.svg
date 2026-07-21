@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128">
+<!-- FW: 10.7.1 -->
   <defs><filter id="soften" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation="0.22"/></filter></defs>
   <rect x="0" y="0" width="128" height="128" fill="#000000" shape-rendering="crispEdges"/>
   <g filter="url(#soften)">
@@ -122,22 +123,20 @@
   <rect x="23" y="26" width="1" height="1" fill="#ffffff"/>
   <rect x="25" y="26" width="1" height="1" fill="#ffffff"/>
   <rect x="33" y="26" width="1" height="1" fill="#ffffff"/>
-  <rect x="39" y="26" width="1" height="1" fill="#ffffff"/>
-  <rect x="41" y="26" width="1" height="1" fill="#ffffff"/>
+  <rect x="39" y="26" width="2" height="1" fill="#ffffff"/>
   <rect x="3" y="27" width="2" height="1" fill="#ffffff"/>
   <rect x="7" y="27" width="3" height="1" fill="#ffffff"/>
   <rect x="20" y="27" width="1" height="1" fill="#ffffff"/>
   <rect x="23" y="27" width="3" height="1" fill="#ffffff"/>
   <rect x="32" y="27" width="1" height="1" fill="#ffffff"/>
-  <rect x="39" y="27" width="3" height="1" fill="#ffffff"/>
+  <rect x="40" y="27" width="1" height="1" fill="#ffffff"/>
   <rect x="3" y="28" width="1" height="1" fill="#ffffff"/>
   <rect x="7" y="28" width="3" height="1" fill="#ffffff"/>
   <rect x="20" y="28" width="1" height="1" fill="#ffffff"/>
   <rect x="23" y="28" width="1" height="1" fill="#ffffff"/>
   <rect x="25" y="28" width="1" height="1" fill="#ffffff"/>
   <rect x="31" y="28" width="1" height="1" fill="#ffffff"/>
-  <rect x="39" y="28" width="1" height="1" fill="#ffffff"/>
-  <rect x="41" y="28" width="1" height="1" fill="#ffffff"/>
+  <rect x="40" y="28" width="1" height="1" fill="#ffffff"/>
   <rect x="3" y="29" width="1" height="1" fill="#ffffff"/>
   <rect x="7" y="29" width="1" height="1" fill="#ffffff"/>
   <rect x="9" y="29" width="1" height="1" fill="#ffffff"/>
@@ -147,7 +146,7 @@
   <rect x="28" y="29" width="1" height="1" fill="#ffffff"/>
   <rect x="31" y="29" width="1" height="1" fill="#ffffff"/>
   <rect x="36" y="29" width="1" height="1" fill="#ffffff"/>
-  <rect x="40" y="29" width="1" height="1" fill="#ffffff"/>
+  <rect x="39" y="29" width="3" height="1" fill="#ffffff"/>
   <rect x="3" y="35" width="2" height="1" fill="#ffffff"/>
   <rect x="17" y="35" width="1" height="1" fill="#ffffff"/>
   <rect x="36" y="35" width="1" height="1" fill="#ffffff"/>

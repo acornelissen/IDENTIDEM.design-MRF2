@@ -58,10 +58,23 @@ namespace
 {
 std::string g_output_dir = "../Documentation/user-manual/images";
 
-void writeSvg(const std::string &name, const CanvasDisplay &canvas)
+void writeSvg(const std::string &name, const CanvasDisplay &canvas,
+              const std::string &metadata = "")
 {
   std::string svg = renderFrameBufferSvg(canvas.getBuffer(), canvas.width(),
                                          canvas.height(), canvas.getBytesPerRow(), 4);
+  // The version is drawn as pixels, so screens that carry it also embed it as a
+  // machine-readable comment. This lets the CI version-consistency check verify
+  // the SVGs were regenerated after a version bump.
+  if (!metadata.empty())
+  {
+    const std::string tag = "<!-- " + metadata + " -->\n";
+    const std::size_t insertAt = svg.find('\n');
+    if (insertAt != std::string::npos)
+    {
+      svg.insert(insertAt + 1, tag);
+    }
+  }
   std::string path = g_output_dir + "/" + name + ".svg";
   std::ofstream out(path, std::ios::binary | std::ios::trunc);
   out << svg;
@@ -175,7 +188,7 @@ int main(int argc, char **argv)
   // ---- Setup root ----
   poseCommonState();
   drawConfigUI();
-  writeSvg("config-ui", display);
+  writeSvg("config-ui", display, std::string("IDENTIDEM.design MRF ") + FWVERSION);
 
   // ---- Setup > Film ----
   poseCommonState();
@@ -244,7 +257,7 @@ int main(int argc, char **argv)
   // ---- System Health ----
   poseCommonState();
   drawHealthUI();
-  writeSvg("health-ui", display);
+  writeSvg("health-ui", display, std::string("FW: ") + FWVERSION);
 
   // ---- Reset frame counter confirm ----
   poseCommonState();
