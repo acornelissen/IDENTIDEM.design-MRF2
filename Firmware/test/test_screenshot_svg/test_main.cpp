@@ -49,9 +49,22 @@ void test_header_dimensions_scale_and_viewbox()
   TEST_ASSERT_TRUE(svg.find("width=\"512\"") != std::string::npos);
   TEST_ASSERT_TRUE(svg.find("height=\"512\"") != std::string::npos);
   TEST_ASSERT_TRUE(svg.find("viewBox=\"0 0 128 128\"") != std::string::npos);
-  TEST_ASSERT_TRUE(svg.find("shape-rendering=\"crispEdges\"") != std::string::npos);
-  // Black background rect present.
-  TEST_ASSERT_TRUE(svg.find("fill=\"#000000\"") != std::string::npos);
+  // Background stays crisp; the lit pixels are softened by the blur filter.
+  TEST_ASSERT_TRUE(svg.find("fill=\"#000000\" shape-rendering=\"crispEdges\"") != std::string::npos);
+}
+
+void test_light_antialiasing_filter_present()
+{
+  int bytesPerRow = 0;
+  std::vector<uint8_t> buffer = makeBuffer(32, 8, bytesPerRow);
+  setPixel(buffer, bytesPerRow, 5, 3);
+
+  std::string svg = renderFrameBufferSvg(buffer.data(), 32, 8, bytesPerRow, 4);
+
+  // A soften filter is defined and applied to the white-pixel group.
+  TEST_ASSERT_TRUE(svg.find("<filter id=\"soften\"") != std::string::npos);
+  TEST_ASSERT_TRUE(svg.find("feGaussianBlur") != std::string::npos);
+  TEST_ASSERT_TRUE(svg.find("<g filter=\"url(#soften)\">") != std::string::npos);
 }
 
 void test_external_display_dimensions()
@@ -142,6 +155,7 @@ int main(int, char **)
 {
   UNITY_BEGIN();
   RUN_TEST(test_header_dimensions_scale_and_viewbox);
+  RUN_TEST(test_light_antialiasing_filter_present);
   RUN_TEST(test_external_display_dimensions);
   RUN_TEST(test_empty_buffer_has_no_white_rects);
   RUN_TEST(test_single_pixel_emits_one_rect_at_coords);
