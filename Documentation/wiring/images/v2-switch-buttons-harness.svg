@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 648" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">
   <title>v2 (MRF-Pro-v8) power switch and buttons harness — J4</title>
-  <desc>Wiring diagram for the 8-pin JST-SH connector J4 on the MRF-Pro-v8 main board, which carries one DPDT power switch and two momentary buttons. J4 pin 1, 2, 3 are GND. Pin 4 is EN (Feather J2 pin 11). Pin 5 is the right button, Feather D10 (J2 pin 6). Pin 6 is the left button, Feather D9 (J2 pin 5). Pin 7 is 3.3OUT, switched 3.3 V to FPC pin 6. Pin 8 is 3.3IN, the Feather 3.3 V source from J1 pin 2. DPDT pole A switches 3.3IN to 3.3OUT. Pole B ties EN to GND to hold the ESP32-S3 in reset when off. Each button connects its GPIO pin to GND when pressed.</desc>
+  <desc>Wiring diagram for the 8-pin JST-SH connector J4 on the MRF-Pro-v8 main board, which carries one DPDT power switch and two momentary buttons. J4 pin 1, 2, 3 are GND. Pin 4 is EN (Feather J2 pin 11). Pin 5 is the right button, Feather D10 (J2 pin 6). Pin 6 is the left button, Feather D9 (J2 pin 5). Pin 7 is 3.3IN, the Feather 3.3 V source from J1 pins 2 and 3. Pin 8 is 3.3OUT, switched 3.3 V to FPC pin 6. DPDT pole A switches 3.3IN to 3.3OUT. Pole B ties EN to GND to hold the ESP32-S3 in reset when off. Each button connects its GPIO pin to GND when pressed.</desc>
 
   <rect x="0" y="0" width="1000" height="620" fill="#ffffff"/>
   <text x="500" y="32" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">v2 (MRF-Pro-v8) &#8212; power switch + buttons harness</text>
@@ -30,15 +30,15 @@
     <text x="150" y="319" text-anchor="end">EN</text>
     <text x="150" y="354" text-anchor="end">D10</text>
     <text x="150" y="389" text-anchor="end">D9</text>
-    <text x="150" y="424" text-anchor="end">3.3OUT</text>
-    <text x="150" y="459" text-anchor="end">3.3IN</text>
+    <text x="150" y="424" text-anchor="end">3.3IN</text>
+    <text x="150" y="459" text-anchor="end">3.3OUT</text>
   </g>
   <g font-size="9" fill="#64748b">
     <text x="150" y="331" text-anchor="end">J2.11</text>
     <text x="150" y="366" text-anchor="end">J2.6</text>
     <text x="150" y="401" text-anchor="end">J2.5</text>
-    <text x="150" y="436" text-anchor="end">&#8594; FPC 6</text>
-    <text x="150" y="471" text-anchor="end">&#8592; J1.2</text>
+    <text x="150" y="436" text-anchor="end">&#8592; J1.2</text>
+    <text x="150" y="471" text-anchor="end">&#8594; FPC 6</text>
   </g>
   <!-- pin pads -->
   <g font-size="11" font-weight="700" fill="#fff">
@@ -97,12 +97,13 @@
   <text x="732" y="286" font-size="8.5" fill="#334155">ganged</text>
 
   <!-- wires J4 -> switch (orthogonal) -->
-  <!-- pin 8 (3.3IN) to pole A COM -->
-  <polyline points="272,455 610,455 610,240 668,240" fill="none" stroke="#d32f2f" stroke-width="2.5"/>
-  <text x="470" y="449" font-size="10" fill="#b91c1c">3.3IN (from Feather 3.3 V)</text>
-  <!-- pin 7 (3.3OUT) to pole A used throw -->
-  <polyline points="272,420 592,420 592,224 776,224" fill="none" stroke="#d32f2f" stroke-width="2.5"/>
-  <text x="470" y="414" font-size="10" fill="#b91c1c">3.3OUT (&#8594; FPC pin 6)</text>
+  <!-- pin 7 (3.3IN) to pole A COM -->
+  <polyline points="272,420 592,420 592,240 668,240" fill="none" stroke="#d32f2f" stroke-width="2.5"/>
+  <text x="470" y="414" font-size="10" fill="#b91c1c">3.3IN (from Feather 3.3 V)</text>
+  <!-- pin 8 (3.3OUT) to pole A used throw; short white gap marks the crossing, no junction -->
+  <line x1="603" y1="240" x2="617" y2="240" stroke="#ffffff" stroke-width="4"/>
+  <polyline points="272,455 610,455 610,224 776,224" fill="none" stroke="#d32f2f" stroke-width="2.5"/>
+  <text x="470" y="449" font-size="10" fill="#b91c1c">3.3OUT (&#8594; FPC pin 6)</text>
   <!-- pin 4 (EN) to pole B COM -->
   <polyline points="272,315 574,315 574,328 668,328" fill="none" stroke="#1565c0" stroke-width="2.5"/>
   <text x="410" y="309" font-size="10" fill="#1565c0">EN</text>

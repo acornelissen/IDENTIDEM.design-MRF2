@@ -61,10 +61,10 @@ DPDT: **pole A** gates the breakout 3.3 V (pin 7 → pin 8); **pole B** ties the
 | 4 | EN | Feather J2.11 | **pole B** — OFF ties EN→GND, holds MCU in reset |
 | 5 | D10 | Feather J2.6 | Right button → GND |
 | 6 | D9 | Feather J2.5 | Left button → GND |
-| 7 | 3.3OUT | FPC pin 6 → breakout | **pole A** out (switched 3.3 V) |
-| 8 | 3.3IN | Feather J1.2 | **pole A** in (3.3 V source) |
+| 7 | 3.3IN | Feather J1.2, J1.3 | **pole A** in (3.3 V source) |
+| 8 | 3.3OUT | FPC pin 6 → breakout | **pole A** out (switched 3.3 V) |
 
-DPDT: **pole A** switches 3.3 V (pin 8 → pin 7); **pole B** ties EN to GND. The poles are ganged, so **pulling EN to GND (OFF) also opens pole A and breaks the 3.3 V** — power and MCU-enable are cut together, fully powering the camera down (≤1 µA off). See the [power-shutdown errata](../hardware-errata/lidar-stage2-ldo-design.md) for the design rationale.
+DPDT: **pole A** switches 3.3 V (pin 7 → pin 8); **pole B** ties EN to GND. The poles are ganged, so **pulling EN to GND (OFF) also opens pole A and breaks the 3.3 V** — power and MCU-enable are cut together, fully powering the camera down (≤1 µA off). See the [power-shutdown errata](../hardware-errata/lidar-stage2-ldo-design.md) for the design rationale.
 
 ---
 
@@ -108,7 +108,7 @@ The 8-pin FPC carries the LiDAR UART plus power and I²C, straight pin-to-pin. T
 
 | FPC pin | Signal | v1 | v2 |
 | --- | --- | --- | --- |
-| 1 | supply to breakout | 3.3 V | **VBAT** (feeds the LDO) |
+| 1 | supply to breakout | breakout 3.3 V rail; on the main board it lands on Feather **D11** (J2.7), an unused GPIO — the rail itself arrives on pin 6 | **VBAT** from Feather J2.12 (feeds the LDO) |
 | 2 | LiDAR UART_TX → main J1.14 | same | same |
 | 3 | LiDAR UART_RX → main J1.15 | same | same |
 | 4 | GND | same | same |

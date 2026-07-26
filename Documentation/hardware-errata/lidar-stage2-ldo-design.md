@@ -165,15 +165,15 @@ The power switch is reworked onto the existing 8-pin header **J4** as a DPDT int
 
 | J4 pin | Net | Role |
 |--------|-----|------|
-| 8 | `3.3IN` (J1.2) | Pole A in — Feather 3.3 V source |
-| 7 | `3.3OUT` (→ J3.6 = FPC pin 6) | Pole A out — switched 3.3 V to breakout (U1 EN + J6 + I²C bus) |
+| 7 | `3.3IN` (J1.2, J1.3) | Pole A in — Feather 3.3 V source |
+| 8 | `3.3OUT` (→ J3.6 = FPC pin 6) | Pole A out — switched 3.3 V to breakout (U1 EN + J6 + I²C bus) |
 | 4 | `EN` (→ J2.11) | Pole B — Feather enable; off position ties to GND |
 | 1, 2, 3 | `GND` | Pole B return / switch common |
 | 5, 6 | Feather D10 (J2.6), D9 (J2.5) | Expansion GPIOs broken out on the same header — **not** part of the power switch; leave unswitched |
 
 So `3.3OUT` (FPC pin 6) is no longer assumed to be a free-running Feather rail — it is the gated output of pole A, and pole B independently holds the MCU off. J4 doubles as a small expansion header (pins 5,6 = D10/D9), which is why it is an 8-pin part rather than a 6-pin. See [Power switch](#power-switch--full-shutdown).
 
-> **Reconciliation with the as-built MRF-Pro-v8 (why this section changed).** Earlier revisions of this errata assumed the Feather 3.3 V reached the breakout directly on the FPC. Schematic capture showed it did not: on the prior board FPC pin 1 was driven from a Feather **GPIO (D11)** and pin 6 was a private net to J4 pin 8, so the Feather LDO's 3.3 V never reached the FPC at all — the LiDAR's supply came through a GPIO and/or the J4 expansion header, a weak path that likely worsened the laser-pulse brownout this errata fixes. (The breakout end labels both pins `3.3V` — the J5 table above — so the two boards' nets *named* the same thing while the main board actually fed them from D11 and J4.8. That end-to-end mismatch is exactly the defect.) The respin corrects it: FPC pin 6 now carries a real switched 3.3 V (`3.3OUT`) gated by the J4 DPDT, pin 1 carries `VBAT`, and D11 is freed.
+> **Reconciliation with the as-built MRF-Pro-v8 (why this section changed).** Earlier revisions of this errata assumed the Feather 3.3 V reached the breakout *directly* on the FPC. Schematic capture showed the path is indirect but real: the Feather 3.3 V pour reaches J4 pin 7, leaves the board through pole A of the power switch, and returns on J4 pin 8 → FPC pin 6. The breakout ties FPC pins 1 and 6 to the same `3.3V` net, so that single switched rail feeds the LiDAR's laser supply, its logic supply and the STEMMA QT bus — one undecoupled net for everything, which is the brownout this errata fixes. FPC pin 1 adds nothing to that path: on the main board it lands on Feather **D11** (J2 pin 7), a GPIO the firmware never configures, so it just sits on the breakout's 3.3 V rail as a stray strap and burns the pin. The respin splits the two: pin 1 becomes `VBAT` feeding the breakout's own LDO, pin 6 stays the switched `3.3OUT` that gates it, and D11 is freed.
 
 ## Execution split
 
