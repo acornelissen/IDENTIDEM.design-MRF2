@@ -2199,6 +2199,10 @@
 		(uuid "f4726f0e-8572-42f3-8902-77c30d26821d")
 	)
 	(no_connect
+		(at 92.71 72.39)
+		(uuid "f59733fc-c843-495d-a157-4017fd5f7fe8")
+	)
+	(no_connect
 		(at 87.63 99.06)
 		(uuid "01340067-28f0-4f9e-8170-ea87aa900550")
 	)
@@ -2352,16 +2356,6 @@
 	)
 	(wire
 		(pts
-			(xy 64.77 71.12) (xy 64.77 156.21)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "27515c58-f18e-4a80-a323-8b89d4a684ce")
-	)
-	(wire
-		(pts
 			(xy 111.76 62.23) (xy 109.22 62.23)
 		)
 		(stroke
@@ -2472,16 +2466,6 @@
 	)
 	(wire
 		(pts
-			(xy 64.77 156.21) (xy 92.71 156.21)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "67ef2f43-de72-4711-8185-30dce098d16d")
-	)
-	(wire
-		(pts
 			(xy 114.3 137.16) (xy 114.3 59.69)
 		)
 		(stroke
@@ -2499,16 +2483,6 @@
 			(type default)
 		)
 		(uuid "6a81c1e4-4ebc-4676-9481-feff88829e11")
-	)
-	(wire
-		(pts
-			(xy 92.71 72.39) (xy 92.71 71.12)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6d4046aa-20f6-460d-923c-0d55bbcaa166")
 	)
 	(wire
 		(pts
@@ -2579,16 +2553,6 @@
 			(type default)
 		)
 		(uuid "81c45383-65ea-48ea-8d4f-ee7826fdf0de")
-	)
-	(wire
-		(pts
-			(xy 92.71 71.12) (xy 64.77 71.12)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "829080e2-8c9c-410b-8fa9-f7ade24bac6a")
 	)
 	(wire
 		(pts
@@ -2869,6 +2833,60 @@
 			(type default)
 		)
 		(uuid "fbb4a163-92fd-44b9-8347-b6bc6f5a71de")
+	)
+	(wire
+		(pts
+			(xy 92.71 156.21) (xy 92.71 153.67)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "27df2992-5c70-461e-a368-191be503701d")
+	)
+	(label "3V3_SW"
+		(at 92.71 153.67 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f78a5d3c-1d0c-4789-ada0-bc11c8321fa3")
+		(property "Netclass" ""
+			(at 92.71 154.94 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(label "3V3_SW"
+		(at 105.41 148.59 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "badc017f-96bf-45c8-b7c0-94598704be4e")
+		(property "Netclass" ""
+			(at 105.41 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
 	)
 	(label "GND"
 		(at 77.47 114.3 0)

@@ -85,10 +85,10 @@ If low-battery LiDAR range later proves to matter in the field, the fallback is 
 
 The camera power switch is an off-board **DPDT** switch wired to the main-board 8-pin header **J4**. It does two things at once:
 
-- **Pole A — gate the switched 3.3 V.** Bridges Feather 3.3 V (`3.3IN`, J4.8) to `3.3OUT` (J4.7), which leaves the main board on **FPC pin 6**. On = the breakout (Stemma QT J6 + U1 EN) sees 3.3 V; off = open, `3.3OUT` collapses.
+- **Pole A — gate the switched 3.3 V.** Bridges Feather 3.3 V (`3.3IN`, J4.7) to `3.3OUT` (J4.8), which leaves the main board on **FPC pin 6**. On = the breakout (Stemma QT J6 + U1 EN) sees 3.3 V; off = open, `3.3OUT` collapses.
 - **Pole B — hold the MCU off.** In the *off* position, ties Feather **EN** (J4.4 → J2.11) to **GND** (J4.1–3), which keeps the ESP32-S3 regulator disabled so the Feather 3.3 V rail (`3.3IN`) stays down. On = EN released, the Feather's internal pull-up enables it.
 
-The two poles are redundant by design and reinforce each other: pole B collapses `3.3IN`, which is also pole A's *source* (J4.8), so `3.3OUT` would drop even if pole A's contacts welded shut — and pole A's open contacts drop `3.3OUT` even if EN somehow floated high. Either failure still kills the LiDAR rail.
+The two poles are redundant by design and reinforce each other: pole B collapses `3.3IN`, which is also pole A's *source* (J4.7), so `3.3OUT` would drop even if pole A's contacts welded shut — and pole A's open contacts drop `3.3OUT` even if EN somehow floated high. Either failure still kills the LiDAR rail.
 
 > **Harness failure mode.** J4 carries `EN`, `3.3IN`, `3.3OUT`, and `GND` out to the off-board switch, so that harness is a critical connection. If J4 is unplugged or intermittent, the Feather's onboard 100 kΩ EN pull-up holds EN high, so the **MCU boots normally while `3.3OUT` stays dead** — meaning the I²C peripherals (displays, lens ADC, IMU, encoder) and the LiDAR LDO enable all lose power even though the camera appears "on." It is a defined, safe state, not a short, but a confusing one. Use a latching/keyed J4 connector, and read "MCU runs but the displays and LiDAR are dark" as the signature of a loose or disconnected J4.
 
@@ -173,7 +173,7 @@ The power switch is reworked onto the existing 8-pin header **J4** as a DPDT int
 
 So `3.3OUT` (FPC pin 6) is no longer assumed to be a free-running Feather rail — it is the gated output of pole A, and pole B independently holds the MCU off. J4 doubles as a small expansion header (pins 5,6 = D10/D9), which is why it is an 8-pin part rather than a 6-pin. See [Power switch](#power-switch--full-shutdown).
 
-> **Reconciliation with the as-built MRF-Pro-v8 (why this section changed).** Earlier revisions of this errata assumed the Feather 3.3 V reached the breakout *directly* on the FPC. Schematic capture showed the path is indirect but real: the Feather 3.3 V pour reaches J4 pin 7, leaves the board through pole A of the power switch, and returns on J4 pin 8 → FPC pin 6. The breakout ties FPC pins 1 and 6 to the same `3.3V` net, so that single switched rail feeds the LiDAR's laser supply, its logic supply and the STEMMA QT bus — one undecoupled net for everything, which is the brownout this errata fixes. FPC pin 1 adds nothing to that path: on the main board it lands on Feather **D11** (J2 pin 7), a GPIO the firmware never configures, so it just sits on the breakout's 3.3 V rail as a stray strap and burns the pin. The respin splits the two: pin 1 becomes `VBAT` feeding the breakout's own LDO, pin 6 stays the switched `3.3OUT` that gates it, and D11 is freed.
+> **Reconciliation with the as-built MRF-Pro-v8 (why this section changed).** Earlier revisions of this errata assumed the Feather 3.3 V reached the breakout *directly* on the FPC. Schematic capture showed the path is indirect but real: the Feather 3.3 V pour reaches J4 pin 7, leaves the board through pole A of the power switch, and returns on J4 pin 8 → the FPC. The breakout ties FPC pins 1 and 6 to the same `3.3V` net, so that single switched rail feeds the LiDAR's laser supply, its logic supply and the STEMMA QT bus — one undecoupled net for everything, which is the brownout this errata fixes. (v7.5 originally carried the rail on pin 6 only and ran pin 1 to Feather **D11**, an abandoned experiment; that board now puts `3V3_SW` on both conductors and leaves D11 free. Either way the breakout sees one rail — the v8 fix is what separates them.) The respin splits the two: pin 1 becomes `VBAT` feeding the breakout's own LDO, pin 6 becomes the switched `3.3OUT` that gates it.
 
 ## Execution split
 
@@ -183,7 +183,7 @@ Schematic capture (adding U1, Cin, the new nets, and the EN/BAT wiring) is done 
 
 ## Verification
 
-- ERC both boards; netlist shows U1 IN on `VBAT`; U1 OUT + C2/C3 + J7 pin 2 on `3V3_LIDAR`; FB1 → C1 + J7 pin 1 on `3V3_LASER`; U1 EN + R1 on the FPC pin-6 switched rail (`3.3V` on the breakout sheet = `3.3OUT` on the main sheet), R1's other end on `GND`; J6 still on that same rail. Main board: Feather BAT (J2.12) on `VBAT` → FPC pin 1; J4 DPDT wired `3.3IN`(J4.8)/`3.3OUT`(J4.7)/`EN`(J4.4)/`GND`(J4.1-3).
+- ERC both boards; netlist shows U1 IN on `VBAT`; U1 OUT + C2/C3 + J7 pin 2 on `3V3_LIDAR`; FB1 → C1 + J7 pin 1 on `3V3_LASER`; U1 EN + R1 on the FPC pin-6 switched rail (`3.3V` on the breakout sheet = `3.3OUT` on the main sheet), R1's other end on `GND`; J6 still on that same rail. Main board: Feather BAT (J2.12) on `VBAT` → FPC pin 1; J4 DPDT wired `3.3IN`(J4.7)/`3.3OUT`(J4.8)/`EN`(J4.4)/`GND`(J4.1-3).
 - **J7 pin 5 (INT) still tied low** and pins 3,4 (UART) unchanged — the mode select must read UART at power-on.
 - Scope J7 VCC under laser load: ripple to tens of mV; confirm it holds clean until VBAT approaches ~3.5 V (dropout onset). Confirm the rail never exceeds the sensor's 3.6 V abs-max.
 - **Power switch off:** confirm `3V3_LIDAR` drops to 0 V and off-state battery current is ~µA (no always-on LiDAR draw).

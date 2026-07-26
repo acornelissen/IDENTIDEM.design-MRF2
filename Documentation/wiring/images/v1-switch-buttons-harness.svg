@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 648" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">
   <title>v1 (MRF-Pro-v7.5) power switch and buttons harness — J4</title>
-  <desc>Wiring diagram for the 8-pin JST-SH connector J4 on the MRF-Pro-v7.5 main board, which carries the power switch and two momentary buttons. J4 pin 1, 2, 3 are GND. Pin 4 is the Feather RESET line (J1 pin 1). Pin 5 is the right button, Feather D10 (J2 pin 6). Pin 6 is the left button, Feather D9 (J2 pin 5). Pin 7 is the Feather 3.3 V rail. Pin 8 is the switched 3.3 V to FPC pin 6 and the breakout. The switch gates 3.3 V from pin 7 to pin 8. The DPDT's second pole ties the Feather RESET line (pin 4) to GND to hold the MCU off; v8 replaced the RESET pole with the cleaner EN. Each button connects its GPIO pin to GND when pressed.</desc>
+  <desc>Wiring diagram for the 8-pin JST-SH connector J4 on the MRF-Pro-v7.5 main board, which carries the power switch and two momentary buttons. J4 pin 1, 2, 3 are GND. Pin 4 is the Feather RESET line (J1 pin 1). Pin 5 is the right button, Feather D10 (J2 pin 6). Pin 6 is the left button, Feather D9 (J2 pin 5). Pin 7 is the Feather 3.3 V rail. Pin 8 is the switched 3.3 V to FPC pins 1 and 6 and the breakout. The switch gates 3.3 V from pin 7 to pin 8. The DPDT's second pole ties the Feather RESET line (pin 4) to GND to hold the MCU off; v8 replaced the RESET pole with the cleaner EN. Each button connects its GPIO pin to GND when pressed.</desc>
 
   <rect x="0" y="0" width="1000" height="620" fill="#ffffff"/>
   <text x="500" y="32" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">v1 (MRF-Pro-v7.5) &#8212; power switch + buttons harness</text>
@@ -96,7 +96,7 @@
   <text x="440" y="414" font-size="10" fill="#b91c1c">3.3 V (Feather rail)</text>
   <!-- pin 8 (SW 3.3 V out) to pole A used throw -->
   <polyline points="272,455 592,455 592,224 776,224" fill="none" stroke="#d32f2f" stroke-width="2.5"/>
-  <text x="440" y="449" font-size="10" fill="#b91c1c">SW 3.3 V (&#8594; FPC pin 6)</text>
+  <text x="440" y="449" font-size="10" fill="#b91c1c">SW 3.3 V (&#8594; FPC pins 1, 6)</text>
   <!-- pin 4 (RESET) to pole B COM -->
   <polyline points="272,315 574,315 574,328 668,328" fill="none" stroke="#1565c0" stroke-width="2.5"/>
   <text x="410" y="309" font-size="10" fill="#1565c0">RESET</text>

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">
   <title>v1 (MRF-Pro-v7.5) breakout to LiDAR harness — J7</title>
-  <desc>Wiring diagram for the 6-pin JST-SH connector J7 on the MRF-Pro-v7.5 breakout, which the DTS6012M LiDAR plugs into 1:1. Pin 1 is the laser supply and pin 2 is the logic supply; both are tied to the shared 3.3 V rail that arrives on FPC pin 6, with no dedicated regulator. Pin 3 is the sensor UART TX to FPC pin 2 and Feather RX at main J1 pin 14. Pin 4 is the sensor UART RX to FPC pin 3 and Feather TX at main J1 pin 15. Pin 5 is INT tied to GND for UART mode. Pin 6 is GND. Because both supply pins share the undecoupled 3.3 V rail, the pulsed laser sags it and limits range; the hand-solder decoupling stopgap improves it and v2 fixes it with a dedicated LDO.</desc>
+  <desc>Wiring diagram for the 6-pin JST-SH connector J7 on the MRF-Pro-v7.5 breakout, which the DTS6012M LiDAR plugs into 1:1. Pin 1 is the laser supply and pin 2 is the logic supply; both are tied to the shared 3.3 V rail that arrives on FPC pins 1 and 6, with no dedicated regulator. Pin 3 is the sensor UART TX to FPC pin 2 and Feather RX at main J1 pin 14. Pin 4 is the sensor UART RX to FPC pin 3 and Feather TX at main J1 pin 15. Pin 5 is INT tied to GND for UART mode. Pin 6 is GND. Because both supply pins share the undecoupled 3.3 V rail, the pulsed laser sags it and limits range; the hand-solder decoupling stopgap improves it and v2 fixes it with a dedicated LDO.</desc>
 
   <rect x="0" y="0" width="1000" height="620" fill="#ffffff"/>
   <text x="500" y="32" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">v1 (MRF-Pro-v7.5) &#8212; breakout &#8594; LiDAR harness</text>
@@ -46,7 +46,7 @@
   <!-- ===================== shared 3.3 V rail block ===================== -->
   <rect x="640" y="170" width="300" height="120" rx="8" fill="#fff" stroke="#0f172a" stroke-width="1.6"/>
   <text x="790" y="200" text-anchor="middle" font-size="13.5" font-weight="700" fill="#0f172a">Shared 3.3 V rail</text>
-  <text x="790" y="219" text-anchor="middle" font-size="10.5" fill="#64748b">from FPC pin 6 (switched rail)</text>
+  <text x="790" y="219" text-anchor="middle" font-size="10.5" fill="#64748b">from FPC pins 1, 6 (switched rail)</text>
   <text x="790" y="236" text-anchor="middle" font-size="10.5" fill="#64748b">also feeds the I&#178;C bus + encoder</text>
   <circle cx="640" cy="258" r="4" fill="#1565c0"/><text x="654" y="262" font-size="10.5" fill="#1565c0">3V3_LASER &#183; 3V3 logic (pins 1 &amp; 2)</text>
 

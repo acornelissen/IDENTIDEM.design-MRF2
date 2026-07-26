@@ -93,9 +93,9 @@ The Feather ESP32-S3 is modeled as **generic header connectors** (J1/J2); the FP
 **BAT → FPC pin 1:**
 
 1. Find the header pin for **BAT** (it is **J2 pin 12**). Draw a wire and label it **`VBAT`**.
-2. Label the FPC **pin 1** conductor (J3 pin 1) **`VBAT`**. On the prior board pin 1 landed on a Feather GPIO (D11) and drew its 3.3 V from pin 6 through the breakout's shared net — see the topology note in the design doc.
+2. Label the FPC **pin 1** conductor (J3 pin 1) **`VBAT`**. On the prior board pin 1 is part of `3V3_SW`, the same switched rail as pin 6 — see the topology note in the design doc.
 
-**J4 DPDT power switch** (the prior board ran the whole breakout off the single switched 3.3 V on FPC pin 6; this rework separates the rails):
+**J4 DPDT power switch** (the prior board ran the whole breakout off one switched 3.3 V rail; this rework separates them):
 
 1. `3.3IN` (Feather, J1 pins 2 and 3) → **J4 pin 7** — pole A input.
 2. **J4 pin 8** → FPC **pin 6** (J3 pin 6), labeled **`3.3OUT`** — pole A output, the switched 3.3 V the breakout uses for U1 EN + J6.

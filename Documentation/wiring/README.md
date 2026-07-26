@@ -44,8 +44,8 @@ One 8-pin JST-SH connector carries the off-board power switch and both momentary
 | 4 | RESET | Feather J1.1 | pole B ties RESET → GND to hold the MCU off |
 | 5 | D10 | Feather J2.6 | Right button → GND |
 | 6 | D9 | Feather J2.5 | Left button → GND |
-| 7 | 3.3 V | Feather rail | pole A input |
-| 8 | switched 3.3 V | FPC pin 6 → breakout | pole A output |
+| 7 | 3.3 V | Feather J1.2 | pole A input |
+| 8 | 3V3_SW | FPC pins 1 and 6 → breakout | pole A output |
 
 DPDT: **pole A** gates the breakout 3.3 V (pin 7 → pin 8); **pole B** ties the Feather **RESET** line (pin 4) to GND. The poles are ganged, so **pulling RESET to GND (OFF) also opens pole A and breaks the 3.3 V** — the MCU is held in reset and power is cut together. v8 replaced the RESET pole with the cleaner **EN** hold-off.
 
@@ -78,7 +78,7 @@ The DTS6012M plugs into the 6-pin **J7** on the breakout (1:1). Its UART reaches
 
 | J7 pin | DTS6012M | Net | Goes to |
 | --- | --- | --- | --- |
-| 1 | 3V3_LASER | shared 3.3 V | breakout 3.3 V rail (FPC pin 6) |
+| 1 | 3V3_LASER | shared 3.3 V | breakout 3.3 V rail (FPC pins 1 and 6) |
 | 2 | 3V3 (logic) | shared 3.3 V | breakout 3.3 V rail |
 | 3 | UART_TX | → FPC pin 2 | main J1.14 (1:1) |
 | 4 | UART_RX | → FPC pin 3 | main J1.15 (1:1) |
@@ -108,7 +108,7 @@ The 8-pin FPC carries the LiDAR UART plus power and I²C, straight pin-to-pin. T
 
 | FPC pin | Signal | v1 | v2 |
 | --- | --- | --- | --- |
-| 1 | supply to breakout | breakout 3.3 V rail; on the main board it lands on Feather **D11** (J2.7), an unused GPIO — the rail itself arrives on pin 6 | **VBAT** from Feather J2.12 (feeds the LDO) |
+| 1 | supply to breakout | `3V3_SW`, the same switched rail as pin 6 — two conductors for one supply | **VBAT** from Feather J2.12 (feeds the LDO) |
 | 2 | LiDAR UART_TX → main J1.14 | same | same |
 | 3 | LiDAR UART_RX → main J1.15 | same | same |
 | 4 | GND | same | same |
@@ -116,6 +116,8 @@ The 8-pin FPC carries the LiDAR UART plus power and I²C, straight pin-to-pin. T
 | 6 | switched 3.3 V (from J4) | same | same |
 | 7 | I²C SDA | same | same |
 | 8 | I²C SCL | same | same |
+
+Early v7.5 boards ran pin 1 to Feather **D11** instead of the switched rail — a leftover from an abandoned experiment. Nothing needs changing on those: the breakout ties pins 1 and 6 to the same net, so the supply arrived on pin 6 either way and the firmware never drives D11. Current v7.5 files carry the supply on both conductors and leave D11 free.
 
 ---
 
