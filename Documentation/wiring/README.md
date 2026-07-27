@@ -19,15 +19,16 @@ These diagrams are drawn from the KiCad schematics/PCBs, but a few things are wo
 | Ref | Board | Pins | Type | Entry | Role |
 | --- | --- | --- | --- | --- | --- |
 | J3 | Main | 8 | 0.5 mm FPC | — | Ribbon to breakout J5 |
-| **J4** | Main | 8 | JST-SH 1.0 mm | Top | **Power switch + 2 buttons** |
+| **J4** | Main | 8 | JST-SH 1.0 mm | v2 right angle · v1 top | **Power switch + 2 buttons** |
 | J5 | Breakout | 8 | 0.5 mm FPC | — | Ribbon to main J3 |
 | J6 | Breakout | 4 | JST-SH 1.0 mm | Right angle | STEMMA QT / Qwiic I²C (encoder + bus) |
 | **J7** | Breakout | 6 | JST-SH 1.0 mm | Right angle | **DTS6012M LiDAR** |
 
 Reference designators are identical across both revisions. The entry direction is not
 interchangeable — a top-entry and a right-angle SH connector have different land patterns.
-J4 is top entry (`ZX-SH1.0-8PLT`, C7430457); both breakout connectors are right angle.
-Cables are the same either way; only the housing on the board differs.
+Both breakout connectors are right angle. J4 is right angle on v2 (`ZX-SH1.0-8PWT`,
+C7430450) and top entry on v1 (`ZX-SH1.0-8PLT`, C7430457) — check which board you have
+before ordering. Cables are the same either way; only the housing on the board differs.
 
 ---
 

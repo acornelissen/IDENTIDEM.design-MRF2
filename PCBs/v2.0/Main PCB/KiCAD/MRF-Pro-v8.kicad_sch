@@ -3328,7 +3328,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "Connector_JST:JST_SH_BM08B-SRSS-TB_1x08-1MP_P1.00mm_Vertical"
+		(property "Footprint" "Connector_JST:JST_SH_SM08B-SRSS-TB_1x08-1MP_P1.00mm_Horizontal"
 			(at 104.14 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -3361,7 +3361,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C7430457"
+		(property "LCSC" "C7430450"
 			(at 104.14 49.53 90)
 			(hide yes)
 			(show_name no)
