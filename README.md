@@ -99,9 +99,11 @@ The same connectors populate v1 and v2:
 | Item | Qty | Notes | Example sources |
 | --- | --- | --- | --- |
 | 0.5mm pitch 8-pin FPC connector (FPC-05F-8PH20, C2856797) | 2 | One on the main PCB, one on the breakout | [JLCPCB](https://jlcpcb.com/partdetail/XUNPU-FPC_05F8PH20/C2856797) |
-| SH 1.0mm 8-pin connector (ZX-SH1.0-8PWT, C7430450) | 1 | Main board J4 — power switch and buttons | [JLCPCB](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_08PWT/C7430450) |
-| SH 1.0mm 6-pin connector (ZX-SH1.0-6PWT, C7430448) | 1 | Breakout J7 — LiDAR sensor | [JLCPCB](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_06PWT/C7430448) |
-| SH 1.0mm 4-pin connector (ZX-SH1.0-4PWT, C7430446) | 1 | Breakout J6 — STEMMA QT | [JLCPCB](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_04PWT/C7430446) |
+| SH 1.0mm 8-pin connector, **top entry** (ZX-SH1.0-8PLT, C7430457) | 1 | Main board J4 — power switch and buttons | [JLCPCB](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_08PLT/C7430457) |
+| SH 1.0mm 6-pin connector, **right angle** (ZX-SH1.0-6PWT, C7430448) | 1 | Breakout J7 — LiDAR sensor | [JLCPCB](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_06PWT/C7430448) |
+| SH 1.0mm 4-pin connector, **right angle** (ZX-SH1.0-4PWT, C7430446) | 1 | Breakout J6 — STEMMA QT | [JLCPCB](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_04PWT/C7430446) |
+
+> Mind the `LT` / `WT` suffix. `LT` is top entry (vertical), `WT` is right angle (side entry) — they have different land patterns and are not interchangeable. J4 on the main board is top entry; both breakout connectors are right angle.
 
 ### v2 breakout only — dedicated LiDAR regulator
 
